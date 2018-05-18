@@ -1,0 +1,18 @@
+<RCC>
+    <qresource prefix="/shaders">
+        <file>background.vert</file>
+        <file>background.frag</file>
+        <file>util.glsl</file>
+        <file>thirdparty/ColorSpaces.inc.glsl</file>
+        <file>thirdparty/psrdnoise2D.glsl</file>
+        <file>thirdparty/cellular2D.glsl</file>
+        <file>thirdparty/classicnoise2D.glsl</file>
+        <file>thirdparty/noise2D.glsl</file>
+        <file>old_background.vert</file>
+        <file>old_brush.frag</file>
+        <file>old_brush.vert</file>
+        <file>old_buffer.frag</file>
+        <file>old_buffer.vert</file>
+        <file>old_checkers.frag</file>
+    </qresource>
+</RCC>

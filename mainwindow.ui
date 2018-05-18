@@ -1,0 +1,1409 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>GfxPaint::MainWindow</class>
+ <widget class="QMainWindow" name="GfxPaint::MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1036</width>
+    <height>754</height>
+   </rect>
+  </property>
+  <property name="documentMode">
+   <bool>false</bool>
+  </property>
+  <property name="dockNestingEnabled">
+   <bool>true</bool>
+  </property>
+  <property name="dockOptions">
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::GroupedDragging</set>
+  </property>
+  <property name="unifiedTitleAndToolBarOnMac">
+   <bool>false</bool>
+  </property>
+  <widget class="QWidget" name="centralWidget">
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QMdiArea" name="mdiArea">
+      <property name="verticalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+      <property name="horizontalScrollBarPolicy">
+       <enum>Qt::ScrollBarAsNeeded</enum>
+      </property>
+      <property name="viewMode">
+       <enum>QMdiArea::TabbedView</enum>
+      </property>
+      <property name="tabsClosable">
+       <bool>true</bool>
+      </property>
+      <property name="tabsMovable">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QToolBar" name="toolsToolBar">
+   <property name="windowTitle">
+    <string>Tools</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>LeftToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+  </widget>
+  <widget class="QToolBar" name="mainToolBar">
+   <property name="windowTitle">
+    <string>Main</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="separator"/>
+   <addaction name="actionNewWindow"/>
+   <addaction name="actionCloseWindow"/>
+   <addaction name="separator"/>
+   <addaction name="actionNewEditor"/>
+   <addaction name="actionCloseEditor"/>
+   <addaction name="separator"/>
+   <addaction name="actionExit"/>
+  </widget>
+  <widget class="QStatusBar" name="statusBar"/>
+  <widget class="QToolBar" name="fileToolBar">
+   <property name="windowTitle">
+    <string>File</string>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionNewFile"/>
+   <addaction name="actionOpenFiles"/>
+   <addaction name="separator"/>
+   <addaction name="actionSaveFile"/>
+   <addaction name="actionSaveFileAs"/>
+   <addaction name="separator"/>
+   <addaction name="actionCloseFile"/>
+  </widget>
+  <widget class="QDockWidget" name="documentsDockWidget">
+   <property name="windowTitle">
+    <string>Files</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_3">
+    <layout class="QVBoxLayout" name="verticalLayout_3">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="GfxPaint::SessionEditorWidget" name="sessionEditorWidget" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="sceneDockWidget">
+   <property name="windowTitle">
+    <string>Scene</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <layout class="QVBoxLayout" name="verticalLayout_7">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="GfxPaint::SceneTreeWidget" name="sceneTreeWidget" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="brushViewDockWidget">
+   <property name="windowTitle">
+    <string>Brush Preview</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_4">
+    <layout class="QVBoxLayout" name="verticalLayout_2">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="GfxPaint::BrushViewWidget" name="brushViewWidget"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="dabEditorDockWidget">
+   <property name="windowTitle">
+    <string>Dab Settings</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_5">
+    <layout class="QVBoxLayout" name="verticalLayout_5">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="GfxPaint::DabEditorWidget" name="dabEditorWidget" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="strokeEditorDockWidget">
+   <property name="windowTitle">
+    <string>Stroke Settings</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_6">
+    <layout class="QVBoxLayout" name="verticalLayout_6">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="GfxPaint::StrokeEditorWidget" name="strokeEditorWidget" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="nodeDockWidget">
+   <property name="windowTitle">
+    <string>Node</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_8"/>
+  </widget>
+  <widget class="QDockWidget" name="colourEditorDockWidget">
+   <property name="windowTitle">
+    <string>Colour Settings</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_9">
+    <layout class="QVBoxLayout" name="verticalLayout_4">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="GfxPaint::ColourEditorWidget" name="colourEditorWidget" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="transformEditorDockWidget">
+   <property name="windowTitle">
+    <string>Transform Settings</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_2">
+    <layout class="QVBoxLayout" name="verticalLayout_8">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="GfxPaint::TransformEditorWidget" name="transformEditorWidget" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menuBar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>1036</width>
+     <height>24</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menuFile">
+    <property name="title">
+     <string>&amp;File</string>
+    </property>
+    <widget class="QMenu" name="menuRecentFiles">
+     <property name="title">
+      <string>Recent &amp;Files</string>
+     </property>
+    </widget>
+    <addaction name="actionNewFile"/>
+    <addaction name="actionDuplicateFile"/>
+    <addaction name="actionOpenFiles"/>
+    <addaction name="actionRevertFile"/>
+    <addaction name="menuRecentFiles"/>
+    <addaction name="actionCreateEditorWithFile"/>
+    <addaction name="separator"/>
+    <addaction name="actionSaveFile"/>
+    <addaction name="actionSaveFileAs"/>
+    <addaction name="actionSaveAllFiles"/>
+    <addaction name="separator"/>
+    <addaction name="actionCloseFile"/>
+    <addaction name="actionCloseOtherFiles"/>
+    <addaction name="actionCloseAllFiles"/>
+    <addaction name="actionCloseFileWithLastEditor"/>
+    <addaction name="separator"/>
+   </widget>
+   <widget class="QMenu" name="menuView">
+    <property name="title">
+     <string>&amp;View</string>
+    </property>
+    <addaction name="actionShowGrid"/>
+    <addaction name="separator"/>
+    <addaction name="actionResetView"/>
+    <addaction name="actionFitView"/>
+    <addaction name="separator"/>
+    <addaction name="actionActualPixelRatio"/>
+    <addaction name="actionNearestIntegerPixelRatio"/>
+    <addaction name="actionSquarePixelRatio"/>
+    <addaction name="separator"/>
+    <addaction name="actionTransformAtCursor"/>
+   </widget>
+   <widget class="QMenu" name="menuEdit">
+    <property name="title">
+     <string>&amp;Edit</string>
+    </property>
+    <addaction name="actionUndo"/>
+    <addaction name="actionRedo"/>
+    <addaction name="separator"/>
+    <addaction name="actionClear"/>
+    <addaction name="separator"/>
+    <addaction name="actionSnapToGrid"/>
+   </widget>
+   <widget class="QMenu" name="menuApplication">
+    <property name="title">
+     <string>&amp;Application</string>
+    </property>
+    <widget class="QMenu" name="menuRecentSessions">
+     <property name="title">
+      <string>&amp;Recent Sessions</string>
+     </property>
+    </widget>
+    <widget class="QMenu" name="menuStyle">
+     <property name="title">
+      <string>&amp;Style</string>
+     </property>
+    </widget>
+    <widget class="QMenu" name="menuApplicationPalette">
+     <property name="title">
+      <string>&amp;Palette</string>
+     </property>
+    </widget>
+    <widget class="QMenu" name="menuStylesheet">
+     <property name="title">
+      <string>&amp;Stylesheet</string>
+     </property>
+    </widget>
+    <addaction name="actionNewSession"/>
+    <addaction name="actionOpenSession"/>
+    <addaction name="menuRecentSessions"/>
+    <addaction name="actionReopenSessionAtStartup"/>
+    <addaction name="separator"/>
+    <addaction name="actionSaveSession"/>
+    <addaction name="actionSaveSessionAs"/>
+    <addaction name="actionSaveSessionAtExit"/>
+    <addaction name="separator"/>
+    <addaction name="menuStyle"/>
+    <addaction name="menuApplicationPalette"/>
+    <addaction name="menuStylesheet"/>
+    <addaction name="separator"/>
+    <addaction name="actionPreferences"/>
+    <addaction name="separator"/>
+    <addaction name="actionAbout"/>
+    <addaction name="separator"/>
+    <addaction name="actionExit"/>
+   </widget>
+   <widget class="QMenu" name="menuWindow">
+    <property name="title">
+     <string>&amp;Window</string>
+    </property>
+    <widget class="QMenu" name="menuTabPosition">
+     <property name="title">
+      <string>&amp;Tab Position</string>
+     </property>
+     <addaction name="actionTabPositionTop"/>
+     <addaction name="actionTabPositionBottom"/>
+     <addaction name="actionTabPositionLeft"/>
+     <addaction name="actionTabPositionRight"/>
+    </widget>
+    <widget class="QMenu" name="menuDocks">
+     <property name="title">
+      <string>&amp;Docks</string>
+     </property>
+    </widget>
+    <widget class="QMenu" name="menuToolbars">
+     <property name="title">
+      <string>&amp;Toolbars</string>
+     </property>
+    </widget>
+    <addaction name="actionFullscreen"/>
+    <addaction name="actionShowMenuBar"/>
+    <addaction name="actionShowStatusBar"/>
+    <addaction name="menuToolbars"/>
+    <addaction name="menuDocks"/>
+    <addaction name="separator"/>
+    <addaction name="actionNewWindow"/>
+    <addaction name="actionDuplicateWindow"/>
+    <addaction name="separator"/>
+    <addaction name="actionCloseWindow"/>
+    <addaction name="actionCloseOtherWindows"/>
+    <addaction name="separator"/>
+    <addaction name="actionNewEditor"/>
+    <addaction name="actionDuplicateEditor"/>
+    <addaction name="separator"/>
+    <addaction name="actionCloseEditor"/>
+    <addaction name="actionCloseOtherEditors"/>
+    <addaction name="actionCloseAllEditors"/>
+    <addaction name="separator"/>
+    <addaction name="actionCascadeEditors"/>
+    <addaction name="actionTileEditors"/>
+    <addaction name="separator"/>
+    <addaction name="actionMoveEditorToNextWindow"/>
+    <addaction name="actionMoveEditorToPreviousWindow"/>
+    <addaction name="separator"/>
+    <addaction name="actionTabbedEditors"/>
+    <addaction name="menuTabPosition"/>
+   </widget>
+   <widget class="QMenu" name="menuNode">
+    <property name="title">
+     <string>&amp;Node</string>
+    </property>
+   </widget>
+   <addaction name="menuApplication"/>
+   <addaction name="menuWindow"/>
+   <addaction name="menuFile"/>
+   <addaction name="menuEdit"/>
+   <addaction name="menuView"/>
+   <addaction name="menuNode"/>
+  </widget>
+  <action name="actionNewFile">
+   <property name="text">
+    <string>&amp;New File...</string>
+   </property>
+  </action>
+  <action name="actionRevertFile">
+   <property name="text">
+    <string>&amp;Revert File</string>
+   </property>
+  </action>
+  <action name="actionOpenFiles">
+   <property name="text">
+    <string>&amp;Open Files...</string>
+   </property>
+  </action>
+  <action name="actionSaveFile">
+   <property name="text">
+    <string>&amp;Save File</string>
+   </property>
+  </action>
+  <action name="actionSaveFileAs">
+   <property name="text">
+    <string>Save File &amp;As...</string>
+   </property>
+  </action>
+  <action name="actionImageSwapSpare">
+   <property name="text">
+    <string>&amp;Image ↔ Spare</string>
+   </property>
+   <property name="visible">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionImageToSpare">
+   <property name="text">
+    <string>&amp;Image → Spare</string>
+   </property>
+  </action>
+  <action name="actionExit">
+   <property name="text">
+    <string>E&amp;xit</string>
+   </property>
+  </action>
+  <action name="actionResizeImage">
+   <property name="text">
+    <string>&amp;Resize Image...</string>
+   </property>
+  </action>
+  <action name="actionRestore">
+   <property name="text">
+    <string>&amp;Restore</string>
+   </property>
+  </action>
+  <action name="actionOutline">
+   <property name="text">
+    <string>&amp;Outline</string>
+   </property>
+  </action>
+  <action name="actionLoadBrush">
+   <property name="text">
+    <string>&amp;Load...</string>
+   </property>
+  </action>
+  <action name="actionSaveBrush">
+   <property name="text">
+    <string>&amp;Save...</string>
+   </property>
+  </action>
+  <action name="actionPaint">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Paint</string>
+   </property>
+  </action>
+  <action name="actionSingleColour">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Single-colour</string>
+   </property>
+  </action>
+  <action name="actionSmear">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Smear</string>
+   </property>
+  </action>
+  <action name="actionShade">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Shade</string>
+   </property>
+  </action>
+  <action name="actionCycle">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Cycle</string>
+   </property>
+  </action>
+  <action name="actionSmooth">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Smooth</string>
+   </property>
+  </action>
+  <action name="actionMultiCycle">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Multi-Cycle</string>
+   </property>
+  </action>
+  <action name="actionHalveBoth">
+   <property name="text">
+    <string>&amp;Both</string>
+   </property>
+  </action>
+  <action name="actionHalveWidth">
+   <property name="text">
+    <string>&amp;Width</string>
+   </property>
+  </action>
+  <action name="actionHalveHeight">
+   <property name="text">
+    <string>&amp;Height</string>
+   </property>
+  </action>
+  <action name="actionDoubleBoth">
+   <property name="text">
+    <string>&amp;Both</string>
+   </property>
+  </action>
+  <action name="actionDoubleWidth">
+   <property name="text">
+    <string>&amp;Width</string>
+   </property>
+  </action>
+  <action name="actionDoubleHeight">
+   <property name="text">
+    <string>&amp;Height</string>
+   </property>
+  </action>
+  <action name="actionStretchBoth">
+   <property name="text">
+    <string>&amp;Both</string>
+   </property>
+  </action>
+  <action name="actionStretchWidth">
+   <property name="text">
+    <string>&amp;Width</string>
+   </property>
+  </action>
+  <action name="actionStretchHeight">
+   <property name="text">
+    <string>&amp;Height</string>
+   </property>
+  </action>
+  <action name="actionFlipLeftToRight">
+   <property name="text">
+    <string>&amp;Left-to-Right</string>
+   </property>
+  </action>
+  <action name="actionFlipTopToBottom">
+   <property name="text">
+    <string>&amp;Top-to-Bottom</string>
+   </property>
+  </action>
+  <action name="actionRotate90Degrees">
+   <property name="text">
+    <string>&amp;90 Degrees</string>
+   </property>
+  </action>
+  <action name="actionRoate180Degrees">
+   <property name="text">
+    <string>&amp;180 Degrees</string>
+   </property>
+  </action>
+  <action name="actionRotateFree">
+   <property name="text">
+    <string>&amp;Free</string>
+   </property>
+  </action>
+  <action name="actionBendLeftAndRight">
+   <property name="text">
+    <string>&amp;Left-and-Right</string>
+   </property>
+  </action>
+  <action name="actionBendUpAndDown">
+   <property name="text">
+    <string>&amp;Up-and-Down</string>
+   </property>
+  </action>
+  <action name="actionShearLeftAndRight">
+   <property name="text">
+    <string>&amp;Left-and-Right</string>
+   </property>
+  </action>
+  <action name="actionShearUpAndDown">
+   <property name="text">
+    <string>&amp;Up-and-Down</string>
+   </property>
+  </action>
+  <action name="actionAbout">
+   <property name="text">
+    <string>&amp;About...</string>
+   </property>
+  </action>
+  <action name="actionCloseFile">
+   <property name="text">
+    <string>&amp;Close File</string>
+   </property>
+  </action>
+  <action name="actionStencilOn">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Stencil On</string>
+   </property>
+  </action>
+  <action name="actionMakeStencil">
+   <property name="text">
+    <string>&amp;Make...</string>
+   </property>
+  </action>
+  <action name="actionLockForeground">
+   <property name="text">
+    <string>&amp;Lock Foreground</string>
+   </property>
+  </action>
+  <action name="actionReverseStencil">
+   <property name="text">
+    <string>&amp;Reverse</string>
+   </property>
+  </action>
+  <action name="actionDiscardStencil">
+   <property name="text">
+    <string>&amp;Discard</string>
+   </property>
+  </action>
+  <action name="actionBackgroundFix">
+   <property name="text">
+    <string>&amp;Fix</string>
+   </property>
+  </action>
+  <action name="actionBackgroundFree">
+   <property name="text">
+    <string>&amp;Free</string>
+   </property>
+  </action>
+  <action name="actionAntialias">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Anti-alias</string>
+   </property>
+  </action>
+  <action name="actionColourise">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Colourize</string>
+   </property>
+  </action>
+  <action name="actionTranslucent">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Translucent</string>
+   </property>
+  </action>
+  <action name="actionCycleColours">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Cycle Colours</string>
+   </property>
+  </action>
+  <action name="actionBGSwapFGColourImage">
+   <property name="text">
+    <string>&amp;Picture</string>
+   </property>
+  </action>
+  <action name="actionBGSwapFGColourBrush">
+   <property name="text">
+    <string>&amp;Brush</string>
+   </property>
+  </action>
+  <action name="actionBGToFGColourImage">
+   <property name="text">
+    <string>&amp;Picture</string>
+   </property>
+  </action>
+  <action name="actionBGToFGColourBrush">
+   <property name="text">
+    <string>&amp;Brush</string>
+   </property>
+  </action>
+  <action name="actionPaletteDialog">
+   <property name="text">
+    <string>&amp;Dialog...</string>
+   </property>
+  </action>
+  <action name="actionRestorePalette">
+   <property name="text">
+    <string>&amp;Restore</string>
+   </property>
+  </action>
+  <action name="actionDefaultPalette">
+   <property name="text">
+    <string>&amp;Default</string>
+   </property>
+  </action>
+  <action name="actionPaletteFromBrush">
+   <property name="text">
+    <string>&amp;From Brush</string>
+   </property>
+  </action>
+  <action name="actionRemapColoursImage">
+   <property name="text">
+    <string>&amp;Picture</string>
+   </property>
+  </action>
+  <action name="actionRemapColoursBrush">
+   <property name="text">
+    <string>&amp;Brush</string>
+   </property>
+  </action>
+  <action name="actionDottedFreehand">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Dotted Freehand</string>
+   </property>
+  </action>
+  <action name="actionContinuousFreehand">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Continuous Freehand</string>
+   </property>
+  </action>
+  <action name="actionDot">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Dot</string>
+   </property>
+   <property name="visible">
+    <bool>true</bool>
+   </property>
+  </action>
+  <action name="actionLineSingle">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Single Line</string>
+   </property>
+  </action>
+  <action name="actionLineMulti">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Multi Line</string>
+   </property>
+  </action>
+  <action name="actionCurveSingle">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Single Curve</string>
+   </property>
+  </action>
+  <action name="actionCurveDouble">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Double Curve</string>
+   </property>
+  </action>
+  <action name="actionRectangleStroked">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Stroked Rectangle</string>
+   </property>
+  </action>
+  <action name="actionRectangleFilled">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Filled Rectangle</string>
+   </property>
+  </action>
+  <action name="actionSquareStroked">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Stroked Square</string>
+   </property>
+  </action>
+  <action name="actionSquareFilled">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Filled Square</string>
+   </property>
+  </action>
+  <action name="actionEllipseStroked">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Stroked Ellipse</string>
+   </property>
+  </action>
+  <action name="actionEllipseFilled">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Filled Ellipse</string>
+   </property>
+  </action>
+  <action name="actionCircleStroked">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Stroked Circle</string>
+   </property>
+  </action>
+  <action name="actionCircleFilled">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Filled Circle</string>
+   </property>
+  </action>
+  <action name="actionPolygonStroked">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Stroked Polygon</string>
+   </property>
+  </action>
+  <action name="actionPolygonFilled">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Filled Polygon</string>
+   </property>
+  </action>
+  <action name="actionPolyformStroked">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Stroked Polyform</string>
+   </property>
+  </action>
+  <action name="actionPolyformFilled">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Filled Polyform</string>
+   </property>
+  </action>
+  <action name="actionFloodFill">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Flood Fill</string>
+   </property>
+  </action>
+  <action name="actionReplaceMatching">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Replace Matching</string>
+   </property>
+  </action>
+  <action name="actionSprayCan">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Spray Can</string>
+   </property>
+  </action>
+  <action name="actionAirBrush">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Air Brush</string>
+   </property>
+  </action>
+  <action name="actionGrabBrush">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Grab Brush</string>
+   </property>
+  </action>
+  <action name="actionShowBrushEditor">
+   <property name="text">
+    <string>&amp;Show Brush Editor</string>
+   </property>
+  </action>
+  <action name="actionShowSpareEditor">
+   <property name="text">
+    <string>&amp;Show Spare Editor</string>
+   </property>
+  </action>
+  <action name="actionUndo">
+   <property name="text">
+    <string>&amp;Undo</string>
+   </property>
+  </action>
+  <action name="actionRedo">
+   <property name="text">
+    <string>&amp;Redo</string>
+   </property>
+  </action>
+  <action name="actionClear">
+   <property name="text">
+    <string>&amp;Clear</string>
+   </property>
+  </action>
+  <action name="actionPaintMask">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Paint Mask</string>
+   </property>
+  </action>
+  <action name="actionSnapToGrid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Snap to &amp;Grid</string>
+   </property>
+  </action>
+  <action name="actionShowGrid">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show &amp;Grid</string>
+   </property>
+  </action>
+  <action name="actionFullscreen">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show &amp;Fullscreen</string>
+   </property>
+   <property name="shortcut">
+    <string>F11</string>
+   </property>
+  </action>
+  <action name="actionResetView">
+   <property name="text">
+    <string>&amp;Reset View</string>
+   </property>
+  </action>
+  <action name="actionFitView">
+   <property name="text">
+    <string>&amp;Fit View</string>
+   </property>
+  </action>
+  <action name="actionTransformAtCursor">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Transform at &amp;Cursor</string>
+   </property>
+  </action>
+  <action name="actionActualPixelRatio">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Actual Pixel Ratio</string>
+   </property>
+  </action>
+  <action name="actionNearestIntegerPixelRatio">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Nearest &amp;Integer Pixel Ratio</string>
+   </property>
+  </action>
+  <action name="actionSquarePixelRatio">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Square Pixel Ratio</string>
+   </property>
+  </action>
+  <action name="actionTransparent">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Transparent</string>
+   </property>
+  </action>
+  <action name="actionNewWindow">
+   <property name="text">
+    <string>&amp;New Window</string>
+   </property>
+  </action>
+  <action name="actionCloseWindow">
+   <property name="text">
+    <string>&amp;Close Window</string>
+   </property>
+  </action>
+  <action name="actionNewSession">
+   <property name="text">
+    <string>&amp;New Session</string>
+   </property>
+  </action>
+  <action name="actionOpenSession">
+   <property name="text">
+    <string>&amp;Open Session...</string>
+   </property>
+  </action>
+  <action name="actionSaveSession">
+   <property name="text">
+    <string>&amp;Save Session</string>
+   </property>
+  </action>
+  <action name="actionSaveSessionAs">
+   <property name="text">
+    <string>Save Session &amp;As...</string>
+   </property>
+  </action>
+  <action name="actionSaveSessionAtExit">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Save Session at Exit</string>
+   </property>
+  </action>
+  <action name="actionReopenSessionAtStartup">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Reopen Session at Startup</string>
+   </property>
+  </action>
+  <action name="actionTabbedEditors">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Tabbed Editors</string>
+   </property>
+  </action>
+  <action name="actionNewEditor">
+   <property name="text">
+    <string>&amp;New Editor</string>
+   </property>
+  </action>
+  <action name="actionCloseEditor">
+   <property name="text">
+    <string>&amp;Close Editor</string>
+   </property>
+  </action>
+  <action name="actionCloseOtherEditors">
+   <property name="text">
+    <string>Close &amp;Other Editors</string>
+   </property>
+  </action>
+  <action name="actionCloseOtherFiles">
+   <property name="text">
+    <string>Close &amp;Other Files</string>
+   </property>
+  </action>
+  <action name="actionDuplicateEditor">
+   <property name="text">
+    <string>&amp;Duplicate Editor</string>
+   </property>
+  </action>
+  <action name="actionMoveEditorToNextWindow">
+   <property name="text">
+    <string>Move Editor to &amp;Next Window</string>
+   </property>
+  </action>
+  <action name="actionMoveEditorToPreviousWindow">
+   <property name="text">
+    <string>Move Editor to &amp;Previous Window</string>
+   </property>
+  </action>
+  <action name="actionDuplicateWindow">
+   <property name="text">
+    <string>&amp;Duplicate Window</string>
+   </property>
+  </action>
+  <action name="actionCloseOtherWindows">
+   <property name="text">
+    <string>Close &amp;Other Windows</string>
+   </property>
+  </action>
+  <action name="actionCloseAllFiles">
+   <property name="text">
+    <string>Close &amp;All Files</string>
+   </property>
+  </action>
+  <action name="actionSaveAllFiles">
+   <property name="text">
+    <string>Save &amp;All Files</string>
+   </property>
+  </action>
+  <action name="actionDuplicateFile">
+   <property name="text">
+    <string>&amp;Duplicate File</string>
+   </property>
+  </action>
+  <action name="actionPreferences">
+   <property name="text">
+    <string>&amp;Preferences...</string>
+   </property>
+  </action>
+  <action name="actionPreserveTransparent">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Preserve Transparent</string>
+   </property>
+  </action>
+  <action name="actionTabPositionTop">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Top</string>
+   </property>
+  </action>
+  <action name="actionTabPositionBottom">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Bottom</string>
+   </property>
+  </action>
+  <action name="actionTabPositionLeft">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Left</string>
+   </property>
+  </action>
+  <action name="actionTabPositionRight">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Right</string>
+   </property>
+  </action>
+  <action name="actionShowMenuBar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show &amp;Menu Bar</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Shift+M</string>
+   </property>
+  </action>
+  <action name="actionShowStatusBar">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Show &amp;Status Bar</string>
+   </property>
+  </action>
+  <action name="actionCloseAllEditors">
+   <property name="text">
+    <string>Close &amp;All Editors</string>
+   </property>
+  </action>
+  <action name="actionCascadeEditors">
+   <property name="text">
+    <string>&amp;Cascade Editors</string>
+   </property>
+  </action>
+  <action name="actionTileEditors">
+   <property name="text">
+    <string>&amp;Tile Editors</string>
+   </property>
+  </action>
+  <action name="actionCreateEditorWithFile">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Create &amp;Editor with File</string>
+   </property>
+  </action>
+  <action name="actionCloseFileWithLastEditor">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Close File with &amp;Last Editor</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="6" margin="11"/>
+ <customwidgets>
+  <customwidget>
+   <class>GfxPaint::SceneTreeWidget</class>
+   <extends>QWidget</extends>
+   <header>scenetreewidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GfxPaint::DabEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>dabeditorwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GfxPaint::StrokeEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>strokeeditorwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GfxPaint::TransformEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>transformeditorwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GfxPaint::ColourEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>coloureditorwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GfxPaint::BrushViewWidget</class>
+   <extends>QOpenGLWidget</extends>
+   <header>brushviewwidget.h</header>
+  </customwidget>
+  <customwidget>
+   <class>GfxPaint::SessionEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>sessioneditorwidget.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
