@@ -322,9 +322,8 @@ void Application::readSettings(QSettings &settings)
     if (settings.contains("saveSessionAtExit")) m_saveSessionAtExit = settings.value("saveSessionAtExit").toBool();
     if (settings.contains("lastSession")) sessionManager.setSessionFilename(settings.value("lastSession").toString());
 
-    if (m_reopenSessionAtStartup && QFile::exists(sessionManager.sessionFilename())) {
-        sessionManager.openSession(sessionManager.sessionFilename());
-    }
+    if (m_reopenSessionAtStartup && sessionManager.openSession(sessionManager.sessionFilename())) {}
+    else sessionManager.newSession();
 }
 
 void Application::writeSettings(QSettings &settings)
