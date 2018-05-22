@@ -241,7 +241,7 @@ R"(
     return src;
 }
 
-QString RenderManager::dabShaderPart(const QString &name, const Dab::Type type, const Metric metric) {
+QString RenderManager::dabShaderPart(const QString &name, const Dab::Type type) {
     const QMap<Dab::Type, QString> types = {
         { Dab::Type::Pixel,
 R"(
@@ -253,7 +253,7 @@ float %1Brush(const vec2 pos) {
         { Dab::Type::Distance,
 R"(
 float %1Brush(const vec2 pos) {
-    return length(pos);
+    return metric(pos);
 }
 )"
         },
@@ -377,14 +377,14 @@ QString RenderManager::metricShaderPart(const Metric metric)
         { Metric::Euclidean,
 R"(
 float metric(const vec2 pos) {
-    return sqrt(pos.x * pos.x + pos.y * pos.y);
+    return sqrt(pow(pos.x, 2) + pow(pos.y, 2));
 }
 )"
         },
         { Metric::Manhattan,
 R"(
 float metric(const vec2 pos) {
-    return abs(pos.x + pos.y);
+    return abs(pos.x) + abs(pos.y);
 }
 )"
         },
@@ -392,6 +392,20 @@ float metric(const vec2 pos) {
 R"(
 float metric(const vec2 pos) {
     return max(abs(pos.x), abs(pos.y));
+}
+)"
+        },
+        { Metric::Minimum,
+R"(
+float metric(const vec2 pos) {
+    return min(abs(pos.x), abs(pos.y));
+}
+)"
+        },
+        { Metric::Octagonal,
+R"(
+float metric(const vec2 pos) {
+      return (1007.0/1024.0) * max(abs(pos.x), abs(pos.y)) + (441.0/1024.0) * min(abs(pos.x), abs(pos.y));
 }
 )"
         },

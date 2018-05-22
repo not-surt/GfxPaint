@@ -42,7 +42,7 @@ public:
     static QString modelShaderPart(const Model model);
     static QString vertexMainShaderPart();
     static QString patternShaderPart(const QString &name, const Pattern pattern);
-    static QString dabShaderPart(const QString &name, const Dab::Type type, const Metric metric);
+    static QString dabShaderPart(const QString &name, const Dab::Type type);
     static QString bufferShaderPart(const QString &name, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString colourSliderShaderPart(const QString &name, const ColourSpace colourSpace, const int component);
     static QString blenderShaderPart(const Blender blender);

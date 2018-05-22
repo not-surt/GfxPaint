@@ -76,7 +76,7 @@ void DabEditorWidget::updateDab()
 {
     dab.space = static_cast<Space>(ui->spaceComboBox->currentIndex());
     dab.type = static_cast<Dab::Type>(ui->typeComboBox->currentIndex());
-    dab.metric = static_cast<Metric>(ui->typeComboBox->currentIndex());
+    dab.metric = static_cast<Metric>(ui->metricComboBox->currentIndex());
 
     if (ui->fixedRatioCheckBox->isChecked()) {
         if (QObject::sender() == ui->widthSpinBox) {

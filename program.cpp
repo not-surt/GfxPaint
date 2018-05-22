@@ -135,7 +135,7 @@ QOpenGLShaderProgram *DabProgram::createProgram() const
     if (type == Dab::Type::Distance) {
         fragSrc += RenderManager::metricShaderPart(metric);
     }
-    fragSrc += RenderManager::dabShaderPart("src", type, metric);
+    fragSrc += RenderManager::dabShaderPart("src", type);
     fragSrc += RenderManager::bufferShaderPart("dest", 0, destFormat, destIndexed, 1, destPaletteFormat);
     fragSrc += RenderManager::blenderShaderPart(blender);
     fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, destPaletteFormat);

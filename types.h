@@ -23,6 +23,8 @@ enum class Metric {
     Manhattan,
     Chebyshev,
     //Minkoski,
+    Minimum,
+    Octagonal,
 };
 
 enum class Blender {
