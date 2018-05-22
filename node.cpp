@@ -138,11 +138,19 @@ void BufferNode::afterChildren(Traversal &traversal)
 
 void BufferNode::render(Traversal &traversal)
 {
-    const Traversal::RenderTarget &renderTarget = traversal.renderTargetStack.top();
-    QTransform transform = traversal.transformStack.top();
-    BufferProgram program(buffer.format(), indexed, traversal.paletteStack.top()->format(), renderTarget.buffer->format(), renderTarget.indexed, renderTarget.palette->format(), Blender::Alpha);
-    renderTarget.buffer->bindFramebuffer();
-    program.render(&buffer, traversal.paletteStack.top(), QTransform().scale(buffer.width(), buffer.height()) * transform * renderTarget.transform, renderTarget.buffer, renderTarget.palette);
+    if (!traversal.renderTargetStack.isEmpty()) {
+        const Traversal::RenderTarget &renderTarget = traversal.renderTargetStack.top();
+        QTransform transform = traversal.transformStack.top();
+        const Buffer *palette = nullptr;
+        Buffer::Format paletteFormat;
+        if (!traversal.paletteStack.isEmpty()) {
+            palette = traversal.paletteStack.top();
+            paletteFormat = palette->format();
+        }
+        BufferProgram program(buffer.format(), indexed, paletteFormat, renderTarget.buffer->format(), renderTarget.indexed, renderTarget.palette ? renderTarget.palette->format() : Buffer::Format(), Blender::Alpha);
+        renderTarget.buffer->bindFramebuffer();
+        program.render(&buffer, palette, QTransform().scale(buffer.width(), buffer.height()) * transform * renderTarget.transform, renderTarget.buffer, renderTarget.palette);
+    }
 }
 
 PaletteNode::PaletteNode(const Buffer &buffer, const bool indexed) :

@@ -204,8 +204,6 @@ vec4 %1(const vec2 pos) {
 }
 
 QString RenderManager::bufferShaderPart(const QString &name, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat) {
-    qDebug() << "Buffer::Format::ComponentType" << (int)paletteFormat.componentType;///////////////////////////////
-    qDebug() << "indexed" << indexed;///////////////////////////////
     QString src;
     src +=
 QString(R"(
@@ -225,14 +223,14 @@ vec4 %1(const vec2 pos) {
 )").arg(name);
     if (indexed && paletteFormat.componentType != Buffer::Format::ComponentType::Invalid) src +=
 QString(R"(
-    uint index = texelFetch(%1Texture, ivec2(floor(pos))).x;
-    vec4 colour = vec4(texelFetch(%1Palette, ivec2(index, 0))) / %2;
+    const uint index = texelFetch(%1Texture, ivec2(floor(pos))).x;
+    const vec4 colour = vec4(texelFetch(%1Palette, ivec2(index, 0))) / %2;
     return colour;
 )").arg(name)
             .arg(paletteFormat.scale());
     else src +=
 QString(R"(
-    vec4 colour = vec4(texelFetch(%1Texture, ivec2(floor(pos)))) / %2;
+    const vec4 colour = vec4(texelFetch(%1Texture, ivec2(floor(pos)))) / %2;
     return colour;
 )").arg(name)
             .arg(bufferFormat.scale());
@@ -368,6 +366,7 @@ vec4 blend(const vec4 src, const vec4 dest) {
         },
     };
     QString src;
+//    src += fileToString(":/shaders/thirdparty/PhotoshopMathFP.glsl");
     src += blenders[blender];
     return src;
 }
@@ -402,7 +401,7 @@ float metric(const vec2 pos) {
     return src;
 }
 
-QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const bool indexed)
+QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const Buffer::Format paletteFormat)
 {
     QString src;
     src +=
@@ -414,31 +413,31 @@ out %1 fragment;
 void main(void) {
     const vec4 fragmentColour = blend(src(pos), dest(gl_FragCoord.xy));
 )";
-    if (indexed) qDebug() << "indexed";///////////////////////////////////////
     if (indexed) src +=
 R"(
-    uint nearest = 0;
-    float nearestDistance = 256 * 256 * 256;
-    for (uint x = 0; x < textureSize(destPalette).x; ++x) {
-        uint index = uint(texelFetch(%1Texture, ivec2(x, 0)).x);
-        float indexDistance = distance(fragmentColour, index);
-        if (indexDistance < nearestDistance) {
-            nearest = x;
-            nearestDistance = indexDistance;
+    uint nearestIndex = 0;
+    float nearestDistance = pow(%2 + 1, 3);
+    for (uint index = 0; index < uint(textureSize(destPalette, 0).x); ++index) {
+        const vec4 paletteColour = vec4(texelFetch(destPalette, ivec2(index, 0))) / float(%3);
+        const float colourDistance = distance(fragmentColour.rgb, paletteColour.rgb);
+        if (colourDistance < nearestDistance) {
+            nearestIndex = index;
+            nearestDistance = colourDistance;
         }
     }
-    //fragment = nearest;
-    fragment = 2;
+    fragment = nearestIndex;
+    //fragment = uint(gl_FragCoord.x) % uint(textureSize(destPalette, 0).x);
 )";
     else src +=
 R"(
+    %3 + %3;//////////////////
     fragment = %1(fragmentColour * %2);
 )";
     src +=
 R"(
 }
 )";
-    return src.arg(format.shaderValueType()).arg(format.scale());
+    return src.arg(format.shaderValueType()).arg(format.scale()).arg(indexed && paletteFormat.isValid() ? paletteFormat.scale() : 1.0);
 }
 
 QString RenderManager::widgetOutputShaderPart()

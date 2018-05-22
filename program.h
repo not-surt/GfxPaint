@@ -98,7 +98,7 @@ public:
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
     }
-    ~BufferProgram() {
+    ~BufferProgram() override {
         glDeleteBuffers(1, &uniformBuffer);
     }
 
@@ -137,7 +137,7 @@ public:
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
     }
-    ~DabProgram() {
+    ~DabProgram() override {
         glDeleteBuffers(1, &uniformBuffer);
     }
 
@@ -217,7 +217,7 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     }
-    virtual ~ColourConversionProgram() {
+    virtual ~ColourConversionProgram() override {
         glDeleteBuffers(1, &storageBuffer);
     }
 
@@ -251,7 +251,7 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     }
-    virtual ~ColourPickProgram() {
+    ~ColourPickProgram() override {
         glDeleteBuffers(1, &storageBuffer);
     }
 

@@ -42,16 +42,15 @@ void EditingContext::updatePrograms()
     m_dabPrograms.clear();
     QMap<Node *, ColourPickProgram *> oldColourPickPrograms = m_colourPickPrograms;
     m_colourPickPrograms.clear();
+    Buffer buffer;
+    scene.render(nullptr, false, nullptr, QTransform(), &m_states);
     for (auto index : m_selectionModel.selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
-            qDebug() << "states size" << m_states.count() << m_states.keys() << node << m_states.contains(node);///////////////////////////
             Traversal::State &state = m_states[node];
-//            qDebug() << state.palette->isNull() << state.palette->size();///////////////////////////
             if (bufferNode) {
-                //m_dabPrograms.insert(bufferNode, new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette->format(), m_brush.dab.blender));
-                m_dabPrograms.insert(bufferNode, new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette.format(), m_brush.dab.blender));
+                m_dabPrograms.insert(bufferNode, new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_brush.dab.blender));
                 m_colourPickPrograms.insert(bufferNode, new ColourPickProgram(bufferNode->buffer.format()));
             }
         }

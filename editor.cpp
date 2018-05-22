@@ -120,7 +120,9 @@ void Editor::render()
 
     // Draw scene
     widgetBuffer->bindFramebuffer();
-    scene.render(*widgetBuffer, false, Buffer({1, 1}, Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 4)), cameraTransform * viewportTransform, &m_editingContext.states());
+//    Buffer palette({1, 1}, Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 4));
+//    scene.render(nullptr, false, /*&palette*/nullptr, cameraTransform * viewportTransform, &m_editingContext.states());
+    scene.render(widgetBuffer, false, /*&palette*/nullptr, cameraTransform * viewportTransform, &m_editingContext.states());
 
     // Undraw on-canvas brush preview
     for (auto index : m_editingContext.selectionModel().selectedRows()) {
@@ -196,8 +198,8 @@ void Editor::drawDab(const Dab &dab, const QColor &colour, BufferNode &node, con
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
 //    const Buffer *const palette = m_editingContext.states()[&node].palette;
-    const Buffer *const palette = &m_editingContext.states()[&node].palette;
-    qDebug() << "STATE PALETTE" << palette << palette->size() << static_cast<int>(palette->format().componentType) << palette->format().componentSize << palette->format().componentCount << palette->format().scale() << palette->isNull(); ////////////////////////////////////////////
+    const Buffer *const palette = m_editingContext.states()[&node].palette;
+//    qDebug() << "STATE PALETTE" << palette << palette->size() << static_cast<int>(palette->format().componentType) << palette->format().componentSize << palette->format().componentCount << palette->format().scale() << palette->isNull(); ////////////////////////////////////////////
     m_editingContext.dabPrograms()[&node]->render(dab, colour, spaceTransform * QTransform().translate(objectSpacePos.x(), objectSpacePos.y()) * GfxPaint::viewportTransform(node.buffer.size()), &node.buffer, palette);
 }
 
@@ -223,7 +225,7 @@ void Editor::updateContext()
     m_editingContext.states().clear();
     for (auto index : m_editingContext.selectionModel().selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
-        m_editingContext.states().insert(node, {});
+        m_editingContext.states().insert(node, Traversal::State());
     }
     update(); // Rebuild states, full traversal render bad!
 

@@ -23,18 +23,19 @@ class Traversal
 {
 public:    
     struct RenderTarget {
-        Buffer *buffer;
-        bool indexed;
-        const Buffer *palette;
-        QTransform transform;
+        Buffer *buffer = nullptr;
+        bool indexed = false;
+        const Buffer *palette = nullptr;
+        QTransform transform = QTransform();
     };
 
     struct State {
+        ~State();
         RenderTarget renderTarget;
         QTransform transform;
         QTransform parentTransform;
-        //const Buffer *palette;
-        Buffer palette;
+        const Buffer *palette = nullptr;
+        //Buffer palette;
         bool rendering;
     };
 
@@ -51,10 +52,11 @@ public:
     {}
 
     State state() {
-        qDebug() << "STATE!" << paletteStack.size() << paletteStack.top()->format().componentCount << paletteStack.top()->size();//////////////////////////////////////////////////////////
+//        qDebug() << "STATE!" << paletteStack.size() << paletteStack.top()->format().componentCount << paletteStack.top()->size();//////////////////////////////////////////////////////////
         //return {renderTargetStack.top(), transformStack.top(), *(++transformStack.rbegin()), paletteStack.top(), rendering};
         //return {renderTargetStack.top(), transformStack.top(), *(++transformStack.rbegin()), new Buffer(*paletteStack.top()), rendering};/////////////////////////////////////
-        return {renderTargetStack.top(), transformStack.top(), *(++transformStack.rbegin()), *paletteStack.top(), rendering};/////////////////////////////////////
+        //return {renderTargetStack.top(), transformStack.top(), *(++transformStack.rbegin()), *paletteStack.top(), rendering};/////////////////////////////////////
+        return {!renderTargetStack.isEmpty() ? renderTargetStack.top() : RenderTarget(), transformStack.top(), *(++transformStack.rbegin()), !paletteStack.isEmpty() ? new Buffer(*paletteStack.top()) : nullptr, rendering};/////////////////////////////////////
     }
 };
 
@@ -109,8 +111,8 @@ public:
     }    
     static void beforeChildren(Node *const node, Traversal &traversal);
     static void afterChildren(Node *const node, Traversal &traversal);
-    void renderSubGraph(Node *const node, Buffer &buffer, const bool indexed, const Buffer &palette, const QTransform &viewTransform, const QTransform &parentTransform, QMap<Node *, Traversal::State> *const saveStates = nullptr);
-    void render(Buffer &buffer, const bool indexed, const Buffer &palette, const QTransform &viewTransform, QMap<Node *, Traversal::State> *const saveStates = nullptr);
+    void renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const QTransform &viewTransform, const QTransform &parentTransform, QMap<Node *, Traversal::State> *const saveStates = nullptr);
+    void render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const QTransform &viewTransform, QMap<Node *, Traversal::State> *const saveStates = nullptr);
 
     Node root;
 

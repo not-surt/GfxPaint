@@ -10,6 +10,11 @@
 
 namespace GfxPaint {
 
+Traversal::State::~State() {
+    ContextBinder binder(&qApp->renderManager.context, &qApp->renderManager.surface);
+//    delete palette;
+}
+
 Scene::Scene(const QString &filename) :
     root(),
     file(),
@@ -127,24 +132,25 @@ void Scene::afterChildren(Node *const node, Traversal &traversal)
     node->afterChildren(traversal);
 }
 
-void Scene::renderSubGraph(Node *const node, Buffer &buffer, const bool indexed, const Buffer &palette, const QTransform &viewTransform, const QTransform &parentTransform, QMap<Node *, Traversal::State> *const saveStates)
+void Scene::renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const QTransform &viewTransform, const QTransform &parentTransform, QMap<Node *, Traversal::State> *const saveStates)
 {
     Traversal traversal;
 
     traversal.saveStates = saveStates;
 
-    traversal.renderTargetStack.push({&buffer, indexed, &palette, viewTransform});
+    if (buffer) traversal.renderTargetStack.push({buffer, indexed, palette, viewTransform});
+//    else traversal.renderTargetStack.push({});
     traversal.transformStack.push(parentTransform);
-    traversal.paletteStack.push(&palette);
+    if (palette) traversal.paletteStack.push(palette);
 
     traverse<Traversal &>(node, Scene::beforeChildren, Scene::afterChildren, traversal);
 
-    traversal.paletteStack.pop();
+    if (palette) traversal.paletteStack.pop();
     traversal.transformStack.pop();
-    traversal.renderTargetStack.pop();
+    if (buffer) traversal.renderTargetStack.pop();
 }
 
-void Scene::render(Buffer &buffer, const bool indexed, const Buffer &palette, const QTransform &viewTransform, QMap<Node *, Traversal::State> *const saveStates)
+void Scene::render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const QTransform &viewTransform, QMap<Node *, Traversal::State> *const saveStates)
 {
     renderSubGraph(&root, buffer, indexed, palette, viewTransform, QTransform(), saveStates);
 }

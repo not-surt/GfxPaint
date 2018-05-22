@@ -80,7 +80,7 @@ QOpenGLShaderProgram *BufferProgram::createProgram() const
     fragSrc += RenderManager::bufferShaderPart("src", 0, srcFormat, srcIndexed, 1, srcPaletteFormat);
     fragSrc += RenderManager::bufferShaderPart("dest", 2, destFormat, destIndexed, 3, destPaletteFormat);
     fragSrc += RenderManager::blenderShaderPart(blender);
-    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed);
+    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, destPaletteFormat);
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);
 
     program->link();
@@ -109,7 +109,7 @@ void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, co
         dest->bindTextureUnit(2);
         glUniform1i(program.uniformLocation("destTexture"), 2);
 
-        if (destIndexed) {
+        if (destIndexed && destPalette) {
             glUniform1i(program.uniformLocation("destPalette"), 3);
             destPalette->bindTextureUnit(3);
         }
@@ -136,10 +136,9 @@ QOpenGLShaderProgram *DabProgram::createProgram() const
         fragSrc += RenderManager::metricShaderPart(metric);
     }
     fragSrc += RenderManager::dabShaderPart("src", type, metric);
-    qDebug() << static_cast<int>(destPaletteFormat.componentType) << destPaletteFormat.componentSize << destPaletteFormat.componentCount;//////////////////////////////////////////////////////
     fragSrc += RenderManager::bufferShaderPart("dest", 0, destFormat, destIndexed, 1, destPaletteFormat);
     fragSrc += RenderManager::blenderShaderPart(blender);
-    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed);
+    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, destPaletteFormat);
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);
 
     program->link();
@@ -165,11 +164,11 @@ void DabProgram::render(const Dab &dab, const QColor &colour, const QTransform &
 
     dest->bindTextureUnit(0);
     glUniform1i(program.uniformLocation("destTexture"), 0);
-    dest->bindImageUnit(0);
-    glUniform1i(program.uniformLocation("destImage"), 0);
-    if (destIndexed) {
-        glUniform1i(program.uniformLocation("destPalette"), 3);
-        //destPalette->bindTextureUnit(3);
+    //dest->bindImageUnit(0);
+    //glUniform1i(program.uniformLocation("destImage"), 0);
+    if (destIndexed && destPalette) {
+        glUniform1i(program.uniformLocation("destPalette"), 1);
+        destPalette->bindTextureUnit(1);
     }
 
     if (dab.type == Dab::Type::Pixel) {
@@ -197,7 +196,7 @@ QOpenGLShaderProgram *ColourSliderProgram::createProgram() const
     fragSrc += RenderManager::colourSliderShaderPart("src", colourSpace, component);
     fragSrc += RenderManager::bufferShaderPart("dest", 0, destFormat, false, 0, Buffer::Format());
     fragSrc += RenderManager::blenderShaderPart(blender);
-    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, false);
+    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, false, Buffer::Format());
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);
 
     program->link();

@@ -105,3 +105,7 @@ RESOURCES += \
     shaders/shaders.qrc \
     stylesheets/qdarkstyle/style.qrc \
     stylesheets/darkorange/darkorange.qrc
+
+DISTFILES += \
+    LICENSE \
+    README.md

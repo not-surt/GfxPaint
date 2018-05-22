@@ -14,5 +14,6 @@
         <file>old_buffer.frag</file>
         <file>old_buffer.vert</file>
         <file>old_checkers.frag</file>
+        <file>thirdparty/PhotoshopMathFP.glsl</file>
     </qresource>
 </RCC>

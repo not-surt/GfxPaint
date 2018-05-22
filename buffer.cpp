@@ -14,11 +14,11 @@ static const QList<QString> uIntShaderValueTypes = {"uint", "uvec2", "uvec3", "u
 static const QList<QString> sIntShaderValueTypes = {"int", "ivec2", "ivec3", "ivec4"};
 const QMap<BufferData::Format::ComponentType, BufferData::Format::ComponentInfo> BufferData::Format::components = {
     {ComponentType::UNorm, {floatShaderSamplerType, floatFormats, floatShaderValueTypes, {
-         {1, {GL_UNSIGNED_BYTE, 1,}},
+         {1, {GL_UNSIGNED_BYTE, 1}},
          {2, {GL_UNSIGNED_SHORT, 1}},
      }}},
     {ComponentType::SNorm, {floatShaderSamplerType, floatFormats, floatShaderValueTypes, {
-         {1, {GL_BYTE, 1,}},
+         {1, {GL_BYTE, 1}},
          {2, {GL_SHORT, 1}},
      }}},
     {ComponentType::UInt, {uIntShaderSamplerType, intFormats, uIntShaderValueTypes, {
@@ -32,7 +32,7 @@ const QMap<BufferData::Format::ComponentType, BufferData::Format::ComponentInfo>
          {4, {GL_INT, std::numeric_limits<GLint>::max()}},
      }}},
     {ComponentType::Float, {floatShaderSamplerType, floatFormats, floatShaderValueTypes, {
-         {2, {GL_HALF_FLOAT, 1,}},
+         {2, {GL_HALF_FLOAT, 1}},
          {4, {GL_FLOAT, 1}},
      }}},
 };
@@ -94,11 +94,10 @@ const QMap<BufferData::Format, BufferData::Format::FormatInfo> BufferData::Forma
 
 BufferData::BufferData() :
     QSharedData(), OpenGL(false),
-    size(0, 0), format(Format::ComponentType::Invalid, 0, 0),
+    size(0, 0), format(),
     texture(0),
     framebuffer(0)
 {
-    //qDebug() << ref;
 }
 
 BufferData::BufferData(const QSize size, const Format format, const GLvoid *const data) :

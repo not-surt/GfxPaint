@@ -47,7 +47,7 @@ public:
     static QString colourSliderShaderPart(const QString &name, const ColourSpace colourSpace, const int component);
     static QString blenderShaderPart(const Blender blender);
     static QString metricShaderPart(const Metric metric);
-    static QString fragmentMainShaderPart(const Buffer::Format format, const bool indexed);
+    static QString fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const Buffer::Format paletteFormat);
     static QString widgetOutputShaderPart();
 };
 

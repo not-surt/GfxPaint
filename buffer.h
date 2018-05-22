@@ -22,7 +22,7 @@ public:
             Float,
         };
 
-        Format(const ComponentType type = ComponentType::UNorm, const int size = 0, const int count = 0) :
+        Format(const ComponentType type = ComponentType::Invalid, const int size = 0, const int count = 0) :
             componentType(type), componentSize(size), componentCount(count)
         {}
         inline bool operator==(const Format &rhs) const {
@@ -35,6 +35,10 @@ public:
             return this->componentType < rhs.componentType
                     || this->componentSize < rhs.componentSize
                     || this->componentCount < rhs.componentCount;
+        }
+
+        bool isValid() const {
+            return componentType != ComponentType::Invalid;
         }
 
         ComponentType componentType;
