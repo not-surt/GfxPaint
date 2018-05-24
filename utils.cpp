@@ -92,4 +92,9 @@ Buffer bufferFromImageFile(const QString &filename, Buffer *const palette)
     return buffer;
 }
 
+void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements)
+{
+    for (auto key : replacements.keys()) string.replace(key, replacements[key]);
+}
+
 } // namespace GfxPaint

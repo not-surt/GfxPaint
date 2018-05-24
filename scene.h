@@ -52,10 +52,6 @@ public:
     {}
 
     State state() {
-//        qDebug() << "STATE!" << paletteStack.size() << paletteStack.top()->format().componentCount << paletteStack.top()->size();//////////////////////////////////////////////////////////
-        //return {renderTargetStack.top(), transformStack.top(), *(++transformStack.rbegin()), paletteStack.top(), rendering};
-        //return {renderTargetStack.top(), transformStack.top(), *(++transformStack.rbegin()), new Buffer(*paletteStack.top()), rendering};/////////////////////////////////////
-        //return {renderTargetStack.top(), transformStack.top(), *(++transformStack.rbegin()), *paletteStack.top(), rendering};/////////////////////////////////////
         return {!renderTargetStack.isEmpty() ? renderTargetStack.top() : RenderTarget(), transformStack.top(), *(++transformStack.rbegin()), !paletteStack.isEmpty() ? new Buffer(*paletteStack.top()) : nullptr, rendering};/////////////////////////////////////
     }
 };

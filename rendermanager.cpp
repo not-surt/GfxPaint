@@ -18,7 +18,7 @@ const QTransform RenderManager::flipTransform(
         0.0, -1.0, 0.0,
         0.0, 0.0, 1.0);
 
-const QMap<std::tuple<ColourSpace, ColourSpace>, QString> colourSpaceConversionShaderFunctionNames = {
+const QMap<ColourSpaceConversion, QString> RenderManager::colourSpaceConversionShaderFunctionNames = {
     {ColourSpaceConversion(ColourSpace::RGB, ColourSpace::sRGB), "rgb_to_srgb"},
     {ColourSpaceConversion(ColourSpace::RGB, ColourSpace::XYZ), "rgb_to_xyz"},
     {ColourSpaceConversion(ColourSpace::RGB, ColourSpace::xyY), "rgb_to_xyY"},
@@ -182,7 +182,6 @@ void main(void) {
 
 QString RenderManager::patternShaderPart(const QString &name, const Pattern pattern)
 {
-
     QString src;
     src +=
 R"(
@@ -203,7 +202,8 @@ vec4 %1(const vec2 pos) {
     return src;
 }
 
-QString RenderManager::bufferShaderPart(const QString &name, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat) {
+QString RenderManager::bufferShaderPart(const QString &name, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat)
+{
     QString src;
     src +=
 QString(R"(
@@ -241,7 +241,8 @@ R"(
     return src;
 }
 
-QString RenderManager::dabShaderPart(const QString &name, const Dab::Type type) {
+QString RenderManager::dabShaderPart(const QString &name, const Dab::Type type)
+{
     const QMap<Dab::Type, QString> types = {
         { Dab::Type::Pixel,
 R"(
@@ -297,15 +298,39 @@ R"(
 layout(std140, binding = 0) uniform Data {
     vec4 colour;
 } data;
-//uniform vec4 %1Colour = vec4(0.25, 0.5, 1.0, 0.5);
 vec4 %1Colour = data.colour;
 vec4 %1(const vec2 pos) {
-    const vec3 %2 = rgb_to_%2(%1Colour.rgb);
-    const vec3 rgb = %2_to_rgb(vec3(pos.x, %2[1], %2[2]));
-    return vec4(rgb, %1Colour.a);
+)";
+    if (component == 3) src +=
+R"(
+    const float alpha = pos.x;
+    const vec3 rgb = %1Colour.rgb;
+)";
+    else if (colourSpace != ColourSpace::RGB) src +=
+R"(
+    const float alpha = %1Colour.a;
+    vec3 %2 = rgb_to_%2(%1Colour.rgb);
+    %2[%3] = pos.x;
+    const vec3 rgb = %2_to_rgb(%2);
+)";
+    else src +=
+R"(
+    const float alpha = %1Colour.a;
+    vec3 rgb = %1Colour.rgb;
+    rgb[%3] = pos.x;
+)";
+    src +=
+R"(
+    return vec4(rgb, alpha);
 }
 )";
-    return src.arg(name).arg("hsl");
+    //return src.arg(name).arg(colourSpaceNames[colourSpace]).arg(component);
+    stringMultiReplace(src, {
+        {"%1", name},
+        {"%2", colourSpaceInfo[colourSpace].funcName},
+        {"%3", QString::number(component)},
+    });
+    return src;
 }
 
 QString RenderManager::blenderShaderPart(const Blender blender) {

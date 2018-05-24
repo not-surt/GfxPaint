@@ -12,11 +12,12 @@ class ColourSliderWidget : public GfxPaint::RenderedWidget
     Q_OBJECT
 
 public:
+    explicit ColourSliderWidget(const ColourSpace colourSpace, const int component, QWidget *const parent = nullptr);
     explicit ColourSliderWidget(QWidget *const parent = nullptr);
-    virtual ~ColourSliderWidget();
+    virtual ~ColourSliderWidget() override;
 
-    virtual QSize sizeHint() const override { return QSize(64, 64); }
-    virtual QSize minimumSizeHint() const override { return QSize(64, 64); }
+    virtual QSize sizeHint() const override { return QSize(128, 32); }
+    virtual QSize minimumSizeHint() const override { return QSize(64, 16); }
 
     QColor colour() const;
 
@@ -34,6 +35,9 @@ protected:
     virtual void render() override;
 
     bool mouseEvent(QMouseEvent *event);
+
+    ColourSpace colourSpace;
+    int component;
 
     ColourSliderProgram *program;
 

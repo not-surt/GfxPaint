@@ -189,6 +189,36 @@ protected:
     UniformData uniformData;
 };
 
+class ColourSliderPickProgram : public Program {
+public:
+    ColourSliderPickProgram(const Buffer::Format format) :
+        Program(typeid(ColourSliderPickProgram), {static_cast<int>(format.componentType), format.componentSize, format.componentCount}),
+        format(format),
+        storageBuffer(0), storageData{{0.0}}
+    {
+        glGenBuffers(1, &storageBuffer);
+        glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
+        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
+    }
+    ~ColourSliderPickProgram() override {
+        glDeleteBuffers(1, &storageBuffer);
+    }
+
+    QColor pick(const float pos);
+
+protected:
+    struct StorageData {
+        float colour[4];
+    };
+
+    virtual QOpenGLShaderProgram *createProgram() const override;
+
+    const Buffer::Format format;
+
+    GLuint storageBuffer;
+    StorageData storageData;
+};
+
 class PatternProgram : public Program {
 public:
     PatternProgram(const Pattern pattern, const Buffer::Format destFormat, const Blender blender) :

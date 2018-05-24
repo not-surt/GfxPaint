@@ -52,6 +52,7 @@ typedef std::tuple<ColourSpace, ColourSpace> ColourSpaceConversion;
 struct ColourSpaceInfo {
     QString label;
     QString funcName;
+    int componentCount;
     QStringList componentLabels;
 };
 

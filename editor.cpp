@@ -197,9 +197,7 @@ void Editor::drawDab(const Dab &dab, const QColor &colour, BufferNode &node, con
     node.buffer.bindFramebuffer();
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-//    const Buffer *const palette = m_editingContext.states()[&node].palette;
     const Buffer *const palette = m_editingContext.states()[&node].palette;
-//    qDebug() << "STATE PALETTE" << palette << palette->size() << static_cast<int>(palette->format().componentType) << palette->format().componentSize << palette->format().componentCount << palette->format().scale() << palette->isNull(); ////////////////////////////////////////////
     m_editingContext.dabPrograms()[&node]->render(dab, colour, spaceTransform * QTransform().translate(objectSpacePos.x(), objectSpacePos.y()) * GfxPaint::viewportTransform(node.buffer.size()), &node.buffer, palette);
 }
 

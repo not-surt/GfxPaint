@@ -100,7 +100,7 @@ void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, co
     glUniform1i(program.uniformLocation("srcTexture"), 0);
     src->bindTextureUnit(0);
 
-    if (srcIndexed) {
+    if (srcIndexed && srcPalette) {
         glUniform1i(program.uniformLocation("srcPalette"), 1);
         srcPalette->bindTextureUnit(1);
     }
@@ -231,6 +231,53 @@ void ColourSliderProgram::render(const QColor &colour, const ColourSpace colourS
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     //glTextureBarrier();
+}
+
+QOpenGLShaderProgram *ColourSliderPickProgram::createProgram() const
+{
+    QOpenGLShaderProgram *const program = new QOpenGLShaderProgram();
+
+    QString compSrc;
+    compSrc += RenderManager::headerShaderPart();
+    compSrc += RenderManager::bufferShaderPart("src", 0, format, false, 0, Buffer::Format());
+    compSrc +=
+R"(
+uniform vec2 pos;
+layout(std430, binding = 0) buffer data
+{
+    vec4 colour;
+};
+layout (local_size_x = 1, local_size_y = 1) in;
+void main() {
+    colour = vec4(src(pos));
+}
+)";
+    program->addShaderFromSourceCode(QOpenGLShader::Compute, compSrc);
+
+    program->link();
+    return program;
+}
+
+QColor ColourSliderPickProgram::pick(const float pos)
+{
+//    QColor colour;
+//    colour.setRgbF(0.0, 0.0, 0.0, 1.0);
+//    program().bind();
+//    glUniform1i(program().uniformLocation("srcTexture"), 0);
+//    src->bindTextureUnit(0);
+//    glUniform2f(program().uniformLocation("pos"), static_cast<GLfloat>(pos.x()), static_cast<GLfloat>(pos.y()));
+//    glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
+//    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
+//    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(StorageData), nullptr, GL_STREAM_READ);
+//    glDispatchCompute(1, 1, 1);
+//    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+//    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(StorageData), &storageData);
+//    typedef void (QColor::*const Setter)(qreal value);
+//    static const Setter setters[4] = {&QColor::setRedF, &QColor::setGreenF, &QColor::setBlueF, &QColor::setAlphaF};
+//    for (int i = 0; i < src->format().componentSize; ++i) {
+//        (colour.*setters[i])(static_cast<qreal>(storageData.colour[i]));
+//    }
+//    return colour;
 }
 
 QOpenGLShaderProgram *PatternProgram::createProgram() const

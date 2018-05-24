@@ -48,6 +48,8 @@ protected:
 
 QString fileToString(const QString &path);
 
+void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements);
+
 QTransform viewportTransform(const QSize size);
 
 void qTransformCopyToGLArray(const QTransform &transform, GLfloat array[3][3]);

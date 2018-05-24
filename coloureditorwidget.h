@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+#include "coloursliderwidget.h"
+
 namespace GfxPaint {
 
 namespace Ui {
@@ -14,7 +16,7 @@ class ColourEditorWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit ColourEditorWidget(QWidget *parent = 0);
+    explicit ColourEditorWidget(QWidget *parent = nullptr);
     ~ColourEditorWidget();
 
     QColor colour() const;
@@ -22,10 +24,15 @@ public:
 public slots:
     void setColour(const QColor &colour);
 
+protected slots:
+    void updateColour();
+
 signals:
     void colourChanged(const QColor &colour);
 
 private:
+    void updateWidgets();
+
     Ui::ColourEditorWidget *ui;
 
     QColor m_colour;

@@ -5,10 +5,17 @@
 
 namespace GfxPaint {
 
-ColourSliderWidget::ColourSliderWidget(QWidget *const parent) :
+ColourSliderWidget::ColourSliderWidget(const ColourSpace colourSpace, const int component, QWidget *const parent) :
     RenderedWidget(parent),
+    colourSpace(colourSpace), component(component),
     program(nullptr),
     m_colour(255, 0, 0, 255)
+{
+
+}
+
+ColourSliderWidget::ColourSliderWidget(QWidget *const parent) :
+    ColourSliderWidget(ColourSpace::HSL, 0, parent)
 {
 }
 
@@ -25,6 +32,7 @@ bool ColourSliderWidget::mouseEvent(QMouseEvent *event)
     colour.setRedF(pos);
     setColour(colour);
     event->accept();
+    return true;
 }
 
 void ColourSliderWidget::resizeGL(int w, int h)
@@ -33,7 +41,7 @@ void ColourSliderWidget::resizeGL(int w, int h)
 
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Program *const old = program;
-    program = new ColourSliderProgram(ColourSpace::HSL, 0, widgetBuffer->format(), Blender::Alpha);
+    program = new ColourSliderProgram(colourSpace, component, widgetBuffer->format(), Blender::Alpha);
     delete old;
 }
 
@@ -53,7 +61,7 @@ void ColourSliderWidget::setColour(const QColor &colour)
 
 void ColourSliderWidget::render()
 {
-    program->render(m_colour, ColourSpace::HSL, 0, RenderManager::unitToClipTransform, widgetBuffer);
+    program->render(m_colour, colourSpace, component, RenderManager::unitToClipTransform, widgetBuffer);
 }
 
 } // namespace GfxPaint
