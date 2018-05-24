@@ -8,7 +8,7 @@ namespace GfxPaint {
 ColourSliderWidget::ColourSliderWidget(const ColourSpace colourSpace, const int component, QWidget *const parent) :
     RenderedWidget(parent),
     colourSpace(colourSpace), component(component),
-    program(nullptr),
+    program(nullptr), pickProgram(nullptr),
     m_colour(255, 0, 0, 255)
 {
 
@@ -27,10 +27,8 @@ ColourSliderWidget::~ColourSliderWidget()
 
 bool ColourSliderWidget::mouseEvent(QMouseEvent *event)
 {
-    const qreal pos = clamp(0.0, 1.0, static_cast<qreal>(event->pos().x()) / static_cast<qreal>(width() - 1));
-    QColor colour = m_colour;
-    colour.setRedF(pos);
-    setColour(colour);
+    const float pos = clamp(0.0f, 1.0f, static_cast<float>(event->pos().x()) / static_cast<float>(width() - 1));
+    setColour(pickProgram->pick(m_colour, pos));
     event->accept();
     return true;
 }
@@ -40,8 +38,11 @@ void ColourSliderWidget::resizeGL(int w, int h)
     RenderedWidget::resizeGL(w, h);
 
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    Program *const old = program;
+    Program *old = program;
     program = new ColourSliderProgram(colourSpace, component, widgetBuffer->format(), Blender::Alpha);
+    delete old;
+    old = pickProgram;
+    pickProgram = new ColourSliderPickProgram(colourSpace, component);
     delete old;
 }
 

@@ -191,9 +191,9 @@ protected:
 
 class ColourSliderPickProgram : public Program {
 public:
-    ColourSliderPickProgram(const Buffer::Format format) :
-        Program(typeid(ColourSliderPickProgram), {static_cast<int>(format.componentType), format.componentSize, format.componentCount}),
-        format(format),
+    ColourSliderPickProgram(const ColourSpace colourSpace, const int component) :
+        Program(typeid(ColourSliderPickProgram), {static_cast<int>(colourSpace), component}),
+        colourSpace(colourSpace), component(component),
         storageBuffer(0), storageData{{0.0}}
     {
         glGenBuffers(1, &storageBuffer);
@@ -204,7 +204,7 @@ public:
         glDeleteBuffers(1, &storageBuffer);
     }
 
-    QColor pick(const float pos);
+    QColor pick(QColor colour, const float pos);
 
 protected:
     struct StorageData {
@@ -213,7 +213,8 @@ protected:
 
     virtual QOpenGLShaderProgram *createProgram() const override;
 
-    const Buffer::Format format;
+    const ColourSpace colourSpace;
+    const int component;
 
     GLuint storageBuffer;
     StorageData storageData;

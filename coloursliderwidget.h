@@ -40,6 +40,7 @@ protected:
     int component;
 
     ColourSliderProgram *program;
+    ColourSliderPickProgram *pickProgram;
 
     QColor m_colour;
 };

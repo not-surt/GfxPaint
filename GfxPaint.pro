@@ -108,4 +108,5 @@ RESOURCES += \
 
 DISTFILES += \
     LICENSE \
-    README.md
+    README.md \
+    TODO
