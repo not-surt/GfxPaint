@@ -212,16 +212,11 @@ void ColourSliderProgram::render(const QColor &colour, const ColourSpace colourS
 
     GLfloat col[4]{(GLfloat)colour.redF(), (GLfloat)colour.greenF(), (GLfloat)colour.blueF(), (GLfloat)colour.alphaF()};
     memcpy(uniformData.colour, col, sizeof(GLfloat) * 4);
-    GLuint uniformBuffer;
-    glGenBuffers(1, &uniformBuffer);
     glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
-    //glBindBuffer(GL_UNIFORM_BUFFER, 0);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
 
     program.setUniformValue("matrix", transform);
-
-    //glUniform4f(program.uniformLocation("srcColour"), colour.redF(), colour.greenF(), colour.blueF(), colour.alphaF());
 
     dest->bindTextureUnit(0);
     glUniform1i(program.uniformLocation("destTexture"), 0);
@@ -231,6 +226,33 @@ void ColourSliderProgram::render(const QColor &colour, const ColourSpace colourS
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     //glTextureBarrier();
+}
+
+QOpenGLShaderProgram *ColourSliderMarkerProgram::createProgram() const
+{
+    QOpenGLShaderProgram *program = new QOpenGLShaderProgram();
+
+//    QString vertSrc;
+//    vertSrc += RenderManager::headerShaderPart();
+//    vertSrc += RenderManager::modelShaderPart(Model::UnitQuad);
+//    vertSrc += RenderManager::vertexMainShaderPart();
+//    program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
+
+//    QString fragSrc;
+//    fragSrc += RenderManager::headerShaderPart();
+//    fragSrc += RenderManager::colourSliderShaderPart("src", colourSpace, component);
+//    fragSrc += RenderManager::bufferShaderPart("dest", 0, destFormat, false, 0, Buffer::Format());
+//    fragSrc += RenderManager::blenderShaderPart(blender);
+//    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, false, Buffer::Format());
+//    program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);
+
+//    program->link();
+    return program;
+}
+
+void ColourSliderMarkerProgram::render(const QTransform &transform, const QColor &colour0, const QColor &colour1)
+{
+
 }
 
 QOpenGLShaderProgram *ColourSliderPickProgram::createProgram() const
@@ -267,11 +289,9 @@ QColor ColourSliderPickProgram::pick(QColor colour, const float pos)
 
     glUniform1f(program().uniformLocation("pos"), static_cast<GLfloat>(pos));
 
-    GLuint uniformBuffer;
-    glGenBuffers(1, &uniformBuffer);
     glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(storageData), &storageData, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(storageData), &storageData, GL_DYNAMIC_DRAW);
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);

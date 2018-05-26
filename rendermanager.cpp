@@ -343,6 +343,8 @@ vec4 blend(vec4 src, vec4 dest) {
     const float a = src.a + dest.a * (1.0 - src.a);
     const vec3 rgb = src.rgb + dest.rgb * (1.0 - src.a);
     return unpremultiply(vec4(rgb, a));
+//      return vec4(BlendOpacity(dest.rgb, src.rgb, BlendNormal, src.a), src.a + (1.0 - src.a) * dest.a);
+//      return vec4(vec3(1, 0, 0), src.a + (1.0 - src.a) * dest.a);
 }
 )"
         },
@@ -391,7 +393,8 @@ vec4 blend(const vec4 src, const vec4 dest) {
         },
     };
     QString src;
-//    src += fileToString(":/shaders/thirdparty/PhotoshopMathFP.glsl");
+    src += fileToString(":/shaders/blending.glsl");
+    src += fileToString(":/shaders/thirdparty/PhotoshopMathFP.glsl");
     src += blenders[blender];
     return src;
 }
@@ -443,6 +446,7 @@ float metric(const vec2 pos) {
 QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const Buffer::Format paletteFormat)
 {
     QString src;
+    src += fileToString(":/shaders/compositing.glsl");
     src +=
 R"(
 in layout(location = 0) vec2 pos;
@@ -450,7 +454,10 @@ in layout(location = 0) vec2 pos;
 out %1 fragment;
 
 void main(void) {
-    const vec4 fragmentColour = blend(src(pos), dest(gl_FragCoord.xy));
+    const vec4 destColour = dest(gl_FragCoord.xy);
+    const vec4 srcColour = src(pos);
+    const vec4 blended = vec4(blendNormal(destColour.rgb, srcColour.rgb), srcColour.a);
+    const vec4 fragmentColour = porterDuffSrcOver(destColour, blended);
 )";
     if (indexed) src +=
 R"(

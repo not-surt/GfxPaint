@@ -169,8 +169,16 @@ public:
         Program(typeid(ColourSliderProgram), {static_cast<int>(colourSpace), component, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(blender)}),
         colourSpace(colourSpace), component(component),
         destFormat(destFormat),
-        blender(blender)
-    {}
+        blender(blender),
+        uniformBuffer(0), uniformData{{0.0}}
+    {
+        glGenBuffers(1, &uniformBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
+    }
+    ~ColourSliderProgram() override {
+        glDeleteBuffers(1, &uniformBuffer);
+    }
 
     void render(const QColor &colour, const ColourSpace colourSpace, const int component, const QTransform &transform, Buffer *const dest);
 
@@ -186,7 +194,23 @@ protected:
     const Buffer::Format destFormat;
     const Blender blender;
 
+    GLuint uniformBuffer;
     UniformData uniformData;
+};
+
+class ColourSliderMarkerProgram : public Program {
+public:
+    ColourSliderMarkerProgram() :
+        Program(typeid(ColourSliderMarkerProgram), {})
+    {
+    }
+    ~ColourSliderMarkerProgram() override {
+    }
+
+    void render(const QTransform &transform, const QColor &colour0 = Qt::white, const QColor &colour1 = Qt::black);
+
+protected:
+    virtual QOpenGLShaderProgram *createProgram() const override;
 };
 
 class ColourSliderPickProgram : public Program {
@@ -194,21 +218,26 @@ public:
     ColourSliderPickProgram(const ColourSpace colourSpace, const int component) :
         Program(typeid(ColourSliderPickProgram), {static_cast<int>(colourSpace), component}),
         colourSpace(colourSpace), component(component),
-        storageBuffer(0), storageData{{0.0}}
+        uniformBuffer(0), storageBuffer(0), storageData{{0.0}}
     {
+        glGenBuffers(1, &uniformBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
+
         glGenBuffers(1, &storageBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     }
     ~ColourSliderPickProgram() override {
         glDeleteBuffers(1, &storageBuffer);
+        glDeleteBuffers(1, &uniformBuffer);
     }
 
     QColor pick(QColor colour, const float pos);
 
 protected:
     struct StorageData {
-        float colour[4];
+        GLfloat colour[4];
     };
 
     virtual QOpenGLShaderProgram *createProgram() const override;
@@ -216,6 +245,7 @@ protected:
     const ColourSpace colourSpace;
     const int component;
 
+    GLuint uniformBuffer;
     GLuint storageBuffer;
     StorageData storageData;
 };
