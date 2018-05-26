@@ -66,6 +66,19 @@ void qTransformFillFromGLArray(QTransform &transform, const GLfloat array[3][3])
     );
 }
 
+void qColorCopyToGLArray(const QColor &colour, GLfloat array[])
+{
+    const float matrix[4] = {
+        static_cast<GLfloat>(colour.redF()), static_cast<GLfloat>(colour.greenF()), static_cast<GLfloat>(colour.blueF()), static_cast<GLfloat>(colour.alphaF())
+    };
+    memcpy(array, matrix, sizeof(GLfloat) * 4);
+}
+
+void qColorFillFromGLArray(QColor &colour, const GLfloat array[])
+{
+    colour.setRgbF(static_cast<qreal>(array[0]), static_cast<qreal>(array[1]), static_cast<qreal>(array[2]), static_cast<qreal>(array[3]));
+}
+
 Buffer bufferFromImageFile(const QString &filename, Buffer *const palette)
 {
     static const QMap<QImage::Format, QImage::Format> imageFormatConversion = {

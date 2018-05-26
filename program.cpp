@@ -147,6 +147,11 @@ void DabProgram::render(const Dab &dab, const QColor &colour, const QTransform &
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
+    qTransformCopyToGLArray(dab.transform() * transform, uniformData.matrix);
+    qColorCopyToGLArray(colour, uniformData.colour);
+    uniformData.hardness = static_cast<GLfloat>(dab.hardness);
+    uniformData.alpha = static_cast<GLfloat>(dab.opacity);
+
     glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);

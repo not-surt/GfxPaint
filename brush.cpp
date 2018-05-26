@@ -1,5 +1,7 @@
 #include "brush.h"
 
+#include "rendermanager.h"
+
 namespace GfxPaint {
 
 Dab::Dab() :
@@ -8,7 +10,7 @@ Dab::Dab() :
     angle(0.0),
     origin(0.0, 0.0), pixelSnap(PixelSnap::None),
     hardness(0.0), opacity(1.0),
-    blendMode(0), composeMode(0),
+    blendMode(0), composeMode(RenderManager::composeModeDefault),
     buffer()
 {
 }

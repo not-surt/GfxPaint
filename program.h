@@ -147,6 +147,7 @@ public:
 protected:
     struct UniformData {
         GLfloat matrix[3][3];
+        GLfloat colour[4];
         GLfloat hardness;
         GLfloat alpha;
     };

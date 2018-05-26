@@ -110,6 +110,7 @@ const QList<RenderManager::ComposeModeInfo> RenderManager::composeModes = {
     {"Destination Atop", "porterDuffDestAtop"},
     {"Xor", "porterDuffXor"},
 };
+const int RenderManager::composeModeDefault = 3;
 
 RenderManager::RenderManager() :
     OpenGL(),
@@ -317,6 +318,7 @@ float %1Brush(const vec2 pos) {
 R"(
 layout(std140, binding = 0) uniform Data {
     mat3 matrix;
+    vec4 colour;
     float hardness;
     float opacity;
 } data;
@@ -383,6 +385,7 @@ QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const
     QString src;
     src += fileToString(":/shaders/compositing.glsl");
     src += fileToString(":/shaders/blending.glsl");
+    if (indexed) src += fileToString(":/shaders/quantise.glsl");
     src +=
 R"(
 in layout(location = 0) vec2 pos;
@@ -392,39 +395,30 @@ out %1 fragment;
 void main(void) {
 )";
     src +=
-//)").arg(RenderManager::blendModes[blendMode].functionName).arg(RenderManager::composeModes[composeMode].functionName);
 QString(R"(
     const vec4 destColour = dest(gl_FragCoord.xy);
     const vec4 srcColour = src(pos);
     const vec4 blended = vec4(%1(destColour.rgb, srcColour.rgb), srcColour.a);
     const vec4 fragmentColour = unpremultiply(%2(destColour, blended));
 )").arg(RenderManager::blendModes[blendMode].functionName).arg(RenderManager::composeModes[composeMode].functionName);
-    qDebug() << blendMode << composeMode;
     if (indexed) src +=
 R"(
-    uint nearestIndex = 0;
-    float nearestDistance = pow(%2 + 1, 3);
-    for (uint index = 0; index < uint(textureSize(destPalette, 0).x); ++index) {
-        const vec4 paletteColour = vec4(texelFetch(destPalette, ivec2(index, 0))) / float(%3);
-        const float colourDistance = distance(fragmentColour.rgb, paletteColour.rgb);
-        if (colourDistance < nearestDistance) {
-            nearestIndex = index;
-            nearestDistance = colourDistance;
-        }
-    }
-    fragment = nearestIndex;
-    //fragment = uint(gl_FragCoord.x) % uint(textureSize(destPalette, 0).x);
+    fragment = quantise(destPalette, %3, fragmentColour);
 )";
     else src +=
 R"(
-    %3 + %3;//////////////////
     fragment = %1(fragmentColour * %2);
 )";
     src +=
 R"(
 }
 )";
-    return src.arg(format.shaderValueType()).arg(format.scale()).arg(indexed && paletteFormat.isValid() ? paletteFormat.scale() : 1.0);
+    stringMultiReplace(src, {
+        {"%1", format.shaderValueType()},
+        {"%2", QString::number(format.scale())},
+        {"%3", QString::number(indexed && paletteFormat.isValid() ? paletteFormat.scale() : 1.0)},
+    });
+    return src;
 }
 
 QString RenderManager::widgetOutputShaderPart()

@@ -1,73 +1,59 @@
-/*vec4 premultiply(const vec4 colour) {
-    return vec4(colour.rgb * colour.a, colour.a);
-}
-
-vec4 unpremultiply(const vec4 colour) {
-    if (colour.a == 0.0) return colour;
-    else return vec4(colour.rgb / colour.a, colour.a);
-}
-
-vec4 alphaCompositePremultiplied(const vec4 dest, const vec4 src) {
-    return src.rgb + dest.rgb * (1.0 - src.a);
-}
-
-vec4 alphaComposite(const vec4 dest, const vec4 src) {
-    return unpremultiply(alphaCompositePremultiplied(premultiply(dest), premultiply(src)));
-}*/
-
-vec4 porterDuff(const vec4 dest, const float destFraction, const vec4 src, const float srcFraction) {
-    // NOTE: Output is premultiplied
-    return vec4(src.a * srcFraction * src.rgb + dest.a * destFraction * dest.rgb, src.a + dest.a * (1.0 - src.a));
+vec4 porterDuff(const vec4 s, const vec4 d, const vec4 b) {
+    const float areaSrc = s.a * (1.0 - d.a);
+    const float areaDest = d.a * (1.0 - s.a);
+    const float areaBoth = s.a * d.a;
+    const vec3 colour = areaSrc * s.rgb + areaDest * d.rgb + areaBoth * b.rgb;
+    const float as = normalize(s.a);
+    const float ad = normalize(d.a);
+    const float ab = normalize(b.a);
+    const float alpha = areaSrc * as + areaDest * ad + areaBoth * ab;
+    return vec4(colour, alpha);
 }
 
 vec4 porterDuffClear(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 0.0, src, 0.0);
+    return porterDuff(vec4(0.0), vec4(0.0), vec4(0.0));
 }
 
 vec4 porterDuffCopy(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 0.0, src, 1.0);
+    return porterDuff(src, vec4(0.0), src);
 }
 
 vec4 porterDuffDest(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 1.0, src, 0.0);
+    return porterDuff(vec4(0.0), dest, dest);
 }
 
 vec4 porterDuffSrcOver(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 1.0 - src.a, src, 1.0);
+    return porterDuff(src, dest, src);
 }
 
 vec4 porterDuffDestOver(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 1.0, src, 1.0 - dest.a);
+    return porterDuff(src, dest, dest);
 }
 
 vec4 porterDuffSrcIn(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 0.0, src, dest.a);
+    return porterDuff(vec4(0.0), vec4(0.0), src);
 }
 
 vec4 porterDuffDestIn(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, src.a, src, 0.0);
+    return porterDuff(vec4(0.0), vec4(0.0), dest);
 }
 
 vec4 porterDuffSrcOut(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 0.0, src, 1.0 - dest.a);
+    return porterDuff(src, vec4(0.0), vec4(0.0));
 }
 
 vec4 porterDuffDestOut(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 1.0 - src.a, src, 0.0);
+    return porterDuff(vec4(0.0), dest, vec4(0.0));
 }
 
 vec4 porterDuffSrcAtop(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 1.0 - src.a, src, dest.a);
+    return porterDuff(vec4(0.0), dest, src);
 }
 
 vec4 porterDuffDestAtop(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, src.a, src, 1.0 - dest.a);
+    return porterDuff(src, vec4(0.0), dest);
 }
 
 vec4 porterDuffXor(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 1.0 - src.a, src, 1.0 - dest.a);
-}
-
-vec4 porterDuffLighter(const vec4 dest, const vec4 src) {
-    return porterDuff(dest, 1.0, src, 1.0);
+    return porterDuff(src, dest, vec4(0.0));
 }

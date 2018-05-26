@@ -55,6 +55,9 @@ QTransform viewportTransform(const QSize size);
 void qTransformCopyToGLArray(const QTransform &transform, GLfloat array[3][3]);
 void qTransformFillFromGLArray(QTransform &transform, const GLfloat array[3][3]);
 
+void qColorCopyToGLArray(const QColor &colour, GLfloat array[4]);
+void qColorFillFromGLArray(QColor &colour, const GLfloat array[4]);
+
 Buffer bufferFromImageFile(const QString &filename, Buffer *const palette = nullptr);
 
 template <typename T>

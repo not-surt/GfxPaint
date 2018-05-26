@@ -51,6 +51,7 @@ public:
         QString functionName;
     };
     static const QList<ComposeModeInfo> composeModes;
+    static const int composeModeDefault;
 
     ProgramManager programManager;
 

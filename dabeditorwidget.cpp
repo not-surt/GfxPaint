@@ -19,15 +19,6 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     validator->setDecimals(3);
     ui->ratioLineEdit->setValidator(validator);
 
-    for (auto blendMode : RenderManager::blendModes) {
-        ui->blendModeComboBox->addItem(blendMode.label);
-    }
-
-    for (auto composeMode : RenderManager::composeModes) {
-        ui->composeModeComboBox->addItem(composeMode.label);
-    }
-    ui->composeModeComboBox->setCurrentIndex(3);
-
     QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->typeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
@@ -42,6 +33,14 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     QObject::connect(ui->opacitySpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->blendModeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->composeModeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+
+    for (auto blendMode : RenderManager::blendModes) {
+        ui->blendModeComboBox->addItem(blendMode.label);
+    }
+
+    for (auto composeMode : RenderManager::composeModes) {
+        ui->composeModeComboBox->addItem(composeMode.label);
+    }
 }
 
 DabEditorWidget::~DabEditorWidget()
