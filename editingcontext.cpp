@@ -50,7 +50,7 @@ void EditingContext::updatePrograms()
         if (bufferNode) {
             Traversal::State &state = m_states[node];
             if (bufferNode) {
-                m_dabPrograms.insert(bufferNode, new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_brush.dab.blender));
+                m_dabPrograms.insert(bufferNode, new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_brush.dab.blendMode, m_brush.dab.composeMode));
                 m_colourPickPrograms.insert(bufferNode, new ColourPickProgram(bufferNode->buffer.format()));
             }
         }

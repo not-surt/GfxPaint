@@ -16,5 +16,6 @@
         <file>old_checkers.frag</file>
         <file>compositing.glsl</file>
         <file>blending.glsl</file>
+        <file>distance.glsl</file>
     </qresource>
 </RCC>

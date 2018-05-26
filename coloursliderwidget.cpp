@@ -39,7 +39,7 @@ void ColourSliderWidget::resizeGL(int w, int h)
 
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Program *old = program;
-    program = new ColourSliderProgram(colourSpace, component, widgetBuffer->format(), Blender::Alpha);
+    program = new ColourSliderProgram(colourSpace, component, widgetBuffer->format(), 0);
     delete old;
     old = pickProgram;
     pickProgram = new ColourSliderPickProgram(colourSpace, component);

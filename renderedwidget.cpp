@@ -69,7 +69,7 @@ void RenderedWidget::resizeGL(int w, int h)
         delete old;
 
         old = patternProgram;
-        patternProgram = new PatternProgram(Pattern::Checkers, widgetBuffer->format(), Blender::Alpha);
+        patternProgram = new PatternProgram(Pattern::Checkers, widgetBuffer->format(), 0);
         delete old;
     }
 }

@@ -87,11 +87,11 @@ protected:
 
 class BufferProgram : public Program {
 public:
-    BufferProgram(const Buffer::Format srcFormat, const bool srcIndexed, const Buffer::Format srcPaletteFormat, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const Blender blender) :
-        Program(typeid(BufferProgram), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed), static_cast<int>(srcPaletteFormat.componentType), srcPaletteFormat.componentSize, srcPaletteFormat.componentCount, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, static_cast<int>(blender)}),
+    BufferProgram(const Buffer::Format srcFormat, const bool srcIndexed, const Buffer::Format srcPaletteFormat, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        Program(typeid(BufferProgram), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed), static_cast<int>(srcPaletteFormat.componentType), srcPaletteFormat.componentSize, srcPaletteFormat.componentCount, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, static_cast<int>(blendMode), composeMode}),
         srcFormat(srcFormat), srcIndexed(srcIndexed), srcPaletteFormat(srcPaletteFormat),
         destFormat(destFormat), destIndexed(destIndexed), destPaletteFormat(destPaletteFormat),
-        blender(blender),
+        blendMode(blendMode), composeMode(composeMode),
         uniformBuffer(0), uniformData()
     {
         glGenBuffers(1, &uniformBuffer);
@@ -118,7 +118,8 @@ protected:
     const Buffer::Format destFormat;
     const bool destIndexed;
     const Buffer::Format destPaletteFormat;
-    const Blender blender;
+    const int blendMode;
+    const int composeMode;
 
     GLuint uniformBuffer;
     UniformData uniformData;
@@ -126,11 +127,11 @@ protected:
 
 class DabProgram : public Program {
 public:
-    DabProgram(const Dab::Type type, const Metric metric, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const Blender blender) :
-        Program(typeid(DabProgram), {static_cast<int>(type), static_cast<int>(metric), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, static_cast<int>(blender)}),
+    DabProgram(const Dab::Type type, const int metric, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        Program(typeid(DabProgram), {static_cast<int>(type), metric, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, static_cast<int>(blendMode), composeMode}),
         type(type), metric(metric),
         destFormat(destFormat), destIndexed(destIndexed), destPaletteFormat(destPaletteFormat),
-        blender(blender),
+        blendMode(blendMode), composeMode(composeMode),
         uniformBuffer(0), uniformData()
     {
         glGenBuffers(1, &uniformBuffer);
@@ -153,11 +154,12 @@ protected:
     virtual QOpenGLShaderProgram *createProgram() const override;
 
     const Dab::Type type;
-    const Metric metric;
+    const int metric;
     const Buffer::Format destFormat;
     const bool destIndexed;
     const Buffer::Format destPaletteFormat;
-    const Blender blender;
+    const int blendMode;
+    const int composeMode;
 
     GLuint uniformBuffer;
     UniformData uniformData;
@@ -165,11 +167,11 @@ protected:
 
 class ColourSliderProgram : public Program {
 public:
-    ColourSliderProgram(const ColourSpace colourSpace, const int component, const Buffer::Format destFormat, const Blender blender) :
-        Program(typeid(ColourSliderProgram), {static_cast<int>(colourSpace), component, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(blender)}),
+    ColourSliderProgram(const ColourSpace colourSpace, const int component, const Buffer::Format destFormat, const int blendMode) :
+        Program(typeid(ColourSliderProgram), {static_cast<int>(colourSpace), component, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode}),
         colourSpace(colourSpace), component(component),
         destFormat(destFormat),
-        blender(blender),
+        blendMode(blendMode),
         uniformBuffer(0), uniformData{{0.0}}
     {
         glGenBuffers(1, &uniformBuffer);
@@ -192,7 +194,7 @@ protected:
     const ColourSpace colourSpace;
     const int component;
     const Buffer::Format destFormat;
-    const Blender blender;
+    const int blendMode;
 
     GLuint uniformBuffer;
     UniformData uniformData;
@@ -252,9 +254,9 @@ protected:
 
 class PatternProgram : public Program {
 public:
-    PatternProgram(const Pattern pattern, const Buffer::Format destFormat, const Blender blender) :
-        Program(typeid(PatternProgram), {static_cast<int>(pattern), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(blender)}),
-        pattern(pattern), destFormat(destFormat), blender(blender)
+    PatternProgram(const Pattern pattern, const Buffer::Format destFormat, const int blendMode) :
+        Program(typeid(PatternProgram), {static_cast<int>(pattern), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode}),
+        pattern(pattern), destFormat(destFormat), blendMode(blendMode)
     {}
 
     void render(const QTransform &transform);
@@ -264,7 +266,7 @@ protected:
 
     const Pattern pattern;
     const Buffer::Format destFormat;
-    const Blender blender;
+    const int blendMode;
 };
 
 class ColourConversionProgram : public Program {

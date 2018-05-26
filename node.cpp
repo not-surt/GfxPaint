@@ -68,7 +68,7 @@ AbstractBufferNode::AbstractBufferNode(const AbstractBufferNode &other) :
 {
 }
 
-BufferNode::BufferNode(const Buffer &buffer, const bool indexed, const Blender blender, const QSizeF &pixelAspectRatio, const QSizeF &scrollScale) :
+BufferNode::BufferNode(const Buffer &buffer, const bool indexed, const int blender, const QSizeF &pixelAspectRatio, const QSizeF &scrollScale) :
     SpatialNode(), AbstractBufferNode(buffer, indexed),
     blender(blender), pixelAspectRatio(pixelAspectRatio), scrollScale(scrollScale)
 {
@@ -104,7 +104,7 @@ Node *BufferNode::createFromDialog(QWidget *const parentWindow)
     if (result == QDialog::Accepted) {
         ContextBinder binder(&qApp->renderManager.context, &qApp->renderManager.surface);
         Buffer buffer(dialog.imageSize(), dialog.format());
-        return new BufferNode(buffer, false, Blender::Alpha, dialog.pixelRatio());
+        return new BufferNode(buffer, false, 0, dialog.pixelRatio());
     }
     else return nullptr;
 }
@@ -147,7 +147,7 @@ void BufferNode::render(Traversal &traversal)
             palette = traversal.paletteStack.top();
             paletteFormat = palette->format();
         }
-        BufferProgram program(buffer.format(), indexed, paletteFormat, renderTarget.buffer->format(), renderTarget.indexed, renderTarget.palette ? renderTarget.palette->format() : Buffer::Format(), Blender::Alpha);
+        BufferProgram program(buffer.format(), indexed, paletteFormat, renderTarget.buffer->format(), renderTarget.indexed, renderTarget.palette ? renderTarget.palette->format() : Buffer::Format(), 0, 3);
         renderTarget.buffer->bindFramebuffer();
         program.render(&buffer, palette, QTransform().scale(buffer.width(), buffer.height()) * transform * renderTarget.transform, renderTarget.buffer, renderTarget.palette);
     }

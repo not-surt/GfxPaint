@@ -6,9 +6,9 @@ const int FormatIndexed = 1;
 const int FormatRgba = 2;
 
 // Blend modes
-const int BlendModeMix = 0;
-const int BlendModeReplace = 1;
-const int BlendModeErase = 2;
+const int intMix = 0;
+const int intReplace = 1;
+const int intErase = 2;
 
 // Source
 uniform uvec2 srcRectPos;
@@ -104,7 +104,7 @@ void main(void) {
         }
 
         /*switch (blendMode) {
-        case BlendModeMix: {
+        case intMix: {
             if (blendIndexed) {
                 fragmentIndexed = (srcIndex != transparentIndex ? srcIndex : destIndex);
             }
@@ -120,10 +120,10 @@ void main(void) {
 
             }
         } break;
-        case BlendModeReplace: {
+        case intReplace: {
             fragmentRgba = srcRgba;
         } break;
-        case BlendModeErase: {
+        case intErase: {
         } break;
         }*/
 //        vec4 blend(vec4 src, vec4 dest) {

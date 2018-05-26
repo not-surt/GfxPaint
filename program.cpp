@@ -79,8 +79,7 @@ QOpenGLShaderProgram *BufferProgram::createProgram() const
     fragSrc += RenderManager::headerShaderPart();
     fragSrc += RenderManager::bufferShaderPart("src", 0, srcFormat, srcIndexed, 1, srcPaletteFormat);
     fragSrc += RenderManager::bufferShaderPart("dest", 2, destFormat, destIndexed, 3, destPaletteFormat);
-    fragSrc += RenderManager::blenderShaderPart(blender);
-    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, destPaletteFormat);
+    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode);
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);
 
     program->link();
@@ -132,13 +131,9 @@ QOpenGLShaderProgram *DabProgram::createProgram() const
 
     QString fragSrc;
     fragSrc += RenderManager::headerShaderPart();
-    if (type == Dab::Type::Distance) {
-        fragSrc += RenderManager::metricShaderPart(metric);
-    }
-    fragSrc += RenderManager::dabShaderPart("src", type);
+    fragSrc += RenderManager::dabShaderPart("src", type, metric);
     fragSrc += RenderManager::bufferShaderPart("dest", 0, destFormat, destIndexed, 1, destPaletteFormat);
-    fragSrc += RenderManager::blenderShaderPart(blender);
-    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, destPaletteFormat);
+    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode);
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);
 
     program->link();
@@ -195,8 +190,7 @@ QOpenGLShaderProgram *ColourSliderProgram::createProgram() const
     fragSrc += RenderManager::headerShaderPart();
     fragSrc += RenderManager::colourSliderShaderPart("src", colourSpace, component);
     fragSrc += RenderManager::bufferShaderPart("dest", 0, destFormat, false, 0, Buffer::Format());
-    fragSrc += RenderManager::blenderShaderPart(blender);
-    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, false, Buffer::Format());
+    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, false, Buffer::Format(), blendMode, 3);
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);
 
     program->link();
@@ -317,7 +311,6 @@ QOpenGLShaderProgram *PatternProgram::createProgram() const
     fragSrc += RenderManager::headerShaderPart();
     fragSrc += RenderManager::patternShaderPart("src", Pattern::Checkers);
     fragSrc += RenderManager::bufferShaderPart("dest", 0, destFormat, false, 0, Buffer::Format());
-    fragSrc += RenderManager::blenderShaderPart(blender);
     //fragSrc += RenderManager::fragmentMainShaderPart(destFormat);
     fragSrc += RenderManager::widgetOutputShaderPart();
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);

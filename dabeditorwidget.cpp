@@ -4,6 +4,8 @@
 #include <QVector2D>
 #include <QtMath>
 
+#include "rendermanager.h"
+
 namespace GfxPaint {
 
 DabEditorWidget::DabEditorWidget(QWidget *parent) :
@@ -17,6 +19,15 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     validator->setDecimals(3);
     ui->ratioLineEdit->setValidator(validator);
 
+    for (auto blendMode : RenderManager::blendModes) {
+        ui->blendModeComboBox->addItem(blendMode.label);
+    }
+
+    for (auto composeMode : RenderManager::composeModes) {
+        ui->composeModeComboBox->addItem(composeMode.label);
+    }
+    ui->composeModeComboBox->setCurrentIndex(3);
+
     QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->typeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
@@ -29,7 +40,8 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     QObject::connect(ui->originYSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->hardnessSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->opacitySpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->blenderComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->blendModeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->composeModeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
 }
 
 DabEditorWidget::~DabEditorWidget()
@@ -53,12 +65,12 @@ void DabEditorWidget::updateWidgets()
         ui->angleSpinBox,
         ui->originXSpinBox, ui->originYSpinBox,
         ui->hardnessSpinBox, ui->opacitySpinBox,
-        ui->blenderComboBox,
+        ui->blendModeComboBox, ui->composeModeComboBox,
     };
     for (auto widget : widgets) widget->blockSignals(true);
     ui->spaceComboBox->setCurrentIndex(static_cast<int>(dab.space));
     ui->typeComboBox->setCurrentIndex(static_cast<int>(dab.type));
-    ui->metricComboBox->setCurrentIndex(static_cast<int>(dab.metric));
+    ui->metricComboBox->setCurrentIndex(dab.metric);
     ui->widthSpinBox->setValue(dab.size.width());
     ui->heightSpinBox->setValue(dab.size.height());
     ui->fixedRatioCheckBox->setChecked(dab.fixedRatio);
@@ -67,7 +79,8 @@ void DabEditorWidget::updateWidgets()
     ui->originYSpinBox->setValue(dab.origin.y());
     ui->hardnessSpinBox->setValue(dab.hardness);
     ui->opacitySpinBox->setValue(dab.opacity);
-    ui->blenderComboBox->setCurrentIndex(static_cast<int>(dab.blender));
+    ui->blendModeComboBox->setCurrentIndex(dab.blendMode);
+    ui->composeModeComboBox->setCurrentIndex(dab.composeMode);
     for (auto widget : widgets) widget->blockSignals(false);
     updateDab();
 }
@@ -76,7 +89,7 @@ void DabEditorWidget::updateDab()
 {
     dab.space = static_cast<Space>(ui->spaceComboBox->currentIndex());
     dab.type = static_cast<Dab::Type>(ui->typeComboBox->currentIndex());
-    dab.metric = static_cast<Metric>(ui->metricComboBox->currentIndex());
+    dab.metric = ui->metricComboBox->currentIndex();
 
     if (ui->fixedRatioCheckBox->isChecked()) {
         if (QObject::sender() == ui->widthSpinBox) {
@@ -105,7 +118,8 @@ void DabEditorWidget::updateDab()
     dab.hardness = ui->hardnessSpinBox->value();
     dab.opacity = ui->opacitySpinBox->value();
 
-    dab.blender = static_cast<Blender>(ui->blenderComboBox->currentIndex());
+    dab.blendMode = ui->blendModeComboBox->currentIndex();
+    dab.composeMode = ui->composeModeComboBox->currentIndex();
 
     emit dabChanged(dab);
 }

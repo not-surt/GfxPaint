@@ -45,7 +45,8 @@ public:
                 this->pixelSnap == rhs.pixelSnap &&
                 this->hardness == rhs.hardness &&
                 this->opacity == rhs.opacity &&
-                this->blender == rhs.blender &&
+                this->blendMode == rhs.blendMode &&
+                this->composeMode == rhs.composeMode &&
                 this->buffer == rhs.buffer;
     }
     inline bool operator!=(const Dab &rhs) const { return !this->operator==(rhs); }
@@ -56,7 +57,7 @@ public:
 
     Space space;
     Type type;
-    Metric metric;
+    int metric;
     QSizeF size;
     bool fixedRatio;
     qreal ratio;
@@ -65,7 +66,8 @@ public:
     PixelSnap pixelSnap;
     qreal hardness;
     qreal opacity;
-    Blender blender;
+    int blendMode;
+    int composeMode;
     Buffer buffer;
 };
 

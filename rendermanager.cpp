@@ -69,6 +69,48 @@ const QMap<ColourSpaceConversion, QString> RenderManager::colourSpaceConversionS
     {ColourSpaceConversion(ColourSpace::HCY, ColourSpace::HSL), "hcy_to_hsl"},
 };
 
+const QList<RenderManager::DistanceMetricInfo> RenderManager::distanceMetrics = {
+    {"Euclidean", "distanceEuclidean"},
+    {"Manhattan", "distanceManhattan"},
+    {"Chebyshev", "distanceChebyshev"},
+    {"Minimum", "distanceMinimum"},
+    {"Octagonal", "distanceOctagonal"},
+};
+
+const QList<RenderManager::intInfo> RenderManager::blendModes = {
+    {"Normal", "blendNormal"},
+    {"Multiply", "blendMultiply"},
+    {"Screen", "blendScreen"},
+    {"Overlay", "blendOverlay"},
+    {"Darken", "blendDarken"},
+    {"Lighten", "blendLighten"},
+    {"Colour Dodge", "blendColourDodge"},
+    {"Colour Burn", "blendColourBurn"},
+    {"Hard Light", "blendHardLight"},
+    {"Soft Light", "blendSoftLight"},
+    {"Difference", "blendDifference"},
+    {"Exclusion", "blendExclusion"},
+    {"Hue", "blendHue"},
+    {"Saturation", "blendSaturation"},
+    {"Colour", "blendColour"},
+    {"Luminosity", "blendLuminosity"},
+};
+
+const QList<RenderManager::ComposeModeInfo> RenderManager::composeModes = {
+    {"Clear", "porterDuffClear"},
+    {"Copy", "porterDuffCopy"},
+    {"Destination", "porterDuffDest"},
+    {"Source Over", "porterDuffSrcOver"},
+    {"Destination Over", "porterDuffDestOver"},
+    {"Source In", "porterDuffSrcIn"},
+    {"Destination In", "porterDuffDestIn"},
+    {"Source Out", "porterDuffSrcOut"},
+    {"Destination Out", "porterDuffDestOut"},
+    {"Source Atop", "porterDuffSrcAtop"},
+    {"Destination Atop", "porterDuffDestAtop"},
+    {"Xor", "porterDuffXor"},
+};
+
 RenderManager::RenderManager() :
     OpenGL(),
     surface(), context(),
@@ -241,7 +283,7 @@ R"(
     return src;
 }
 
-QString RenderManager::dabShaderPart(const QString &name, const Dab::Type type)
+QString RenderManager::dabShaderPart(const QString &name, const Dab::Type type, const int metric)
 {
     const QMap<Dab::Type, QString> types = {
         { Dab::Type::Pixel,
@@ -252,11 +294,11 @@ float %1Brush(const vec2 pos) {
 )"
         },
         { Dab::Type::Distance,
-R"(
+QString(R"(
 float %1Brush(const vec2 pos) {
-    return metric(pos);
+    return %2(pos);
 }
-)"
+)").arg(name).arg(distanceMetrics[metric].functionName)
         },
         { Dab::Type::Buffer,
 R"(
@@ -267,6 +309,9 @@ float %1Brush(const vec2 pos) {
         },
     };
     QString src;
+    if (type == Dab::Type::Distance) {
+        src += fileToString(":/shaders/distance.glsl");
+    }
     src += types[type];
     src +=
 R"(
@@ -301,7 +346,7 @@ layout(std140, binding = 0) uniform Data {
 vec4 %1Colour = data.colour;
 vec4 %1(const vec2 pos) {
 )";
-    if (component == 3) src +=
+    if (component == colourSpaceInfo[colourSpace].componentCount) src +=
 R"(
     const float alpha = pos.x;
     const vec3 rgb = %1Colour.rgb;
@@ -333,120 +378,11 @@ R"(
     return src;
 }
 
-QString RenderManager::blenderShaderPart(const Blender blender) {
-    const QMap<Blender, QString> blenders = {
-        { Blender::Alpha,
-R"(
-vec4 blend(vec4 src, vec4 dest) {
-    src = premultiply(src);
-    dest = premultiply(dest);
-    const float a = src.a + dest.a * (1.0 - src.a);
-    const vec3 rgb = src.rgb + dest.rgb * (1.0 - src.a);
-    return unpremultiply(vec4(rgb, a));
-//      return vec4(BlendOpacity(dest.rgb, src.rgb, BlendNormal, src.a), src.a + (1.0 - src.a) * dest.a);
-//      return vec4(vec3(1, 0, 0), src.a + (1.0 - src.a) * dest.a);
-}
-)"
-        },
-        { Blender::Erase,
-R"(
-vec4 blend(const vec4 src, const vec4 dest) {
-    //return vec4(dest.rgb, dest.a * (1.0 - src.a));
-    return vec4(dest.rgb, dest.a - src.a);
-}
-)"
-        },
-        { Blender::Replace,
-R"(
-vec4 blend(const vec4 src, const vec4 dest) {
-    return src;
-}
-)"
-        },
-        { Blender::Add,
-R"(
-vec4 blend(const vec4 src, const vec4 dest) {
-    return vec4(dest.rgb + src.rgb * src.a, dest.a);
-}
-)"
-        },
-        { Blender::Subtract,
-R"(
-vec4 blend(const vec4 src, const vec4 dest) {
-    return vec4(dest.rgb - src.rgb * src.a, dest.a);
-}
-)"
-        },
-        { Blender::Multiply,
-R"(
-vec4 blend(const vec4 src, const vec4 dest) {
-    return vec4(dest.rgb * src.rgb * src.a, dest.a);
-}
-)"
-        },
-        { Blender::Divide,
-R"(
-vec4 blend(const vec4 src, const vec4 dest) {
-    return vec4(dest.rgb / src.rgb * src.a, dest.a);
-}
-)"
-        },
-    };
-    QString src;
-    src += fileToString(":/shaders/blending.glsl");
-    src += fileToString(":/shaders/thirdparty/PhotoshopMathFP.glsl");
-    src += blenders[blender];
-    return src;
-}
-
-QString RenderManager::metricShaderPart(const Metric metric)
-{
-    const QMap<Metric, QString> metrics = {
-        { Metric::Euclidean,
-R"(
-float metric(const vec2 pos) {
-    return sqrt(pow(pos.x, 2) + pow(pos.y, 2));
-}
-)"
-        },
-        { Metric::Manhattan,
-R"(
-float metric(const vec2 pos) {
-    return abs(pos.x) + abs(pos.y);
-}
-)"
-        },
-        { Metric::Chebyshev,
-R"(
-float metric(const vec2 pos) {
-    return max(abs(pos.x), abs(pos.y));
-}
-)"
-        },
-        { Metric::Minimum,
-R"(
-float metric(const vec2 pos) {
-    return min(abs(pos.x), abs(pos.y));
-}
-)"
-        },
-        { Metric::Octagonal,
-R"(
-float metric(const vec2 pos) {
-      return (1007.0/1024.0) * max(abs(pos.x), abs(pos.y)) + (441.0/1024.0) * min(abs(pos.x), abs(pos.y));
-}
-)"
-        },
-    };
-    QString src;
-    src += metrics[metric];
-    return src;
-}
-
-QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const Buffer::Format paletteFormat)
+QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const Buffer::Format paletteFormat, const int blendMode, const int composeMode)
 {
     QString src;
     src += fileToString(":/shaders/compositing.glsl");
+    src += fileToString(":/shaders/blending.glsl");
     src +=
 R"(
 in layout(location = 0) vec2 pos;
@@ -454,11 +390,16 @@ in layout(location = 0) vec2 pos;
 out %1 fragment;
 
 void main(void) {
+)";
+    src +=
+//)").arg(RenderManager::blendModes[blendMode].functionName).arg(RenderManager::composeModes[composeMode].functionName);
+QString(R"(
     const vec4 destColour = dest(gl_FragCoord.xy);
     const vec4 srcColour = src(pos);
-    const vec4 blended = vec4(blendNormal(destColour.rgb, srcColour.rgb), srcColour.a);
-    const vec4 fragmentColour = porterDuffSrcOver(destColour, blended);
-)";
+    const vec4 blended = vec4(%1(destColour.rgb, srcColour.rgb), srcColour.a);
+    const vec4 fragmentColour = unpremultiply(%2(destColour, blended));
+)").arg(RenderManager::blendModes[blendMode].functionName).arg(RenderManager::composeModes[composeMode].functionName);
+    qDebug() << blendMode << composeMode;
     if (indexed) src +=
 R"(
     uint nearestIndex = 0;

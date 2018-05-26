@@ -137,11 +137,11 @@ public:
 class BufferNode : public SpatialNode, public AbstractBufferNode
 {
 public:
-    Blender blender;
+    int blender;
     QSizeF pixelAspectRatio;
     QSizeF scrollScale;
 
-    explicit BufferNode(const Buffer &buffer, const bool indexed, const Blender blender = Blender::Alpha, const QSizeF &pixelAspectRatio = {1.0, 1.0}, const QSizeF &scrollScale = {1.0, 1.0});
+    explicit BufferNode(const Buffer &buffer, const bool indexed, const int blender = 0, const QSizeF &pixelAspectRatio = {1.0, 1.0}, const QSizeF &scrollScale = {1.0, 1.0});
     explicit BufferNode(const BufferNode &other);
 
     static Node *createFromFile(const QString &filename);

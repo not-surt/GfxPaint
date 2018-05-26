@@ -30,7 +30,7 @@ void BrushViewWidget::setBrush(const Brush &brush)
 
 void BrushViewWidget::render()
 {
-    if (!dabProgram) dabProgram = new DabProgram(brush.dab.type, brush.dab.metric, widgetBuffer->format(), false, Buffer::Format(), brush.dab.blender);
+    if (!dabProgram) dabProgram = new DabProgram(brush.dab.type, brush.dab.metric, widgetBuffer->format(), false, Buffer::Format(), brush.dab.blendMode, brush.dab.composeMode);
     dabProgram->render(brush.dab, colour, viewportTransform, widgetBuffer, nullptr);
 }
 

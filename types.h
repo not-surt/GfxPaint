@@ -17,26 +17,6 @@ enum class Pattern {
     Checkers,
 };
 
-
-enum class Metric {
-    Euclidean,
-    Manhattan,
-    Chebyshev,
-    //Minkoski,
-    Minimum,
-    Octagonal,
-};
-
-enum class Blender {
-    Alpha,
-    Erase,
-    Replace,
-    Add,
-    Subtract,
-    Multiply,
-    Divide,
-};
-
 enum class ColourSpace {
     RGB,
     sRGB,

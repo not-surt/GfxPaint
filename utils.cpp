@@ -33,6 +33,7 @@ QWidget *centringWidget(QWidget *const widget)
 QString fileToString(const QString &path)
 {
     QFile file(path);
+    Q_ASSERT(file.exists());
     if (file.open(QIODevice::ReadOnly)) return QTextStream(&file).readAll();
     else return QString();
 }

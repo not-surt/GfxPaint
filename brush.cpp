@@ -3,12 +3,12 @@
 namespace GfxPaint {
 
 Dab::Dab() :
-    space(Space::Object), type(Type::Distance), metric(Metric::Euclidean),
+    space(Space::Object), type(Type::Distance), metric(0),
     size(16.0, 16.0), fixedRatio(false), ratio(1.0),
     angle(0.0),
     origin(0.0, 0.0), pixelSnap(PixelSnap::None),
     hardness(0.0), opacity(1.0),
-    blender(Blender::Alpha),
+    blendMode(0), composeMode(0),
     buffer()
 {
 }
@@ -19,7 +19,7 @@ Dab::Dab(const Dab &other) :
     angle(other.angle),
     origin(other.origin), pixelSnap(other.pixelSnap),
     hardness(other.hardness), opacity(other.opacity),
-    blender(other.blender),
+    blendMode(other.blendMode), composeMode(other.composeMode),
     buffer(other.buffer)
 {
 }

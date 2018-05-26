@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>325</width>
-    <height>380</height>
+    <height>413</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -20,6 +20,55 @@
    <string>Form</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="1,1,1">
+   <item row="2" column="1" colspan="2">
+    <widget class="QComboBox" name="metricComboBox">
+     <item>
+      <property name="text">
+       <string>Euclidean</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Manhattan</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Chebyshev</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Minimum</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Octagonal</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="10" column="0">
+    <widget class="QLabel" name="blendModeLabel">
+     <property name="text">
+      <string>&amp;Blend</string>
+     </property>
+     <property name="buddy">
+      <cstring>blendModeComboBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="metricLabel">
+     <property name="text">
+      <string>&amp;Metric</string>
+     </property>
+     <property name="buddy">
+      <cstring>metricComboBox</cstring>
+     </property>
+    </widget>
+   </item>
    <item row="3" column="0">
     <widget class="QLabel" name="sizeLabel">
      <property name="text">
@@ -60,133 +109,6 @@
      </property>
     </widget>
    </item>
-   <item row="7" column="0">
-    <widget class="QLabel" name="pixelSnapLabel">
-     <property name="text">
-      <string>&amp;Pixel Snap</string>
-     </property>
-     <property name="buddy">
-      <cstring>pixelSnapComboBox</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
-    <widget class="QDoubleSpinBox" name="widthSpinBox">
-     <property name="suffix">
-      <string>px</string>
-     </property>
-     <property name="decimals">
-      <number>3</number>
-     </property>
-     <property name="minimum">
-      <double>0.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>512.000000000000000</double>
-     </property>
-     <property name="value">
-      <double>1.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="5" column="1" colspan="2">
-    <widget class="QDoubleSpinBox" name="angleSpinBox">
-     <property name="wrapping">
-      <bool>true</bool>
-     </property>
-     <property name="suffix">
-      <string>deg</string>
-     </property>
-     <property name="decimals">
-      <number>3</number>
-     </property>
-     <property name="minimum">
-      <double>-360.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>360.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="6" column="2">
-    <widget class="QDoubleSpinBox" name="originYSpinBox">
-     <property name="decimals">
-      <number>3</number>
-     </property>
-     <property name="minimum">
-      <double>-512.000000000000000</double>
-     </property>
-     <property name="maximum">
-      <double>512.000000000000000</double>
-     </property>
-    </widget>
-   </item>
-   <item row="4" column="1" colspan="2">
-    <widget class="QLineEdit" name="ratioLineEdit"/>
-   </item>
-   <item row="0" column="1" colspan="2">
-    <widget class="QComboBox" name="spaceComboBox">
-     <item>
-      <property name="text">
-       <string>Object</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Object Aspect-corrected</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>World</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>View</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="spaceLabel">
-     <property name="text">
-      <string>&amp;Space</string>
-     </property>
-     <property name="buddy">
-      <cstring>spaceComboBox</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="1" column="1" colspan="2">
-    <widget class="QComboBox" name="typeComboBox">
-     <item>
-      <property name="text">
-       <string>Pixel</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Distance</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Buffer</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="9" column="0">
-    <widget class="QLabel" name="opacityLabel">
-     <property name="text">
-      <string>&amp;Opacity</string>
-     </property>
-     <property name="buddy">
-      <cstring>opacitySpinBox</cstring>
-     </property>
-    </widget>
-   </item>
    <item row="7" column="1" colspan="2">
     <widget class="QComboBox" name="pixelSnapComboBox">
      <item>
@@ -214,6 +136,16 @@
        <string>Auto</string>
       </property>
      </item>
+    </widget>
+   </item>
+   <item row="9" column="0">
+    <widget class="QLabel" name="opacityLabel">
+     <property name="text">
+      <string>&amp;Opacity</string>
+     </property>
+     <property name="buddy">
+      <cstring>opacitySpinBox</cstring>
+     </property>
     </widget>
    </item>
    <item row="1" column="0">
@@ -258,6 +190,9 @@
      </property>
     </widget>
    </item>
+   <item row="10" column="1" colspan="2">
+    <widget class="QComboBox" name="blendModeComboBox"/>
+   </item>
    <item row="5" column="0">
     <widget class="QLabel" name="angleLabel">
      <property name="text">
@@ -278,45 +213,6 @@
      </property>
     </widget>
    </item>
-   <item row="10" column="1" colspan="2">
-    <widget class="QComboBox" name="blenderComboBox">
-     <item>
-      <property name="text">
-       <string>Alpha</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Erase</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Replace</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Add</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Subtract</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Multiply</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Divide</string>
-      </property>
-     </item>
-    </widget>
-   </item>
    <item row="8" column="1" colspan="2">
     <widget class="QDoubleSpinBox" name="hardnessSpinBox">
      <property name="decimals">
@@ -330,54 +226,135 @@
      </property>
     </widget>
    </item>
-   <item row="10" column="0">
-    <widget class="QLabel" name="blenderLabel">
+   <item row="7" column="0">
+    <widget class="QLabel" name="pixelSnapLabel">
      <property name="text">
-      <string>&amp;Blender</string>
+      <string>&amp;Pixel Snap</string>
      </property>
      <property name="buddy">
-      <cstring>blenderComboBox</cstring>
+      <cstring>pixelSnapComboBox</cstring>
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="metricLabel">
-     <property name="text">
-      <string>&amp;Metric</string>
+   <item row="3" column="1">
+    <widget class="QDoubleSpinBox" name="widthSpinBox">
+     <property name="suffix">
+      <string>px</string>
      </property>
-     <property name="buddy">
-      <cstring>metricComboBox</cstring>
+     <property name="decimals">
+      <number>3</number>
+     </property>
+     <property name="minimum">
+      <double>0.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>512.000000000000000</double>
+     </property>
+     <property name="value">
+      <double>1.000000000000000</double>
      </property>
     </widget>
    </item>
-   <item row="2" column="1" colspan="2">
-    <widget class="QComboBox" name="metricComboBox">
+   <item row="4" column="1" colspan="2">
+    <widget class="QLineEdit" name="ratioLineEdit"/>
+   </item>
+   <item row="5" column="1" colspan="2">
+    <widget class="QDoubleSpinBox" name="angleSpinBox">
+     <property name="wrapping">
+      <bool>true</bool>
+     </property>
+     <property name="suffix">
+      <string>deg</string>
+     </property>
+     <property name="decimals">
+      <number>3</number>
+     </property>
+     <property name="minimum">
+      <double>-360.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>360.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1" colspan="2">
+    <widget class="QComboBox" name="spaceComboBox">
      <item>
       <property name="text">
-       <string>Euclidean</string>
+       <string>Object</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Manhattan</string>
+       <string>Object Aspect-corrected</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Chebyshev</string>
+       <string>World</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Minimum</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>Octagonal</string>
+       <string>View</string>
       </property>
      </item>
     </widget>
+   </item>
+   <item row="6" column="2">
+    <widget class="QDoubleSpinBox" name="originYSpinBox">
+     <property name="decimals">
+      <number>3</number>
+     </property>
+     <property name="minimum">
+      <double>-512.000000000000000</double>
+     </property>
+     <property name="maximum">
+      <double>512.000000000000000</double>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="1" colspan="2">
+    <widget class="QComboBox" name="typeComboBox">
+     <item>
+      <property name="text">
+       <string>Pixel</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Distance</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Buffer</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="spaceLabel">
+     <property name="text">
+      <string>&amp;Space</string>
+     </property>
+     <property name="buddy">
+      <cstring>spaceComboBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="0">
+    <widget class="QLabel" name="composeModeLabel">
+     <property name="text">
+      <string>&amp;Compose</string>
+     </property>
+     <property name="buddy">
+      <cstring>composeModeComboBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="11" column="1" colspan="2">
+    <widget class="QComboBox" name="composeModeComboBox"/>
    </item>
   </layout>
  </widget>
@@ -395,7 +372,7 @@
   <tabstop>pixelSnapComboBox</tabstop>
   <tabstop>hardnessSpinBox</tabstop>
   <tabstop>opacitySpinBox</tabstop>
-  <tabstop>blenderComboBox</tabstop>
+  <tabstop>blendModeComboBox</tabstop>
  </tabstops>
  <resources/>
  <connections/>

@@ -36,18 +36,32 @@ public:
     static const QTransform clipToUnitTransform;
     static const QTransform flipTransform;
 
+    struct DistanceMetricInfo {
+        QString label;
+        QString functionName;
+    };
+    static const QList<DistanceMetricInfo> distanceMetrics;
+    struct intInfo {
+        QString label;
+        QString functionName;
+    };
+    static const QList<intInfo> blendModes;
+    struct ComposeModeInfo {
+        QString label;
+        QString functionName;
+    };
+    static const QList<ComposeModeInfo> composeModes;
+
     ProgramManager programManager;
 
     static QString headerShaderPart();
     static QString modelShaderPart(const Model model);
     static QString vertexMainShaderPart();
     static QString patternShaderPart(const QString &name, const Pattern pattern);
-    static QString dabShaderPart(const QString &name, const Dab::Type type);
+    static QString dabShaderPart(const QString &name, const Dab::Type type, const int metric);
     static QString bufferShaderPart(const QString &name, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString colourSliderShaderPart(const QString &name, const ColourSpace colourSpace, const int component);
-    static QString blenderShaderPart(const Blender blender);
-    static QString metricShaderPart(const Metric metric);
-    static QString fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const Buffer::Format paletteFormat);
+    static QString fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const Buffer::Format paletteFormat, const int blendMode, const int composeMode);
     static QString widgetOutputShaderPart();
 };
 
