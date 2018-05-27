@@ -243,22 +243,22 @@ bool Editor::handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifie
 
     const QSet<QAbstractState *> states = inputState.machine.configuration();
     if (states.contains(&inputState.primaryTool) && states.contains(&inputState.standardTool)) {
-        inputState.strokePoints.append(mouseWorldPos);
-        for (auto index : m_editingContext.selectionModel().selectedRows()) {
-            Node *node = static_cast<Node *>(index.internalPointer());
-            const Traversal::State &state = m_editingContext.states().value(node);
-            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-            if (bufferNode) {
-                const Brush &brush = m_editingContext.brush();
-                QList<QPointF> points;
-                inputState.strokeOffset = strokeSegmentDabs(oldMouseWorldPos, mouseWorldPos, brush.stroke.absoluteSpacing.x(), inputState.strokeOffset, points);
-                if (type == QEvent::MouseButtonRelease && points.isEmpty()) points.append(mouseWorldPos);
-                for (auto point : points) {
-                    drawDab(brush.dab, m_editingContext.colour(), *bufferNode, point);
-                }
-            }
-        }
-        update();
+//        inputState.strokePoints.append(mouseWorldPos);
+//        for (auto index : m_editingContext.selectionModel().selectedRows()) {
+//            Node *node = static_cast<Node *>(index.internalPointer());
+//            const Traversal::State &state = m_editingContext.states().value(node);
+//            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+//            if (bufferNode) {
+//                const Brush &brush = m_editingContext.brush();
+//                QList<QPointF> points;
+//                inputState.strokeOffset = strokeSegmentDabs(oldMouseWorldPos, mouseWorldPos, brush.stroke.absoluteSpacing.x(), inputState.strokeOffset, points);
+//                if (type == QEvent::MouseButtonRelease && points.isEmpty()) points.append(mouseWorldPos);
+//                for (auto point : points) {
+//                    drawDab(brush.dab, m_editingContext.colour(), *bufferNode, point);
+//                }
+//            }
+//        }
+//        update();
     }
     else if (states.contains(&inputState.primaryTool) && states.contains(&inputState.alternateTool)) {
         for (auto index : m_editingContext.selectionModel().selectedRows()) {

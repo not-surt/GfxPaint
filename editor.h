@@ -107,6 +107,39 @@ protected:
     QTransform cameraTransform;
     TransformMode transformMode;
 
+    qreal strokeOffset;
+    QList<QPointF> strokePoints;
+    QPointF mousePointToWorld(const QPointF &point) {
+        return cameraTransform.inverted().map(QPointF(mouseTransform.map(point)));
+    }
+    void strokeStart(const QPointF &point) {
+        strokePoints.clear();
+        strokeOffset = 0.0;
+        strokePoints.append(mousePointToWorld(point));
+    }
+    void strokeAdd(const QPointF &point) {
+        const QPointF &prevWorldPoint = strokePoints.last();
+        const QPointF worldPoint = mousePointToWorld(point);
+        strokePoints.append(worldPoint);
+        for (auto index : m_editingContext.selectionModel().selectedRows()) {
+            Node *node = static_cast<Node *>(index.internalPointer());
+            const Traversal::State &state = m_editingContext.states().value(node);
+            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+            if (bufferNode) {
+                const Brush &brush = m_editingContext.brush();
+                QList<QPointF> points;
+                strokeOffset = strokeSegmentDabs(prevWorldPoint, worldPoint, brush.stroke.absoluteSpacing.x(), strokeOffset, points);
+                for (auto point : points) {
+                    drawDab(brush.dab, m_editingContext.colour(), *bufferNode, point);
+                }
+            }
+        }
+        update();
+    }
+    void strokeEnd(const QPointF &point) {
+        if (strokePoints.isEmpty()) strokeAdd(point);
+    }
+
     class InputState : private QObject {
     public:
         class ToolState : public QState {
@@ -124,15 +157,13 @@ protected:
 //                qDebug() << "onEntry" << event;
                 if (unwrappedEvent->type() == QEvent::MouseButtonPress) {
                     QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
-                    strokePoints.clear();
-                    strokeOffset = 0.0;
-                    strokePoints.append(mouseEvent->pos());
-                    qDebug() << strokePoints;
+                    editor->strokeStart(mouseEvent->pos());
+                    qDebug() << editor->strokePoints;
                 }
                 if (unwrappedEvent->type() == QEvent::MouseMove) {
                     QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
-                    strokePoints.append(mouseEvent->pos());
-                    qDebug() << strokePoints;
+                    editor->strokeAdd(mouseEvent->pos());
+                    qDebug() << editor->strokePoints;
                 }
             }
             virtual void onExit(QEvent *const event) override {
@@ -140,15 +171,12 @@ protected:
 //                qDebug() << "onExit" << event;
                 if (unwrappedEvent->type() == QEvent::MouseButtonRelease) {
                     QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
-                    if (strokePoints.isEmpty()) strokePoints.append(mouseEvent->pos());
-                    qDebug() << strokePoints;
+                    editor->strokeEnd(mouseEvent->pos());
+                    qDebug() << editor->strokePoints;
                 }
             }
 
             Editor *const editor;
-
-            qreal strokeOffset;
-            QList<QPointF> strokePoints;
         };
 
         InputState(Editor *const editor,
