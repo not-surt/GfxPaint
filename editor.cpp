@@ -157,16 +157,21 @@ QTransform Editor::transformPointToPoint(const QPointF origin, const QPointF fro
 }
 
 qreal Editor::strokeSegmentDabs(const QPointF start, const QPointF end, const  qreal spacing, const qreal offset, QList<QPointF> &output) {
+    const QSizeF _spacing(qMax(spacing, 1.0), qMax(spacing, 1.0));
+
+    qreal pos = offset;
+    if (pos == 0.0) {
+        output.append(start);
+        pos += _spacing.width();
+    }
     const QPointF delta(end.x() - start.x(), end.y() - start.y());
     const qreal length = hypot(delta.x(), delta.y());
     const QPointF step(delta.x() / length, delta.y() / length);
-
-    const QSizeF _spacing(qMax(spacing, 1.0), qMax(spacing, 1.0));
-    qreal pos;
-    int i;
-    for (pos = offset, i = 0; pos < length; pos += _spacing.width(), ++i) {
+    while (pos < length) {
         output.append(QPointF(start.x() + pos * step.x(), start.y() + pos * step.y()));
+        pos += _spacing.width();
     }
+
     return pos - length;
 }
 

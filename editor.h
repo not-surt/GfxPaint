@@ -137,7 +137,7 @@ protected:
         update();
     }
     void strokeEnd(const QPointF &point) {
-        if (strokePoints.isEmpty()) strokeAdd(point);
+        if (strokePoints.count() == 1) strokeAdd(point);
     }
 
     class InputState : private QObject {
