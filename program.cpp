@@ -119,6 +119,46 @@ void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, co
     //glTextureBarrier();
 }
 
+QOpenGLShaderProgram *GeometryProgram::createProgram() const
+{
+    QOpenGLShaderProgram *program = new QOpenGLShaderProgram();
+
+    QString vertSrc;
+    vertSrc += RenderManager::headerShaderPart();
+    vertSrc += RenderManager::vertexMainShaderPart();
+    program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
+
+    QString fragSrc;
+    fragSrc += RenderManager::headerShaderPart();
+    fragSrc += RenderManager::bufferShaderPart("dest", 0, destFormat, destIndexed, 1, destPaletteFormat);
+    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode);
+    program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);
+
+    program->link();
+    return program;
+}
+
+void GeometryProgram::render(const QColor &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette) {
+    Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
+
+    QOpenGLShaderProgram &program = this->program();
+    program.bind();
+
+    program.setUniformValue("matrix", transform);
+
+    dest->bindTextureUnit(0);
+    glUniform1i(program.uniformLocation("destTexture"), 0);
+    if (destIndexed && destPalette) {
+        glUniform1i(program.uniformLocation("destPalette"), 1);
+        destPalette->bindTextureUnit(1);
+    }
+
+    glBindVertexArray(vao);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+    glDrawElements(GL_TRIANGLE_FAN, elementCount, GL_TRIANGLE_FAN, nullptr);
+}
+
 QOpenGLShaderProgram *DabProgram::createProgram() const
 {
     QOpenGLShaderProgram *program = new QOpenGLShaderProgram();
@@ -225,33 +265,6 @@ void ColourSliderProgram::render(const QColor &colour, const ColourSpace colourS
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     //glTextureBarrier();
-}
-
-QOpenGLShaderProgram *ColourSliderMarkerProgram::createProgram() const
-{
-    QOpenGLShaderProgram *program = new QOpenGLShaderProgram();
-
-//    QString vertSrc;
-//    vertSrc += RenderManager::headerShaderPart();
-//    vertSrc += RenderManager::modelShaderPart(Model::UnitQuad);
-//    vertSrc += RenderManager::vertexMainShaderPart();
-//    program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
-
-//    QString fragSrc;
-//    fragSrc += RenderManager::headerShaderPart();
-//    fragSrc += RenderManager::colourSliderShaderPart("src", colourSpace, component);
-//    fragSrc += RenderManager::bufferShaderPart("dest", 0, destFormat, false, 0, Buffer::Format());
-//    fragSrc += RenderManager::blenderShaderPart(blender);
-//    fragSrc += RenderManager::fragmentMainShaderPart(destFormat, false, Buffer::Format());
-//    program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);
-
-//    program->link();
-    return program;
-}
-
-void ColourSliderMarkerProgram::render(const QTransform &transform, const QColor &colour0, const QColor &colour1)
-{
-
 }
 
 QOpenGLShaderProgram *ColourSliderPickProgram::createProgram() const

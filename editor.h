@@ -67,6 +67,17 @@ public slots:
     void setTransform(const QTransform &transform);
     void updateContext();
 
+protected slots:
+    void primaryToolMousePress() {
+//        qDebug() << "Press" << inputState.mouseButtons << inputState.modifiers;
+    }
+    void primaryToolMouseMove() {
+//        qDebug() << "Move" << inputState.mouseButtons << inputState.modifiers;
+    }
+    void primaryToolMouseRelease() {
+//        qDebug() << "Release" << inputState.mouseButtons << inputState.modifiers;
+    }
+
 signals:
     void brushChanged(const Brush &brush);
     void colourChanged(const QColor &colour);
@@ -87,7 +98,7 @@ protected:
 
     static void rotateScaleAtOrigin(QTransform &transform, const qreal rotation, const qreal scaling, const QPointF origin);
     static QTransform transformPointToPoint(const QPointF origin, const QPointF from, const QPointF to);
-    bool handleMouseEvent(const Qt::KeyboardModifiers modifiers, const Qt::MouseButton button, const QPoint pos);
+    bool handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifiers modifiers, const Qt::MouseButton button, const QPoint pos);
     qreal strokeSegmentDabs(const QPointF start, const QPointF end, const qreal spacing, const qreal offset, QList<QPointF> &output);
     void drawDab(const Dab &dab, const QColor &colour, BufferNode &node, const QPointF worldPos);
 
@@ -96,29 +107,77 @@ protected:
     QTransform cameraTransform;
     TransformMode transformMode;
 
-    class InputState {
+    class InputState : private QObject {
     public:
-        InputState(QWidget *widget,
+        class ToolState : public QState {
+        public:
+            ToolState(Editor *const editor ,QState *const parent = nullptr) :
+                QState(parent),
+                editor(editor)
+            {
+
+            }
+
+        protected:
+            virtual void onEntry(QEvent *const event) override {
+                QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
+//                qDebug() << "onEntry" << event;
+                if (unwrappedEvent->type() == QEvent::MouseButtonPress) {
+                    QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
+                    strokePoints.clear();
+                    strokeOffset = 0.0;
+                    strokePoints.append(mouseEvent->pos());
+                    qDebug() << strokePoints;
+                }
+                if (unwrappedEvent->type() == QEvent::MouseMove) {
+                    QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
+                    strokePoints.append(mouseEvent->pos());
+                    qDebug() << strokePoints;
+                }
+            }
+            virtual void onExit(QEvent *const event) override {
+                QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
+//                qDebug() << "onExit" << event;
+                if (unwrappedEvent->type() == QEvent::MouseButtonRelease) {
+                    QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
+                    if (strokePoints.isEmpty()) strokePoints.append(mouseEvent->pos());
+                    qDebug() << strokePoints;
+                }
+            }
+
+            Editor *const editor;
+
+            qreal strokeOffset;
+            QList<QPointF> strokePoints;
+        };
+
+        InputState(Editor *const editor,
                    const Qt::MouseButton primaryToolMouseButton = Qt::LeftButton, const Qt::MouseButton secondaryToolMouseButton = Qt::RightButton, const Qt::MouseButton transformMouseButton = Qt::MiddleButton,
                    const Qt::Key transformKey = Qt::Key_Space, const Qt::Key altToolKey = Qt::Key_Control, const Qt::Key altTransformKey = Qt::Key_Alt) :
+            QObject(),
+
+            editor(editor),
+
             machine(QState::ParallelStates),
 
             mouseOverGroup(&machine), mouseOut(&mouseOverGroup), mouseIn(&mouseOverGroup),
-            mouseEnter(widget, QEvent::Enter), mouseLeave(widget, QEvent::Leave),
+            mouseEnter(editor, QEvent::Enter), mouseLeave(editor, QEvent::Leave),
 
             toolGroup(&machine), standardTool(&toolGroup), alternateTool(&toolGroup),
-            alternateToolKeyPress(widget, QEvent::KeyPress, altToolKey), alternateToolKeyRelease(widget, QEvent::KeyRelease, altToolKey),
+            alternateToolKeyPress(editor, QEvent::KeyPress, altToolKey), alternateToolKeyRelease(editor, QEvent::KeyRelease, altToolKey),
 
             transformGroup(&machine), standardTransform(&transformGroup), alternateTransform(&transformGroup),
-            alternateTransformKeyPress(widget, QEvent::KeyPress, altTransformKey), alternateTransformKeyRelease(widget, QEvent::KeyRelease, altTransformKey),
+            alternateTransformKeyPress(editor, QEvent::KeyPress, altTransformKey), alternateTransformKeyRelease(editor, QEvent::KeyRelease, altTransformKey),
 
-            modeGroup(&machine), idle(&modeGroup), primaryTool(&modeGroup), secondaryTool(&modeGroup), transform(&modeGroup),
-            primaryToolMousePress(widget, QEvent::MouseButtonPress, primaryToolMouseButton), primaryToolMouseRelease(widget, QEvent::MouseButtonRelease, primaryToolMouseButton),
-            secondaryToolMousePress(widget, QEvent::MouseButtonPress, secondaryToolMouseButton), secondaryToolMouseRelease(widget, QEvent::MouseButtonRelease, secondaryToolMouseButton),
-            transformMousePress(widget, QEvent::MouseButtonPress, transformMouseButton), transformMouseRelease(widget, QEvent::MouseButtonRelease, transformMouseButton),
-            transformKeyPress(widget, QEvent::KeyPress, transformKey), transformKeyRelease(widget, QEvent::KeyRelease, transformKey),
+            modeGroup(&machine), idle(&modeGroup), primaryTool(editor, &modeGroup), secondaryTool(&modeGroup), transform(&modeGroup),
+            primaryToolMousePress(editor, QEvent::MouseButtonPress, primaryToolMouseButton), primaryToolMouseMove(editor, QEvent::MouseMove, Qt::NoButton), primaryToolMouseRelease(editor, QEvent::MouseButtonRelease, primaryToolMouseButton),
+            secondaryToolMousePress(editor, QEvent::MouseButtonPress, secondaryToolMouseButton), secondaryToolMouseMove(editor, QEvent::MouseMove, Qt::NoButton), secondaryToolMouseRelease(editor, QEvent::MouseButtonRelease, secondaryToolMouseButton),
+            transformMousePress(editor, QEvent::MouseButtonPress, transformMouseButton), transformMouseMove(editor, QEvent::MouseMove, Qt::NoButton), transformMouseRelease(editor, QEvent::MouseButtonRelease, transformMouseButton),
+            transformKeyPress(editor, QEvent::KeyPress, transformKey), transformKeyMove(editor, QEvent::MouseMove, Qt::NoButton), transformKeyRelease(editor, QEvent::KeyRelease, transformKey),
 
-            windowDeactivate(widget, QEvent::WindowDeactivate)
+            windowDeactivate(editor, QEvent::WindowDeactivate),
+
+            modifiers(Qt::NoModifier), mouseButtons{}, keys{}, mousePos{}
         {
             mouseOverGroup.setInitialState(&mouseOut);
             mouseOut.addTransition(&mouseEnter);
@@ -142,6 +201,8 @@ protected:
 
             primaryToolMousePress.setTargetState(&primaryTool);
             idle.addTransition(&primaryToolMousePress);
+            primaryToolMouseMove.setTargetState(&primaryTool);
+            primaryTool.addTransition(&primaryToolMouseMove);
             primaryToolMouseRelease.setTargetState(&idle);
             primaryTool.addTransition(&primaryToolMouseRelease);
 
@@ -162,11 +223,34 @@ protected:
             transform.addTransition(&windowDeactivate);
             windowDeactivate.setTargetState(&idle);
 
-            QObject::connect(&transform, &QState::entered, widget, [widget](){widget->grabMouse();});
-            QObject::connect(&transform, &QState::exited, widget, [widget](){widget->releaseMouse();});
+            QObject::connect(&transform, &QState::entered, editor, [editor](){editor->grabMouse();});
+            QObject::connect(&transform, &QState::exited, editor, [editor](){editor->releaseMouse();});
+
+//            QObject::connect(&primaryTool, &QState::entered, widget, [this, widget](){
+//                qDebug() << "Enter";
+//            });
+//            QObject::connect(&primaryTool, &QState::exited, widget, [this, widget](){
+//                qDebug() << "Exit";
+//            });
+            QObject::connect(&primaryToolMousePress, &QMouseEventTransition::triggered, editor, &Editor::primaryToolMousePress);
+            QObject::connect(&primaryToolMouseMove, &QMouseEventTransition::triggered, editor, &Editor::primaryToolMouseMove);
+            QObject::connect(&primaryToolMouseRelease, &QMouseEventTransition::triggered, editor, &Editor::primaryToolMouseRelease);
+//            QObject::connect(&primaryToolMouseMove, &QMouseEventTransition::triggered, widget, [this, widget](){
+//                qDebug() << "Move" << primaryToolMousePress.eventSource();
+//            });
+//            QObject::connect(&primaryToolMouseRelease, &QMouseEventTransition::triggered, widget, [this, widget](){
+//                qDebug() << "Release" << primaryToolMousePress.eventSource();
+//            });
+
+            editor->installEventFilter(this);
+
+            primaryTool.installEventFilter(this);
+            primaryToolMousePress.installEventFilter(this);
 
             machine.start();
         }
+
+        Editor *const editor;
 
         QStateMachine machine;
 
@@ -190,21 +274,60 @@ protected:
 
         QState modeGroup;
         QState idle;
-        QState primaryTool;
+        ToolState primaryTool;
         QState secondaryTool;
         QState transform;
         QMouseEventTransition primaryToolMousePress;
+        QMouseEventTransition primaryToolMouseMove;
         QMouseEventTransition primaryToolMouseRelease;
         QMouseEventTransition secondaryToolMousePress;
+        QMouseEventTransition secondaryToolMouseMove;
         QMouseEventTransition secondaryToolMouseRelease;
         QMouseEventTransition transformMousePress;
+        QMouseEventTransition transformMouseMove;
         QMouseEventTransition transformMouseRelease;
         KeyEventTransition transformKeyPress;
+        QMouseEventTransition transformKeyMove;
         KeyEventTransition transformKeyRelease;
 
-        QEventTransition windowDeactivate; // Why SIGABRT when change order?
+        QEventTransition windowDeactivate; // TODO: why SIGABRT when change order?
+
+        Qt::KeyboardModifiers modifiers;
+        QSet<Qt::MouseButton> mouseButtons;
+        QSet<int> keys;
+        QPoint mousePos;
 
         QPointF oldPos;
+        qreal strokeOffset;
+        QList<QPointF> strokePoints;        
+
+    private:
+        virtual bool eventFilter(QObject *watched, QEvent *event) override {
+            if (watched == editor) {
+                static const QSet<QEvent::Type> keyEvents = {QEvent::KeyPress, QEvent::KeyRelease};
+                static const QSet<QEvent::Type> mouseEvents = {QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::MouseButtonRelease};
+                if (keyEvents.contains(event->type())) {
+                    const QKeyEvent *const keyEvent = static_cast<QKeyEvent *>(event);
+                    modifiers = keyEvent->modifiers();
+                    if (event->type() == QEvent::KeyPress) keys.insert(keyEvent->key());
+                    else if (event->type() == QEvent::KeyRelease) keys.remove(keyEvent->key());
+                }
+                else if (mouseEvents.contains(event->type())) {
+                    const QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(event);
+                    mousePos = mouseEvent->pos();
+                    if (event->type() == QEvent::MouseButtonPress) mouseButtons.insert(mouseEvent->button());
+                    else if (event->type() == QEvent::MouseMove) ;
+                    else if (event->type() == QEvent::MouseButtonRelease) mouseButtons.remove(mouseEvent->button());
+                }
+            }
+            else if (watched == &primaryTool) {
+                qDebug() << event;
+            }
+            else if (watched == &primaryToolMousePress) {
+                qDebug() << event;
+            }
+            return false;
+        }
     } inputState;
 };
 

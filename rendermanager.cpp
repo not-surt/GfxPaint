@@ -163,7 +163,7 @@ R"(
 #version %1 core
 )";
     src += fileToString(":/shaders/util.glsl");
-    return src.arg(QString::number(OPENGL_MAJOR_VERSION) + QString::number(OPENGL_MINOR_VERSION) + "0");
+    return src.arg(OPENGL_GLSL_VERSION_STRING);
 }
 
 QString RenderManager::modelShaderPart(const Model model)

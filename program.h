@@ -98,7 +98,7 @@ public:
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
     }
-    ~BufferProgram() override {
+    virtual ~BufferProgram() override {
         glDeleteBuffers(1, &uniformBuffer);
     }
 
@@ -125,6 +125,87 @@ protected:
     UniformData uniformData;
 };
 
+class GeometryProgram : public Program {
+public:
+    GeometryProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        Program(typeid(GeometryProgram), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, static_cast<int>(blendMode), composeMode}),
+        destFormat(destFormat), destIndexed(destIndexed), destPaletteFormat(destPaletteFormat),
+        blendMode(blendMode), composeMode(composeMode),
+        uniformBuffer(0), uniformData{},
+        vao(0), vertexBuffer(0), elementBuffer(0), vertexCount(0), elementCount(0)
+    {
+        glGenBuffers(1, &uniformBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
+
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+
+        glGenBuffers(1, &vertexBuffer);
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+
+        glGenBuffers(1, &elementBuffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+    }
+    virtual ~GeometryProgram() override {
+        glDeleteBuffers(1, &elementBuffer);
+        glDeleteBuffers(1, &vertexBuffer);
+        glDeleteVertexArrays(1, &vao);
+        glDeleteBuffers(1, &uniformBuffer);
+    }
+
+    void setGeometry() {
+        glBindVertexArray(vao);
+
+        GLfloat vertices[] = {
+            1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
+            1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
+            -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 0.0f
+        };
+        GLfloat colours[] = {
+            1.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 1.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 0.0f
+        };
+        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+        GLushort elements[] = {
+            0, 1, 2, 3
+        };
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+    }
+
+    void render(const QColor &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
+
+protected:
+    struct UniformData {
+        GLfloat matrix[3][3];
+        GLfloat colour[4];
+        GLfloat hardness;
+        GLfloat alpha;
+    };
+
+    virtual QOpenGLShaderProgram *createProgram() const override;
+
+    const Buffer::Format destFormat;
+    const bool destIndexed;
+    const Buffer::Format destPaletteFormat;
+    const int blendMode;
+    const int composeMode;
+
+    GLuint uniformBuffer;
+    UniformData uniformData;
+    GLuint vao;
+    GLuint vertexBuffer;
+    GLuint elementBuffer;
+    GLsizei vertexCount;
+    GLsizei elementCount;
+};
+
 class DabProgram : public Program {
 public:
     DabProgram(const Dab::Type type, const int metric, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
@@ -132,13 +213,13 @@ public:
         type(type), metric(metric),
         destFormat(destFormat), destIndexed(destIndexed), destPaletteFormat(destPaletteFormat),
         blendMode(blendMode), composeMode(composeMode),
-        uniformBuffer(0), uniformData()
+        uniformBuffer(0), uniformData{}
     {
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
     }
-    ~DabProgram() override {
+    virtual ~DabProgram() override {
         glDeleteBuffers(1, &uniformBuffer);
     }
 
@@ -179,7 +260,7 @@ public:
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
     }
-    ~ColourSliderProgram() override {
+    virtual ~ColourSliderProgram() override {
         glDeleteBuffers(1, &uniformBuffer);
     }
 
@@ -201,27 +282,12 @@ protected:
     UniformData uniformData;
 };
 
-class ColourSliderMarkerProgram : public Program {
-public:
-    ColourSliderMarkerProgram() :
-        Program(typeid(ColourSliderMarkerProgram), {})
-    {
-    }
-    ~ColourSliderMarkerProgram() override {
-    }
-
-    void render(const QTransform &transform, const QColor &colour0 = Qt::white, const QColor &colour1 = Qt::black);
-
-protected:
-    virtual QOpenGLShaderProgram *createProgram() const override;
-};
-
 class ColourSliderPickProgram : public Program {
 public:
     ColourSliderPickProgram(const ColourSpace colourSpace, const int component) :
         Program(typeid(ColourSliderPickProgram), {static_cast<int>(colourSpace), component}),
         colourSpace(colourSpace), component(component),
-        uniformBuffer(0), storageBuffer(0), storageData{{0.0}}
+        uniformBuffer(0), storageBuffer(0), storageData{}
     {
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
@@ -231,7 +297,7 @@ public:
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     }
-    ~ColourSliderPickProgram() override {
+    virtual ~ColourSliderPickProgram() override {
         glDeleteBuffers(1, &storageBuffer);
         glDeleteBuffers(1, &uniformBuffer);
     }
@@ -309,13 +375,13 @@ public:
     ColourPickProgram(const Buffer::Format format) :
         Program(typeid(ColourPickProgram), {static_cast<int>(format.componentType), format.componentSize, format.componentCount}),
         format(format),
-        storageBuffer(0), storageData{{0.0}}
+        storageBuffer(0), storageData{}
     {
         glGenBuffers(1, &storageBuffer);
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     }
-    ~ColourPickProgram() override {
+    virtual ~ColourPickProgram() override {
         glDeleteBuffers(1, &storageBuffer);
     }
 

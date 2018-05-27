@@ -160,8 +160,11 @@ qreal Editor::strokeSegmentDabs(const QPointF start, const QPointF end, const  q
     const QPointF delta(end.x() - start.x(), end.y() - start.y());
     const qreal length = hypot(delta.x(), delta.y());
     const QPointF step(delta.x() / length, delta.y() / length);
-    qreal pos, i;
-    for (pos = offset, i = 0; pos < length; pos += spacing, ++i) {
+
+    const QSizeF _spacing(qMax(spacing, 1.0), qMax(spacing, 1.0));
+    qreal pos;
+    int i;
+    for (pos = offset, i = 0; pos < length; pos += _spacing.width(), ++i) {
         output.append(QPointF(start.x() + pos * step.x(), start.y() + pos * step.y()));
     }
     return pos - length;
@@ -231,7 +234,7 @@ void Editor::updateContext()
     m_editingContext.updateWorkBuffers();
 }
 
-bool Editor::handleMouseEvent(const Qt::KeyboardModifiers modifiers, const Qt::MouseButton button, const QPoint pos)
+bool Editor::handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifiers modifiers, const Qt::MouseButton button, const QPoint pos)
 {
     const QPointF oldMouseViewportPos = mouseTransform.map(inputState.oldPos);
     const QPointF oldMouseWorldPos = cameraTransform.inverted().map(QPointF(oldMouseViewportPos));
@@ -240,15 +243,18 @@ bool Editor::handleMouseEvent(const Qt::KeyboardModifiers modifiers, const Qt::M
 
     const QSet<QAbstractState *> states = inputState.machine.configuration();
     if (states.contains(&inputState.primaryTool) && states.contains(&inputState.standardTool)) {
+        inputState.strokePoints.append(mouseWorldPos);
         for (auto index : m_editingContext.selectionModel().selectedRows()) {
             Node *node = static_cast<Node *>(index.internalPointer());
             const Traversal::State &state = m_editingContext.states().value(node);
             BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
             if (bufferNode) {
+                const Brush &brush = m_editingContext.brush();
                 QList<QPointF> points;
-                strokeSegmentDabs(oldMouseWorldPos, mouseWorldPos, 16.0, 0.0, points);
+                inputState.strokeOffset = strokeSegmentDabs(oldMouseWorldPos, mouseWorldPos, brush.stroke.absoluteSpacing.x(), inputState.strokeOffset, points);
+                if (type == QEvent::MouseButtonRelease && points.isEmpty()) points.append(mouseWorldPos);
                 for (auto point : points) {
-                    drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, point);
+                    drawDab(brush.dab, m_editingContext.colour(), *bufferNode, point);
                 }
             }
         }
@@ -339,19 +345,21 @@ bool Editor::handleMouseEvent(const Qt::KeyboardModifiers modifiers, const Qt::M
 void Editor::mousePressEvent(QMouseEvent *event)
 {
     inputState.oldPos = event->pos();
-    event->setAccepted(handleMouseEvent(event->modifiers(), event->button(), event->pos()));
+    inputState.strokeOffset = 0.0;
+    inputState.strokePoints.clear();
+    event->setAccepted(handleMouseEvent(event->type(), event->modifiers(), event->button(), event->pos()));
 }
 
 void Editor::mouseReleaseEvent(QMouseEvent *event)
 {
-    event->setAccepted(handleMouseEvent(event->modifiers(), event->button(), event->pos()));
+    event->setAccepted(handleMouseEvent(event->type(), event->modifiers(), event->button(), event->pos()));
 }
 
 void Editor::mouseMoveEvent(QMouseEvent *event)
 {
     for (auto button : {Qt::NoButton, Qt::LeftButton, Qt::RightButton, Qt::MidButton}) {
         if (event->buttons() & button || event->buttons() == button)
-            event->setAccepted(handleMouseEvent(event->modifiers(), button, event->pos()));
+            event->setAccepted(handleMouseEvent(event->type(), event->modifiers(), button, event->pos()));
     }
 }
 
