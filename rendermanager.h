@@ -60,9 +60,11 @@ public:
     static QString vertexMainShaderPart();
     static QString patternShaderPart(const QString &name, const Pattern pattern);
     static QString dabShaderPart(const QString &name, const Dab::Type type, const int metric);
+    static QString paletteShaderPart(const QString &name, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString bufferShaderPart(const QString &name, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
-    static QString colourSliderShaderPart(const QString &name, const ColourSpace colourSpace, const int component);
-    static QString fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const Buffer::Format paletteFormat, const int blendMode, const int composeMode);
+    static QString colourSliderShaderPart(const QString &name, const ColourSpace colourSpace, const int component, const bool quantise, const GLint quantisePaletteTextureLocation, const Buffer::Format quantisePaletteFormat);
+    static QString colourPlaneShaderPart(const QString &name, const ColourSpace colourSpace, const int componentX, const int componentY, const bool quantise);
+    static QString fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat, const int blendMode, const int composeMode);
     static QString widgetOutputShaderPart();
 };
 

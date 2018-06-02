@@ -15,6 +15,7 @@
 #include "scene.h"
 #include "editingcontext.h"
 #include "utils.h"
+#include "application.h"
 
 namespace GfxPaint {
 
@@ -40,7 +41,7 @@ class Editor : public RenderedWidget
 public:
     explicit Editor(Scene &scene, QWidget *parent = nullptr);
     Editor(const Editor &other);
-    virtual ~Editor();
+    virtual ~Editor() override;
 
     void updateWindowTitle();
     void setDocumentFilename(const QString &filename);
@@ -81,8 +82,7 @@ protected slots:
 signals:
     void brushChanged(const Brush &brush);
     void colourChanged(const QColor &colour);
-    void editingBufferChanged(Buffer *const buffer);
-    void editingsNodeChanged(const QSet<Node *> &nodes);
+    void paletteChanged(Buffer *const palette);
     void transformModeChanged(const TransformMode transformMode);
     void transformChanged(const QTransform &transform);
 
@@ -101,7 +101,7 @@ protected:
     bool handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifiers modifiers, const Qt::MouseButton button, const QPoint pos);
     qreal strokeSegmentDabs(const QPointF start, const QPointF end, const qreal spacing, const qreal offset, QList<QPointF> &output);
     void drawDab(const Dab &dab, const QColor &colour, BufferNode &node, const QPointF worldPos);
-
+    void drawSegment(const Dab &dab, const Stroke &stroke, const QColor &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset);
     EditingContext m_editingContext;
 
     QTransform cameraTransform;
@@ -126,6 +126,8 @@ protected:
             const Traversal::State &state = m_editingContext.states().value(node);
             BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
             if (bufferNode) {
+                ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+                bufferNode->buffer.bindFramebuffer();
                 const Brush &brush = m_editingContext.brush();
                 QList<QPointF> points;
                 strokeOffset = strokeSegmentDabs(prevWorldPoint, worldPoint, brush.stroke.absoluteSpacing.x(), strokeOffset, points);
@@ -154,25 +156,20 @@ protected:
         protected:
             virtual void onEntry(QEvent *const event) override {
                 QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
-//                qDebug() << "onEntry" << event;
                 if (unwrappedEvent->type() == QEvent::MouseButtonPress) {
                     QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
                     editor->strokeStart(mouseEvent->pos());
-                    qDebug() << editor->strokePoints;
                 }
                 if (unwrappedEvent->type() == QEvent::MouseMove) {
                     QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
                     editor->strokeAdd(mouseEvent->pos());
-                    qDebug() << editor->strokePoints;
                 }
             }
             virtual void onExit(QEvent *const event) override {
                 QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
-//                qDebug() << "onExit" << event;
                 if (unwrappedEvent->type() == QEvent::MouseButtonRelease) {
                     QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
                     editor->strokeEnd(mouseEvent->pos());
-                    qDebug() << editor->strokePoints;
                 }
             }
 

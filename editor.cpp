@@ -108,29 +108,35 @@ void Editor::render()
 {
     for (auto index : m_editingContext.selectionModel().selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
+        const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        if (m_editingContext.workBuffers().contains(node) && bufferNode) {
-            m_editingContext.workBuffers()[node]->copy(bufferNode->buffer);
+        if (bufferNode && bufferNodeContext->workBuffer) {
+            bufferNodeContext->workBuffer->copy(bufferNode->buffer);
             // Draw on-canvas brush preview
             if (inputState.machine.configuration().contains(&inputState.mouseIn)) {
+                ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+                bufferNode->buffer.bindFramebuffer();
+                glDisable(GL_DEPTH_TEST);
+                glDisable(GL_BLEND);
+                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, cameraTransform.inverted().map(QPointF(mouseTransform.map(mapFromGlobal(QCursor::pos())))));
+                bufferNodeContext->strokeBuffer->bindFramebuffer();
                 drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, cameraTransform.inverted().map(QPointF(mouseTransform.map(mapFromGlobal(QCursor::pos())))));
             }
         }
-    }
+    }    
 
     // Draw scene
     widgetBuffer->bindFramebuffer();
-//    Buffer palette({1, 1}, Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 4));
-//    scene.render(nullptr, false, /*&palette*/nullptr, cameraTransform * viewportTransform, &m_editingContext.states());
     scene.render(widgetBuffer, false, /*&palette*/nullptr, cameraTransform * viewportTransform, &m_editingContext.states());
 
     // Undraw on-canvas brush preview
     for (auto index : m_editingContext.selectionModel().selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
+        const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        if (m_editingContext.workBuffers().contains(node) && bufferNode) {
+        if (bufferNode && bufferNodeContext->workBuffer) {
             if (inputState.machine.configuration().contains(&inputState.mouseIn)) {
-                bufferNode->buffer.copy(*m_editingContext.workBuffers()[node]);
+                bufferNode->buffer.copy(*bufferNodeContext->workBuffer);
             }
         }
     }
@@ -176,13 +182,12 @@ qreal Editor::strokeSegmentDabs(const QPointF start, const QPointF end, const  q
 }
 
 void Editor::drawDab(const Dab &dab, const QColor &colour, BufferNode &node, const QPointF worldPos)
-{    
-    Q_ASSERT(m_editingContext.dabPrograms().contains(&node));
+{
+    Q_ASSERT( m_editingContext.bufferNodeContext(&node));
 
     const Traversal::State &state = m_editingContext.states().value(&node);
 
-    QTransform transform = state.transform;
-    const QPointF objectSpacePos = transform.inverted().map(worldPos);
+    const QTransform &transform = state.transform;
     QTransform spaceTransform;
     switch (dab.space) {
     case Space::Object: {
@@ -200,13 +205,15 @@ void Editor::drawDab(const Dab &dab, const QColor &colour, BufferNode &node, con
     }
     const QPointF spaceOffset = spaceTransform.map(QPointF(0.0, 0.0));
     spaceTransform = spaceTransform * QTransform().translate(-spaceOffset.x(), -spaceOffset.y());
+    const QPointF objectSpacePos = transform.inverted().map(worldPos);
 
-    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    node.buffer.bindFramebuffer();
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
     const Buffer *const palette = m_editingContext.states()[&node].palette;
-    m_editingContext.dabPrograms()[&node]->render(dab, colour, spaceTransform * QTransform().translate(objectSpacePos.x(), objectSpacePos.y()) * GfxPaint::viewportTransform(node.buffer.size()), &node.buffer, palette);
+    EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(&node);
+    bufferNodeContext->dabProgram->render(dab, colour, spaceTransform * QTransform().translate(objectSpacePos.x(), objectSpacePos.y()) * GfxPaint::viewportTransform(node.buffer.size()), &node.buffer, palette);
+}
+
+void Editor::drawSegment(const Dab &dab, const Stroke &stroke, const QColor &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset)
+{
 }
 
 void Editor::setTransformMode(const TransformMode transformMode)
@@ -233,10 +240,18 @@ void Editor::updateContext()
         Node *node = static_cast<Node *>(index.internalPointer());
         m_editingContext.states().insert(node, Traversal::State());
     }
-    update(); // Rebuild states, full traversal render bad!
+    // Update node states (non render)
+    scene.render(nullptr, false, nullptr, QTransform(), &m_editingContext.states());
+
+    Buffer *palette = nullptr;
+    for (auto index : m_editingContext.selectionModel().selectedRows()) {
+        Node *node = static_cast<Node *>(index.internalPointer());
+        const Traversal::State &state = m_editingContext.states().value(node);
+        if (state.palette) palette = state.palette;
+    }
+    emit paletteChanged(palette);
 
     m_editingContext.updatePrograms();
-    m_editingContext.updateWorkBuffers();
 }
 
 bool Editor::handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifiers modifiers, const Qt::MouseButton button, const QPoint pos)
@@ -269,10 +284,11 @@ bool Editor::handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifie
         for (auto index : m_editingContext.selectionModel().selectedRows()) {
             Node *node = static_cast<Node *>(index.internalPointer());
             const Traversal::State &state = m_editingContext.states().value(node);
+            EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
             BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
             if (bufferNode) {
                 const QPointF mouseBufferPos = state.transform.inverted().map(mouseWorldPos);
-                setColour(m_editingContext.colourPickPrograms()[bufferNode]->pick(&bufferNode->buffer, mouseBufferPos));
+                setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, mouseBufferPos));
             }
         }
     }

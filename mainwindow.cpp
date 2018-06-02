@@ -585,9 +585,10 @@ void MainWindow::activateEditor(Editor *const editor)
         });
         activeEditorConnections << QObject::connect(activeEditor, &Editor::brushChanged, ui->brushViewWidget, &BrushViewWidget::setBrush);
 
-        activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->colourEditorWidget, &ColourEditorWidget::setColour);
-        activeEditorConnections << QObject::connect(ui->colourEditorWidget, &ColourEditorWidget::colourChanged, activeEditor, &Editor::setColour);
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::setColour);
+        activeEditorConnections << QObject::connect(ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::colourChanged, activeEditor, &Editor::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->brushViewWidget, &BrushViewWidget::setColour);
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::setPalette);
 
         ui->sceneTreeWidget->setEnabled(true);
         ui->sceneTreeWidget->setEditor(editor);

@@ -15,7 +15,8 @@ public:
     explicit BrushViewWidget(QWidget *const parent = nullptr);
     virtual ~BrushViewWidget();
 
-    virtual QSize sizeHint() const override { return QSize(64, 64); }
+    virtual QSize sizeHint() const override { return QSize(128, 128); }
+    virtual QSize minimumSizeHint() const override { return QSize(32, 32); }
 
 public slots:
     void setBrush(const Brush &brush);    

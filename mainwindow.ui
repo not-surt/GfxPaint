@@ -250,9 +250,9 @@
    </attribute>
    <widget class="QWidget" name="dockWidgetContents_8"/>
   </widget>
-  <widget class="QDockWidget" name="colourEditorDockWidget">
+  <widget class="QDockWidget" name="colourSpaceSlidersDockWidget">
    <property name="windowTitle">
-    <string>Colour Settings</string>
+    <string>Colour Space Sliders</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>2</number>
@@ -272,7 +272,7 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="GfxPaint::ColourEditorWidget" name="colourEditorWidget" native="true"/>
+      <widget class="GfxPaint::ColourSpaceSlidersWidget" name="colourSpaceSlidersWidget" native="true"/>
      </item>
     </layout>
    </widget>
@@ -1387,9 +1387,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>GfxPaint::ColourEditorWidget</class>
+   <class>GfxPaint::ColourSpaceSlidersWidget</class>
    <extends>QWidget</extends>
-   <header>coloureditorwidget.h</header>
+   <header>colourspacesliderswidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

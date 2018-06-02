@@ -8,9 +8,8 @@ EditingContext::EditingContext(Scene &scene) :
     scene(scene),
     m_brush(),
     m_colour(255, 0, 0, 255),
-    m_dabPrograms(),
-    m_colourPickPrograms(),
-    m_workBuffers(),
+    m_palette(nullptr),
+    m_bufferNodeContexts(),
     m_selectionModel(qApp->documentManager.documentModel(&scene))
 {
 }
@@ -19,9 +18,7 @@ EditingContext::EditingContext(EditingContext &other) :
     scene(other.scene),
     m_brush(other.m_brush),
     m_colour(other.m_colour),
-    m_dabPrograms(other.m_dabPrograms),
-    m_colourPickPrograms(other.m_colourPickPrograms),
-    m_workBuffers(other.m_workBuffers),
+    m_bufferNodeContexts(other.m_bufferNodeContexts),
     m_selectionModel(other.m_selectionModel.model())
 {
     m_selectionModel.select(other.m_selectionModel.selection(), QItemSelectionModel::ClearAndSelect);
@@ -30,48 +27,30 @@ EditingContext::EditingContext(EditingContext &other) :
 EditingContext::~EditingContext()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    qDeleteAll(m_dabPrograms);
-    qDeleteAll(m_colourPickPrograms);
-    qDeleteAll(m_workBuffers);
+    qDeleteAll(m_bufferNodeContexts);
 }
 
 void EditingContext::updatePrograms()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    QMap<Node *, DabProgram *> oldDabPrograms = m_dabPrograms;
-    m_dabPrograms.clear();
-    QMap<Node *, ColourPickProgram *> oldColourPickPrograms = m_colourPickPrograms;
-    m_colourPickPrograms.clear();
-    Buffer buffer;
-    scene.render(nullptr, false, nullptr, QTransform(), &m_states);
+    QMap<Node *, BufferNodeContext *> oldNodeContexts = m_bufferNodeContexts;
+    m_bufferNodeContexts.clear();
+    // Update node states (non render)
+//    scene.render(nullptr, false, nullptr, QTransform(), &m_states);
     for (auto index : m_selectionModel.selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
             Traversal::State &state = m_states[node];
-            if (bufferNode) {
-                m_dabPrograms.insert(bufferNode, new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_brush.dab.blendMode, m_brush.dab.composeMode));
-                m_colourPickPrograms.insert(bufferNode, new ColourPickProgram(bufferNode->buffer.format()));
-            }
+            m_bufferNodeContexts.insert(bufferNode, new BufferNodeContext(
+                new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_brush.dab.blendMode, m_brush.dab.composeMode),
+                new ColourPickProgram(bufferNode->buffer.format()),
+                new Buffer(bufferNode->buffer),
+                new Buffer(bufferNode->buffer.size(), Buffer::Format(Buffer::Format::ComponentType::Float, 4, 3))
+            ));
         }
     }
-    qDeleteAll(oldDabPrograms);
-    qDeleteAll(oldColourPickPrograms);
-}
-
-void EditingContext::updateWorkBuffers()
-{
-    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    QMap<Node *, Buffer *> oldWorkBuffers = m_workBuffers;
-    m_workBuffers.clear();
-    for (auto index : m_selectionModel.selectedRows()) {
-        Node *node = static_cast<Node *>(index.internalPointer());
-        BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        if (bufferNode) {
-            m_workBuffers.insert(bufferNode, new Buffer(bufferNode->buffer));
-        }
-    }
-    qDeleteAll(oldWorkBuffers);
+    qDeleteAll(oldNodeContexts);
 }
 
 void EditingContext::setBrush(const Brush &brush)
@@ -83,6 +62,11 @@ void EditingContext::setBrush(const Brush &brush)
 void EditingContext::setColour(const QColor &colour)
 {
     this->m_colour = colour;
+}
+
+void EditingContext::setPalette(Buffer *const palette)
+{
+    this->m_palette = palette;
 }
 
 } // namespace GfxPaint

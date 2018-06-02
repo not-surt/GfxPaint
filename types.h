@@ -34,6 +34,7 @@ struct ColourSpaceInfo {
     QString funcName;
     int componentCount;
     QStringList componentLabels;
+    QList<QPair<qreal, qreal>> componentRanges;
 };
 
 extern QMap<ColourSpace, ColourSpaceInfo> colourSpaceInfo;

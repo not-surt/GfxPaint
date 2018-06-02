@@ -34,7 +34,7 @@ public:
         RenderTarget renderTarget;
         QTransform transform;
         QTransform parentTransform;
-        const Buffer *palette = nullptr;
+        Buffer *palette = nullptr;
         //Buffer palette;
         bool rendering;
     };

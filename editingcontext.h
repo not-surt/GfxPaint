@@ -12,21 +12,39 @@ namespace GfxPaint {
 
 class EditingContext {
 public:
+    struct BufferNodeContext {
+        DabProgram *const dabProgram;
+        ColourPickProgram *const colourPickProgram;
+        Buffer *const workBuffer;
+        Buffer *const strokeBuffer;
+
+        BufferNodeContext(DabProgram *const dabProgram, ColourPickProgram *const colourPickProgram, Buffer *const workBuffer, Buffer *const strokeBuffer) :
+            dabProgram(dabProgram), colourPickProgram(colourPickProgram), workBuffer(workBuffer), strokeBuffer(strokeBuffer)
+        {}
+        ~BufferNodeContext() {
+            delete dabProgram;
+            delete colourPickProgram;
+            delete workBuffer;
+            delete strokeBuffer;
+        }
+    };
+
     explicit EditingContext(Scene &scene);
     explicit EditingContext(EditingContext &other);
     ~EditingContext();
 
     void updatePrograms();
-    void updateWorkBuffers();
 
     void setBrush(const Brush &brush);
     void setColour(const QColor &colour);
+    void setPalette(Buffer *const palette);
 
     const Brush &brush() const { return m_brush; }
     const QColor colour() const { return m_colour; }
-    const QMap<Node *, DabProgram *> &dabPrograms() const { return m_dabPrograms; }
-    const QMap<Node *, ColourPickProgram *> &colourPickPrograms() const { return m_colourPickPrograms; }
-    const QMap<Node *, Buffer *> &workBuffers() const { return m_workBuffers; }
+    Buffer *palette() const { return m_palette; }
+    BufferNodeContext *bufferNodeContext(Node *const node) const {
+        return m_bufferNodeContexts.value(node);
+    }
     QMap<Node *, Traversal::State> &states() { return m_states; }
     QItemSelectionModel &selectionModel() { return m_selectionModel; }
 
@@ -34,9 +52,8 @@ private:
     Scene &scene;
     Brush m_brush;
     QColor m_colour;
-    QMap<Node *, DabProgram *> m_dabPrograms;
-    QMap<Node *, ColourPickProgram *> m_colourPickPrograms;
-    QMap<Node *, Buffer *> m_workBuffers;
+    Buffer *m_palette;
+    QMap<Node *, BufferNodeContext *> m_bufferNodeContexts;
     QMap<Node *, Traversal::State> m_states;
     QItemSelectionModel m_selectionModel;
 };

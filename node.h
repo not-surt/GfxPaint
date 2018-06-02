@@ -30,19 +30,20 @@ public:
     QString name;
     bool enabled;
     bool locked;
+    bool promoteChildren;
     Node *parent;
     QList<Node *> children;
 
     explicit Node() :
         QObject(),
-        name(), enabled(true), locked(false), parent(nullptr), children()
+        name(), enabled(true), locked(false), promoteChildren(false), parent(nullptr), children()
     {
         setProperty("objectName", name);
         setProperty("poop", "hello");
     }
     explicit Node(const Node &other) :
         QObject(),
-        name(other.name), enabled(other.enabled), locked(other.locked), parent(nullptr), children()
+        name(other.name), enabled(other.enabled), locked(other.locked), promoteChildren(other.promoteChildren), parent(nullptr), children()
     {}
     virtual ~Node() { for (auto child : children) delete child; }
 

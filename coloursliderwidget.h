@@ -12,7 +12,7 @@ class ColourSliderWidget : public GfxPaint::RenderedWidget
     Q_OBJECT
 
 public:
-    explicit ColourSliderWidget(const ColourSpace colourSpace, const int component, QWidget *const parent = nullptr);
+    explicit ColourSliderWidget(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent = nullptr);
     explicit ColourSliderWidget(QWidget *const parent = nullptr);
     virtual ~ColourSliderWidget() override;
 
@@ -23,6 +23,7 @@ public:
 
 public slots:
     void setColour(const QColor &colour);
+    void setPalette(const Buffer *const palette);
 
 signals:
     void colourChanged(const QColor &colour);
@@ -38,11 +39,14 @@ protected:
 
     ColourSpace colourSpace;
     int component;
+    bool quantise;
+    Buffer::Format quantisePaletteFormat;
 
     ColourSliderProgram *program;
     ColourSliderPickProgram *pickProgram;
 
     QColor m_colour;
+    const Buffer *m_palette;
 };
 
 } // namespace GfxPaint

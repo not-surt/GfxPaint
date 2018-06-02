@@ -22,7 +22,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 
 SOURCES +=\
@@ -30,7 +30,6 @@ SOURCES +=\
     brush.cpp \
     brushviewwidget.cpp \
     buffer.cpp \
-    coloureditorwidget.cpp \
     colourplanewidget.cpp \
     coloursliderwidget.cpp \
     dabeditorwidget.cpp \
@@ -56,14 +55,14 @@ SOURCES +=\
     editor.cpp \
     newbufferdialog.cpp \
     scenemodel.cpp \
-    scenetreewidget.cpp
+    scenetreewidget.cpp \
+    colourspacesliderswidget.cpp
 
 HEADERS  += \
     application.h \
     brush.h \
     brushviewwidget.h \
     buffer.h \
-    coloureditorwidget.h \
     colourplanewidget.h \
     coloursliderwidget.h \
     dabeditorwidget.h \
@@ -89,17 +88,18 @@ HEADERS  += \
     editor.h \
     newbufferdialog.h \
     scenemodel.h \
-    scenetreewidget.h
+    scenetreewidget.h \
+    colourspacesliderswidget.h
 
 FORMS    += \
     mainwindow.ui \
-    coloureditorwidget.ui \
     dabeditorwidget.ui \
     strokeeditorwidget.ui \
     transformeditorwidget.ui \
     sessioneditorwidget.ui \
     newbufferdialog.ui \
-    scenetreewidget.ui
+    scenetreewidget.ui \
+    colourspacesliderswidget.ui
 
 RESOURCES += \
     shaders/shaders.qrc \

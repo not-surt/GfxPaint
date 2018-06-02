@@ -249,11 +249,12 @@ protected:
 
 class ColourSliderProgram : public Program {
 public:
-    ColourSliderProgram(const ColourSpace colourSpace, const int component, const Buffer::Format destFormat, const int blendMode) :
-        Program(typeid(ColourSliderProgram), {static_cast<int>(colourSpace), component, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode}),
+    ColourSliderProgram(const ColourSpace colourSpace, const int component, const Buffer::Format destFormat, const int blendMode, const bool quantise, const Buffer::Format quantisePaletteFormat) :
+        Program(typeid(ColourSliderProgram), {static_cast<int>(colourSpace), component, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount}),
         colourSpace(colourSpace), component(component),
         destFormat(destFormat),
         blendMode(blendMode),
+        quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
         uniformBuffer(0), uniformData{{0.0}}
     {
         glGenBuffers(1, &uniformBuffer);
@@ -264,7 +265,7 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void render(const QColor &colour, const ColourSpace colourSpace, const int component, const QTransform &transform, Buffer *const dest);
+    void render(const QColor &colour, const ColourSpace colourSpace, const int component, const QTransform &transform, Buffer *const dest, const Buffer *const quantisePalette);
 
 protected:
     struct UniformData {
@@ -277,6 +278,8 @@ protected:
     const int component;
     const Buffer::Format destFormat;
     const int blendMode;
+    const bool quantise;
+    const Buffer::Format quantisePaletteFormat;
 
     GLuint uniformBuffer;
     UniformData uniformData;
@@ -284,9 +287,10 @@ protected:
 
 class ColourSliderPickProgram : public Program {
 public:
-    ColourSliderPickProgram(const ColourSpace colourSpace, const int component) :
-        Program(typeid(ColourSliderPickProgram), {static_cast<int>(colourSpace), component}),
+    ColourSliderPickProgram(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat) :
+        Program(typeid(ColourSliderPickProgram), {static_cast<int>(colourSpace), component, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount}),
         colourSpace(colourSpace), component(component),
+        quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
         uniformBuffer(0), storageBuffer(0), storageData{}
     {
         glGenBuffers(1, &uniformBuffer);
@@ -302,7 +306,7 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    QColor pick(QColor colour, const float pos);
+    QColor pick(QColor colour, const float pos, const Buffer *const quantisePalette);
 
 protected:
     struct StorageData {
@@ -313,10 +317,49 @@ protected:
 
     const ColourSpace colourSpace;
     const int component;
+    const bool quantise;
+    const Buffer::Format quantisePaletteFormat;
 
     GLuint uniformBuffer;
     GLuint storageBuffer;
     StorageData storageData;
+};
+
+class ColourPlaneProgram : public Program {
+public:
+    ColourPlaneProgram(const ColourSpace colourSpace, const int componentX, const int componentY, const Buffer::Format destFormat, const int blendMode, const bool quantise) :
+        Program(typeid(ColourPlaneProgram), {static_cast<int>(colourSpace), componentX, componentY, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, quantise}),
+        colourSpace(colourSpace), componentX(componentX), componentY(componentY),
+        destFormat(destFormat),
+        blendMode(blendMode),
+        quantise(quantise),
+        uniformBuffer(0), uniformData{{0.0}}
+    {
+        glGenBuffers(1, &uniformBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
+    }
+    virtual ~ColourPlaneProgram() override {
+        glDeleteBuffers(1, &uniformBuffer);
+    }
+
+    void render(const QColor &colour, const ColourSpace colourSpace, const int componentX, const int componentY, const QTransform &transform, Buffer *const dest);
+
+protected:
+    struct UniformData {
+        GLfloat colour[4];
+    };
+
+    virtual QOpenGLShaderProgram *createProgram() const override;
+
+    const ColourSpace colourSpace;
+    const int componentX, componentY;
+    const Buffer::Format destFormat;
+    const int blendMode;
+    const bool quantise;
+
+    GLuint uniformBuffer;
+    UniformData uniformData;
 };
 
 class PatternProgram : public Program {
