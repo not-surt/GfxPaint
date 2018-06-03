@@ -386,9 +386,12 @@ void Editor::mouseMoveEvent(QMouseEvent *event)
 
 void Editor::wheelEvent(QWheelEvent *event)
 {
+    RenderedWidget::wheelEvent(event);
+
     const QPointF mouseViewportPos = mouseTransform.map(event->posF());
     const QPointF mouseWorldPos = cameraTransform.inverted().map(QPointF(mouseViewportPos));
     const qreal delta = event->angleDelta().y() / (15.0 * 8.0);
+    qDebug() << delta << event->angleDelta() << event->pixelDelta() << event->phase();//////////////////////////////////
     const qreal scaling = pow(2, delta);
     const qreal rotation = -15.0 * delta;
     rotateScaleAtOrigin(cameraTransform,
@@ -396,7 +399,7 @@ void Editor::wheelEvent(QWheelEvent *event)
                        (event->modifiers() == Qt::NoModifier) ? scaling : 1.0,
                        mouseViewportPos);
     emit transformChanged(cameraTransform);
-    update();
+//    update();
     event->accept();
 }
 

@@ -166,7 +166,7 @@ R"(
     return src.arg(OPENGL_GLSL_VERSION_STRING);
 }
 
-QString RenderManager::modelShaderPart(const Model model)
+QString RenderManager::attributelessShaderPart(const Model model)
 {
     const QMap<Model, QString> models = {
         { Model::SingleVertex,
@@ -199,6 +199,28 @@ const vec2 vertices[4] = vec2[](
     };
     QString src;
     src += models[model];
+    return src;
+}
+
+QString RenderManager::geometryVertexShaderPart()
+{
+    QString src;
+    src +=
+R"(
+uniform mat3 matrix;
+
+in layout(location = 0) vec2 vertexPos;
+in layout(location = 1) vec4 vertexColour;
+
+out layout(location = 0) vec2 pos;
+out layout(location = 1) vec4 colour;
+
+void main(void) {
+    pos = vec2(0.0, 0.0);
+    colour = vertexColour;
+    gl_Position = vec4(matrix * vec3(vertexPos, 1.0), 1.0);
+}
+)";
     return src;
 }
 
@@ -296,6 +318,24 @@ R"(
         {"%2", QString::number(bufferTextureLocation)},
         {"%3", bufferFormat.shaderSamplerType()},
         {"%4", QString::number(bufferFormat.scale())},
+    });
+    return src;
+}
+
+QString RenderManager::geometryShaderPart(const QString &name)
+{
+    QString src;
+    src +=
+R"(
+//in layout(location = 0) vec2 pos;
+in layout(location = 1) vec4 colour;
+
+vec4 %1(const vec2 pos) {
+    return colour;
+}
+)";
+    stringMultiReplace(src, {
+        {"%1", name},
     });
     return src;
 }

@@ -1,5 +1,5 @@
 # GfxPaint
-Qt + OpenGL + scenegraph based image editor.
+Qt + OpenGL + scenegraph based indexed image editor.
 
 Badly broken, sporadically abandoned, unusable.
 

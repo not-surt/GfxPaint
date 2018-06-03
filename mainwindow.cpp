@@ -598,8 +598,6 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformChanged, activeEditor, &Editor::setTransform);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::transformModeChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransformMode);
         activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformMode);
-        activeEditorConnections << QObject::connect(activeEditor, &Editor::transformChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransform);
-        activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformChanged, activeEditor, &Editor::setTransform);
 
         activeEditor->activate();
     }

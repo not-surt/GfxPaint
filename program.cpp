@@ -33,7 +33,7 @@ QOpenGLShaderProgram *WidgetProgram::createProgram() const
 
     QString vertSrc;
     vertSrc += RenderManager::headerShaderPart();
-    vertSrc += RenderManager::modelShaderPart(Model::UnitQuad);
+    vertSrc += RenderManager::attributelessShaderPart(Model::UnitQuad);
     vertSrc += RenderManager::vertexMainShaderPart();
     program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
 
@@ -71,7 +71,7 @@ QOpenGLShaderProgram *BufferProgram::createProgram() const
 
     QString vertSrc;
     vertSrc += RenderManager::headerShaderPart();
-    vertSrc += RenderManager::modelShaderPart(Model::UnitQuad);
+    vertSrc += RenderManager::attributelessShaderPart(Model::UnitQuad);
     vertSrc += RenderManager::vertexMainShaderPart();
     program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
 
@@ -125,11 +125,12 @@ QOpenGLShaderProgram *GeometryProgram::createProgram() const
 
     QString vertSrc;
     vertSrc += RenderManager::headerShaderPart();
-    vertSrc += RenderManager::vertexMainShaderPart();
+    vertSrc += RenderManager::geometryVertexShaderPart();
     program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
 
     QString fragSrc;
     fragSrc += RenderManager::headerShaderPart();
+    fragSrc += RenderManager::geometryShaderPart("src");
     fragSrc += RenderManager::bufferShaderPart("dest", 0, destFormat, destIndexed, 1, destPaletteFormat);
     fragSrc += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
     program->addShaderFromSourceCode(QOpenGLShader::Fragment, fragSrc);
@@ -154,9 +155,12 @@ void GeometryProgram::render(const QColor &colour, const QTransform &transform, 
     }
 
     glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-    glDrawElements(GL_TRIANGLE_FAN, elementCount, GL_TRIANGLE_FAN, nullptr);
+    glDrawArrays(GL_TRIANGLES, 0, 3);
+
+//    glBindVertexArray(vao);
+//    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+//    glDrawElements(GL_TRIANGLE_FAN, elementCount, GL_TRIANGLE_FAN, nullptr);
 }
 
 QOpenGLShaderProgram *DabProgram::createProgram() const
@@ -165,7 +169,7 @@ QOpenGLShaderProgram *DabProgram::createProgram() const
 
     QString vertSrc;
     vertSrc += RenderManager::headerShaderPart();
-    vertSrc += RenderManager::modelShaderPart(type == Dab::Type::Pixel ? Model::SingleVertex : Model::ClipQuad);
+    vertSrc += RenderManager::attributelessShaderPart(type == Dab::Type::Pixel ? Model::SingleVertex : Model::ClipQuad);
     vertSrc += RenderManager::vertexMainShaderPart();
     program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
 
@@ -227,7 +231,7 @@ QOpenGLShaderProgram *ColourSliderProgram::createProgram() const
 
     QString vertSrc;
     vertSrc += RenderManager::headerShaderPart();
-    vertSrc += RenderManager::modelShaderPart(Model::UnitQuad);
+    vertSrc += RenderManager::attributelessShaderPart(Model::UnitQuad);
     vertSrc += RenderManager::vertexMainShaderPart();
     program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
 
@@ -322,7 +326,7 @@ QColor ColourSliderPickProgram::pick(QColor colour, const float pos, const Buffe
 
     typedef void (QColor::*const Setter)(qreal value);
     static const Setter setters[4] = {&QColor::setRedF, &QColor::setGreenF, &QColor::setBlueF, &QColor::setAlphaF};
-    for (int i = 0; i < 4; ++i) (colour.*setters[i])(static_cast<qreal>(storageData.colour[i]));
+    for (int i = 0; i < 4; ++i) (colour.*setters[i])(static_cast<qreal>(clamp(0.0f, 1.0f, storageData.colour[i])));
     return colour;
 }
 
@@ -332,7 +336,7 @@ QOpenGLShaderProgram *ColourPlaneProgram::createProgram() const
 
     QString vertSrc;
     vertSrc += RenderManager::headerShaderPart();
-    vertSrc += RenderManager::modelShaderPart(Model::UnitQuad);
+    vertSrc += RenderManager::attributelessShaderPart(Model::UnitQuad);
     vertSrc += RenderManager::vertexMainShaderPart();
     program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
 

@@ -19,14 +19,17 @@ public:
     virtual QSize sizeHint() const override { return QSize(128, 32); }
     virtual QSize minimumSizeHint() const override { return QSize(64, 16); }
 
-    QColor colour() const;
+    QColor colour() const { return m_colour; }
+    qreal pos() const { return m_pos; }
 
 public slots:
     void setColour(const QColor &colour);
     void setPalette(const Buffer *const palette);
+    void setPos(const qreal pos);
 
 signals:
     void colourChanged(const QColor &colour);
+    void posChanged(const qreal pos);
 
 protected:
     virtual void mousePressEvent(QMouseEvent *event) override { mouseEvent(event); }
@@ -35,7 +38,7 @@ protected:
     virtual void resizeGL(int w, int h) override;
     virtual void render() override;
 
-    bool mouseEvent(QMouseEvent *event);
+    void mouseEvent(QMouseEvent *event);
 
     ColourSpace colourSpace;
     int component;
@@ -44,9 +47,13 @@ protected:
 
     ColourSliderProgram *program;
     ColourSliderPickProgram *pickProgram;
+    GeometryProgram *markerProgram;
 
+    qreal m_pos;
     QColor m_colour;
     const Buffer *m_palette;
+
+    static const QVector<GLfloat> markerVertices;
 };
 
 } // namespace GfxPaint

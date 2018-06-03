@@ -154,29 +154,22 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void setGeometry() {
+    void setGeometry(const QVector<GLfloat> &geometry) {
         glBindVertexArray(vao);
 
-        GLfloat vertices[] = {
-            1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-            -1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-            1.0f, -1.0f, 0.0f, 0.0f, 1.0f, 1.0f,
-            -1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 0.0f
-        };
-        GLfloat colours[] = {
-            1.0f, 0.0f, 0.0f, 1.0f,
-            0.0f, 1.0f, 0.0f, 1.0f,
-            0.0f, 0.0f, 1.0f, 1.0f,
-            1.0f, 1.0f, 1.0f, 0.0f
-        };
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        glBufferData(GL_ARRAY_BUFFER, geometry.size() * sizeof(geometry[0]), geometry.data(), GL_STATIC_DRAW);
+        const GLsizei stride = sizeof(GLfloat) * 6;
+        glVertexAttribPointer(0, 2, GL_FLOAT, false, stride, 0);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(1, 4, GL_FLOAT, false, stride, ((GLfloat *)0) + 2);
+        glEnableVertexAttribArray(1);
 
-        GLushort elements[] = {
-            0, 1, 2, 3
-        };
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
+//        GLushort elements[] = {
+//            0, 1, 2, 3
+//        };
+//        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+//        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
     }
 
     void render(const QColor &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
@@ -401,7 +394,7 @@ public:
 
 protected:
     struct StorageData {
-        float colour[4];
+        GLfloat colour[4];
     };
 
     virtual QOpenGLShaderProgram *createProgram() const override;
@@ -432,7 +425,8 @@ public:
 
 protected:
     struct StorageData {
-        float colour[4];
+        GLfloat colour[4];
+        GLuint index;
     };
 
     virtual QOpenGLShaderProgram *createProgram() const override;

@@ -1,11 +1,14 @@
 #include "colourspacesliderswidget.h"
 #include "ui_colourspacesliderswidget.h"
 
+#include "application.h"
+
 namespace GfxPaint {
 
 ColourSpaceSlidersWidget::ColourSpaceSlidersWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::ColourSpaceSlidersWidget),
+    conversionProgram(nullptr),
     m_colour(255, 0, 0, 255),
     m_palette(nullptr)
 {
@@ -21,6 +24,11 @@ ColourSpaceSlidersWidget::ColourSpaceSlidersWidget(QWidget *parent) :
 ColourSpaceSlidersWidget::~ColourSpaceSlidersWidget()
 {
     delete ui;
+
+    {
+        ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+        delete conversionProgram;
+    }
 }
 
 QColor ColourSpaceSlidersWidget::colour() const
@@ -63,6 +71,12 @@ void ColourSpaceSlidersWidget::updateWidgets()
         ui->colourSliderLayout->takeAt(0)->widget()->deleteLater();
     }
     const ColourSpace colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
+    {
+        ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+        Program *oldProgram = conversionProgram;
+        conversionProgram = new ColourConversionProgram(ColourSpace::RGB, colourSpace);
+        delete oldProgram;
+    }
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
     for (int i = 0; i < componentCount; ++i) {
         ColourSliderWidget *const colourSlider = new ColourSliderWidget(colourSpace, i, ui->quantiseCheckBox->isChecked() && m_palette, m_palette ? m_palette->format() : Buffer::Format());
@@ -70,6 +84,9 @@ void ColourSpaceSlidersWidget::updateWidgets()
         colourSlider->setColour(m_colour);
         colourSlider->setPalette(m_palette);
         QObject::connect(colourSlider, &ColourSliderWidget::colourChanged, this, &ColourSpaceSlidersWidget::setColour);
+        QObject::connect(colourSlider, &ColourSliderWidget::posChanged, [this](const GLfloat pos){
+
+        });
     }
 
     updateColour();
