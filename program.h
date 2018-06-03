@@ -8,6 +8,7 @@
 #include "types.h"
 #include "buffer.h"
 #include "brush.h"
+#include "model.h"
 
 namespace GfxPaint {
 
@@ -125,61 +126,27 @@ protected:
     UniformData uniformData;
 };
 
-class GeometryProgram : public Program {
+class ModelProgram : public Program {
 public:
-    GeometryProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
-        Program(typeid(GeometryProgram), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, static_cast<int>(blendMode), composeMode}),
+    ModelProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        Program(typeid(ModelProgram), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, static_cast<int>(blendMode), composeMode}),
         destFormat(destFormat), destIndexed(destIndexed), destPaletteFormat(destPaletteFormat),
         blendMode(blendMode), composeMode(composeMode),
-        uniformBuffer(0), uniformData{},
-        vao(0), vertexBuffer(0), elementBuffer(0), vertexCount(0), elementCount(0)
+        uniformBuffer(0), uniformData{}
     {
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
-
-        glGenVertexArrays(1, &vao);
-        glBindVertexArray(vao);
-
-        glGenBuffers(1, &vertexBuffer);
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-
-        glGenBuffers(1, &elementBuffer);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
     }
-    virtual ~GeometryProgram() override {
-        glDeleteBuffers(1, &elementBuffer);
-        glDeleteBuffers(1, &vertexBuffer);
-        glDeleteVertexArrays(1, &vao);
+    virtual ~ModelProgram() override {
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void setGeometry(const QVector<GLfloat> &geometry) {
-        glBindVertexArray(vao);
-
-        glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-        glBufferData(GL_ARRAY_BUFFER, geometry.size() * sizeof(geometry[0]), geometry.data(), GL_STATIC_DRAW);
-        const GLsizei stride = sizeof(GLfloat) * 6;
-        glVertexAttribPointer(0, 2, GL_FLOAT, false, stride, 0);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(1, 4, GL_FLOAT, false, stride, ((GLfloat *)0) + 2);
-        glEnableVertexAttribArray(1);
-
-//        GLushort elements[] = {
-//            0, 1, 2, 3
-//        };
-//        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-//        glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
-    }
-
-    void render(const QColor &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(Model *const model, const QColor &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     struct UniformData {
         GLfloat matrix[3][3];
-        GLfloat colour[4];
-        GLfloat hardness;
-        GLfloat alpha;
     };
 
     virtual QOpenGLShaderProgram *createProgram() const override;
@@ -192,11 +159,6 @@ protected:
 
     GLuint uniformBuffer;
     UniformData uniformData;
-    GLuint vao;
-    GLuint vertexBuffer;
-    GLuint elementBuffer;
-    GLsizei vertexCount;
-    GLsizei elementCount;
 };
 
 class DabProgram : public Program {

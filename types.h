@@ -7,7 +7,7 @@
 
 namespace GfxPaint {
 
-enum class Model {
+enum class AttributelessModel {
     SingleVertex,
     ClipQuad,
     UnitQuad,

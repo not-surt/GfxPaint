@@ -8,7 +8,7 @@ namespace GfxPaint {
 ColourSpaceSlidersWidget::ColourSpaceSlidersWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::ColourSpaceSlidersWidget),
-    conversionProgram(nullptr),
+    fromRGBConversionProgram(nullptr), toRGBConversionProgram(nullptr),
     m_colour(255, 0, 0, 255),
     m_palette(nullptr)
 {
@@ -27,7 +27,8 @@ ColourSpaceSlidersWidget::~ColourSpaceSlidersWidget()
 
     {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-        delete conversionProgram;
+        delete fromRGBConversionProgram;
+        delete toRGBConversionProgram;
     }
 }
 
@@ -72,10 +73,11 @@ void ColourSpaceSlidersWidget::updateWidgets()
     }
     const ColourSpace colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
     {
+        const QList<Program *> oldPrograms = {fromRGBConversionProgram, toRGBConversionProgram};
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-        Program *oldProgram = conversionProgram;
-        conversionProgram = new ColourConversionProgram(ColourSpace::RGB, colourSpace);
-        delete oldProgram;
+        fromRGBConversionProgram = new ColourConversionProgram(ColourSpace::RGB, colourSpace);
+        toRGBConversionProgram = new ColourConversionProgram(colourSpace, ColourSpace::RGB);
+        qDeleteAll(oldPrograms);
     }
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
     for (int i = 0; i < componentCount; ++i) {
@@ -85,7 +87,7 @@ void ColourSpaceSlidersWidget::updateWidgets()
         colourSlider->setPalette(m_palette);
         QObject::connect(colourSlider, &ColourSliderWidget::colourChanged, this, &ColourSpaceSlidersWidget::setColour);
         QObject::connect(colourSlider, &ColourSliderWidget::posChanged, [this](const GLfloat pos){
-
+//            setColour(toRGBConversionProgram->convert());
         });
     }
 

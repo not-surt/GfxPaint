@@ -56,7 +56,7 @@ public:
     ProgramManager programManager;
 
     static QString headerShaderPart();
-    static QString attributelessShaderPart(const Model model);
+    static QString attributelessShaderPart(const AttributelessModel model);
     static QString geometryVertexShaderPart();
     static QString vertexMainShaderPart();
     static QString patternShaderPart(const QString &name, const Pattern pattern);

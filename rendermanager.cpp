@@ -166,17 +166,17 @@ R"(
     return src.arg(OPENGL_GLSL_VERSION_STRING);
 }
 
-QString RenderManager::attributelessShaderPart(const Model model)
+QString RenderManager::attributelessShaderPart(const AttributelessModel model)
 {
-    const QMap<Model, QString> models = {
-        { Model::SingleVertex,
+    const QMap<AttributelessModel, QString> models = {
+        { AttributelessModel::SingleVertex,
 R"(
 const vec2 vertices[1] = vec2[](
     vec2(0.0, 0.0)
 );
 )"
         },
-        { Model::ClipQuad,
+        { AttributelessModel::ClipQuad,
 R"(
 const vec2 vertices[4] = vec2[](
     vec2(-1.0, 1.0),
@@ -186,7 +186,7 @@ const vec2 vertices[4] = vec2[](
 );
 )"
         },
-        { Model::UnitQuad,
+        { AttributelessModel::UnitQuad,
 R"(
 const vec2 vertices[4] = vec2[](
     vec2(0.0, 1.0),
@@ -277,7 +277,7 @@ R"(
 uniform layout(location = %2) %3 %1PaletteTexture;
 
 vec4 %1Palette(const uint index) {
-    return vec4(texelFetch(%1PaletteTexture, ivec2(index, 0))) / %4;
+    return vec4(texelFetch(%1PaletteTexture, ivec2(index, 0))) / float(%4);
 }
 )";
     stringMultiReplace(src, {
@@ -292,21 +292,26 @@ vec4 %1Palette(const uint index) {
 QString RenderManager::bufferShaderPart(const QString &name, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat)
 {
     QString src;
-    if (indexed) src += paletteShaderPart(name, paletteTextureLocation, paletteFormat);
+    if (indexed && paletteFormat.isValid()) src += paletteShaderPart(name, paletteTextureLocation, paletteFormat);
     src +=
 R"(
 uniform layout(location = %2) %3 %1Texture;
 
 vec4 %1(const vec2 pos) {
 )";
-    if (indexed && paletteFormat.componentType != Buffer::Format::ComponentType::Invalid) src +=
+    if (indexed && paletteFormat.isValid()) src +=
 R"(
     const uint index = texelFetch(%1Texture, ivec2(floor(pos))).x;
     const vec4 colour = %1Palette(index);
 )";
+    else if (indexed && !paletteFormat.isValid()) src +=
+R"(
+    const float grey = texelFetch(%1Texture, ivec2(floor(pos))).x / float(%4);
+    const vec4 colour = vec4(grey, grey, grey, 1.0);
+)";
     else src +=
 R"(
-    const vec4 colour = vec4(texelFetch(%1Texture, ivec2(floor(pos)))) / %4;
+    const vec4 colour = vec4(texelFetch(%1Texture, ivec2(floor(pos)))) / float(%4);
 )";
     src +=
 R"(
@@ -497,7 +502,7 @@ QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const
     QString src;
     src += fileToString(":/shaders/compositing.glsl");
     src += fileToString(":/shaders/blending.glsl");
-    if (indexed) src += fileToString(":/shaders/quantise.glsl");
+    if (indexed && paletteFormat.isValid()) src += fileToString(":/shaders/quantise.glsl");
     src +=
 R"(
 in layout(location = 0) vec2 pos;
@@ -510,9 +515,13 @@ void main(void) {
     const vec4 blended = vec4(%4(destColour.rgb, srcColour.rgb), srcColour.a);
     const vec4 fragmentColour = unpremultiply(%5(destColour, blended));
 )";
-    if (indexed) src +=
+    if (indexed && paletteFormat.isValid()) src +=
 R"(
-    fragment = quantise(destPaletteTexture, %3, fragmentColour);
+    fragment = %1(quantise(destPaletteTexture, %3, fragmentColour));
+)";
+    else if (indexed && !paletteFormat.isValid()) src +=
+R"(
+    fragment = %1((fragmentColour.r + fragmentColour.g + fragmentColour.b) / 3.0 * %2);
 )";
     else src +=
 R"(

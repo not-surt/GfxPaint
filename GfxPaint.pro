@@ -56,7 +56,8 @@ SOURCES +=\
     newbufferdialog.cpp \
     scenemodel.cpp \
     scenetreewidget.cpp \
-    colourspacesliderswidget.cpp
+    colourspacesliderswidget.cpp \
+    model.cpp
 
 HEADERS  += \
     application.h \
@@ -89,7 +90,8 @@ HEADERS  += \
     newbufferdialog.h \
     scenemodel.h \
     scenetreewidget.h \
-    colourspacesliderswidget.h
+    colourspacesliderswidget.h \
+    model.h
 
 FORMS    += \
     mainwindow.ui \

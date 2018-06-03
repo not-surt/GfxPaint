@@ -36,7 +36,8 @@ private:
 
     Ui::ColourSpaceSlidersWidget *ui;
 
-    ColourConversionProgram *conversionProgram;
+    ColourConversionProgram *fromRGBConversionProgram;
+    ColourConversionProgram *toRGBConversionProgram;
 
     QColor m_colour;
     const Buffer *m_palette;

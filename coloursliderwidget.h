@@ -47,13 +47,16 @@ protected:
 
     ColourSliderProgram *program;
     ColourSliderPickProgram *pickProgram;
-    GeometryProgram *markerProgram;
+    ModelProgram *markerProgram;
 
     qreal m_pos;
     QColor m_colour;
     const Buffer *m_palette;
+    Model *markerModel;
 
     static const QVector<GLfloat> markerVertices;
+    static const QVector<GLushort> markerIndices;
+    static const QVector<GLushort> markerElements;
 };
 
 } // namespace GfxPaint
