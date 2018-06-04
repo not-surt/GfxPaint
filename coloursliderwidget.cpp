@@ -5,6 +5,10 @@
 
 namespace GfxPaint {
 
+const QVector<GLsizei> ColourSliderWidget::markerAttributeSizes = {
+    2, 4,
+};
+
 const QVector<GLfloat> ColourSliderWidget::markerVertices = {
     0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
     0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
@@ -19,7 +23,7 @@ const QVector<GLushort> ColourSliderWidget::markerIndices = {
     3, 4, 5,
 };
 
-const QVector<GLushort> ColourSliderWidget::markerElements = {
+const QVector<GLushort> ColourSliderWidget::markerElementSizes = {
     3,
     3,
 };
@@ -71,7 +75,7 @@ void ColourSliderWidget::resizeGL(int w, int h)
     markerProgram = new ModelProgram(widgetBuffer->format(), false, Buffer::Format(), 0, RenderManager::composeModeDefault);
     qDeleteAll(oldPrograms);
     delete markerModel;
-    markerModel = new Model(GL_TRIANGLES, markerVertices, markerIndices, markerElements);
+    markerModel = new Model(GL_TRIANGLES, markerAttributeSizes, markerVertices, markerIndices, markerElementSizes);
 }
 
 void ColourSliderWidget::setColour(const QColor &colour)

@@ -147,6 +147,7 @@ void BufferNode::render(Traversal &traversal)
             palette = traversal.paletteStack.top();
             paletteFormat = palette->format();
         }
+        // TODO: don't create new program for every render
         BufferProgram program(buffer.format(), indexed, paletteFormat, renderTarget.buffer->format(), renderTarget.indexed, renderTarget.palette ? renderTarget.palette->format() : Buffer::Format(), 0, 3);
         renderTarget.buffer->bindFramebuffer();
         program.render(&buffer, palette, QTransform().scale(buffer.width(), buffer.height()) * transform * renderTarget.transform, renderTarget.buffer, renderTarget.palette);

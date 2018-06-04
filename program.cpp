@@ -7,9 +7,9 @@
 
 namespace GfxPaint {
 
-Program::Program(const std::type_index type, const QList<int> &values) :
+Program::Program() :
     OpenGL(true),
-    key(type, values),
+    key(typeid(Program), {}),
     m_program(nullptr)
 {
 }

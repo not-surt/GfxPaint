@@ -53,28 +53,60 @@ class Program : protected OpenGL {
 public:
     typedef std::pair<std::type_index, QList<int>> Key;
 
-    Program(const std::type_index type, const QList<int> &values);
+    Program();
     virtual ~Program();
 
     QOpenGLShaderProgram &program();
 
 protected:
+    void updateKey(const std::type_index type, const QList<int> &values) {
+        key.first = type;
+        key.second.append(values);
+    }
     virtual QOpenGLShaderProgram *createProgram() const = 0;
-
-    const Key key;
 
     QList<ProgramComponent> components;
 
 private:
+    Key key;
     QOpenGLShaderProgram *m_program;
+};
+
+class RenderProgram : public Program {
+public:
+    RenderProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        Program(),
+        destFormat(destFormat), destIndexed(destIndexed), destPaletteFormat(destPaletteFormat),
+        blendMode(blendMode), composeMode(composeMode),
+        uniformBuffer(0)
+    {
+        updateKey(typeid(this), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, blendMode, composeMode});
+
+        glGenBuffers(1, &uniformBuffer);
+    }
+    virtual ~RenderProgram() override {
+        glDeleteBuffers(1, &uniformBuffer);
+    }
+
+
+protected:
+    const Buffer::Format destFormat;
+    const bool destIndexed;
+    const Buffer::Format destPaletteFormat;
+    const int blendMode;
+    const int composeMode;
+
+    GLuint uniformBuffer;
 };
 
 class WidgetProgram : public Program {
 public:
     WidgetProgram(const Buffer::Format srcFormat, const bool srcIndexed, const Buffer::Format srcPaletteFormat) :
-        Program(typeid(WidgetProgram), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed)}),
+        Program(),
         srcFormat(srcFormat), srcIndexed(srcIndexed), srcPaletteFormat(srcPaletteFormat)
-    {}
+    {
+        updateKey(typeid(this), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed)});
+    }
 
     void render(Buffer *const src);
 
@@ -86,23 +118,20 @@ protected:
     const Buffer::Format srcPaletteFormat;
 };
 
-class BufferProgram : public Program {
+class BufferProgram : public RenderProgram {
 public:
     BufferProgram(const Buffer::Format srcFormat, const bool srcIndexed, const Buffer::Format srcPaletteFormat, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
-        Program(typeid(BufferProgram), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed), static_cast<int>(srcPaletteFormat.componentType), srcPaletteFormat.componentSize, srcPaletteFormat.componentCount, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, static_cast<int>(blendMode), composeMode}),
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
         srcFormat(srcFormat), srcIndexed(srcIndexed), srcPaletteFormat(srcPaletteFormat),
-        destFormat(destFormat), destIndexed(destIndexed), destPaletteFormat(destPaletteFormat),
-        blendMode(blendMode), composeMode(composeMode),
-        uniformBuffer(0), uniformData()
+        uniformData()
     {
-        glGenBuffers(1, &uniformBuffer);
+        updateKey(typeid(this), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed), static_cast<int>(srcPaletteFormat.componentType), srcPaletteFormat.componentSize, srcPaletteFormat.componentCount});
+
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
     }
     virtual ~BufferProgram() override {
-        glDeleteBuffers(1, &uniformBuffer);
     }
-
 
     void render(Buffer *const src, const Buffer *const srcPalette, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
 
@@ -116,30 +145,19 @@ protected:
     const Buffer::Format srcFormat;
     const bool srcIndexed;
     const Buffer::Format srcPaletteFormat;
-    const Buffer::Format destFormat;
-    const bool destIndexed;
-    const Buffer::Format destPaletteFormat;
-    const int blendMode;
-    const int composeMode;
 
-    GLuint uniformBuffer;
     UniformData uniformData;
 };
 
-class ModelProgram : public Program {
+class ModelProgram : public RenderProgram {
 public:
     ModelProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
-        Program(typeid(ModelProgram), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, static_cast<int>(blendMode), composeMode}),
-        destFormat(destFormat), destIndexed(destIndexed), destPaletteFormat(destPaletteFormat),
-        blendMode(blendMode), composeMode(composeMode),
-        uniformBuffer(0), uniformData{}
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
+        uniformData{}
     {
-        glGenBuffers(1, &uniformBuffer);
-        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
+        updateKey(typeid(this), {});
     }
     virtual ~ModelProgram() override {
-        glDeleteBuffers(1, &uniformBuffer);
     }
 
     void render(Model *const model, const QColor &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
@@ -151,25 +169,18 @@ protected:
 
     virtual QOpenGLShaderProgram *createProgram() const override;
 
-    const Buffer::Format destFormat;
-    const bool destIndexed;
-    const Buffer::Format destPaletteFormat;
-    const int blendMode;
-    const int composeMode;
-
-    GLuint uniformBuffer;
     UniformData uniformData;
 };
 
-class DabProgram : public Program {
+class DabProgram : public RenderProgram {
 public:
     DabProgram(const Dab::Type type, const int metric, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
-        Program(typeid(DabProgram), {static_cast<int>(type), metric, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, static_cast<int>(blendMode), composeMode}),
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
         type(type), metric(metric),
-        destFormat(destFormat), destIndexed(destIndexed), destPaletteFormat(destPaletteFormat),
-        blendMode(blendMode), composeMode(composeMode),
-        uniformBuffer(0), uniformData{}
+        uniformData{}
     {
+        updateKey(typeid(this), {static_cast<int>(type), metric});
+
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
@@ -192,26 +203,22 @@ protected:
 
     const Dab::Type type;
     const int metric;
-    const Buffer::Format destFormat;
-    const bool destIndexed;
-    const Buffer::Format destPaletteFormat;
-    const int blendMode;
-    const int composeMode;
 
-    GLuint uniformBuffer;
     UniformData uniformData;
 };
 
 class ColourSliderProgram : public Program {
 public:
     ColourSliderProgram(const ColourSpace colourSpace, const int component, const Buffer::Format destFormat, const int blendMode, const bool quantise, const Buffer::Format quantisePaletteFormat) :
-        Program(typeid(ColourSliderProgram), {static_cast<int>(colourSpace), component, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount}),
+        Program(),
         colourSpace(colourSpace), component(component),
         destFormat(destFormat),
         blendMode(blendMode),
         quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
         uniformBuffer(0), uniformData{{0.0}}
     {
+        updateKey(typeid(this), {static_cast<int>(colourSpace), component, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount});
+
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
@@ -243,11 +250,13 @@ protected:
 class ColourSliderPickProgram : public Program {
 public:
     ColourSliderPickProgram(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat) :
-        Program(typeid(ColourSliderPickProgram), {static_cast<int>(colourSpace), component, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount}),
+        Program(),
         colourSpace(colourSpace), component(component),
         quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
         uniformBuffer(0), storageBuffer(0), storageData{}
     {
+        updateKey(typeid(this), {static_cast<int>(colourSpace), component, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount});
+
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
@@ -283,13 +292,15 @@ protected:
 class ColourPlaneProgram : public Program {
 public:
     ColourPlaneProgram(const ColourSpace colourSpace, const int componentX, const int componentY, const Buffer::Format destFormat, const int blendMode, const bool quantise) :
-        Program(typeid(ColourPlaneProgram), {static_cast<int>(colourSpace), componentX, componentY, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, quantise}),
+        Program(),
         colourSpace(colourSpace), componentX(componentX), componentY(componentY),
         destFormat(destFormat),
         blendMode(blendMode),
         quantise(quantise),
         uniformBuffer(0), uniformData{{0.0}}
     {
+        updateKey(typeid(this), {static_cast<int>(colourSpace), componentX, componentY, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, quantise});
+
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
@@ -320,9 +331,11 @@ protected:
 class PatternProgram : public Program {
 public:
     PatternProgram(const Pattern pattern, const Buffer::Format destFormat, const int blendMode) :
-        Program(typeid(PatternProgram), {static_cast<int>(pattern), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode}),
+        Program(),
         pattern(pattern), destFormat(destFormat), blendMode(blendMode)
-    {}
+    {
+        updateKey(typeid(this), {static_cast<int>(pattern), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode});
+    }
 
     void render(const QTransform &transform);
 
@@ -334,19 +347,37 @@ protected:
     const int blendMode;
 };
 
-class ColourConversionProgram : public Program {
+class ToolProgram : public Program {
+public:
+    ToolProgram() :
+        Program(),
+        storageBuffer(0)
+    {
+        updateKey(typeid(this), {});
+
+        glGenBuffers(1, &storageBuffer);
+    }
+    virtual ~ToolProgram() override {
+        glDeleteBuffers(1, &storageBuffer);
+    }
+
+protected:
+    GLuint storageBuffer;
+};
+
+class ColourConversionProgram : public ToolProgram {
 public:
     ColourConversionProgram(const ColourSpace from, const ColourSpace to) :
-        Program(typeid(ColourConversionProgram), {static_cast<int>(from), static_cast<int>(to)}),
+        ToolProgram(),
         from(from), to(to),
-        storageBuffer(0), storageData{{0.0}}
+        storageData{}
     {
-        glGenBuffers(1, &storageBuffer);
+        updateKey(typeid(this), {static_cast<int>(from), static_cast<int>(to)});
+
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     }
     virtual ~ColourConversionProgram() override {
-        glDeleteBuffers(1, &storageBuffer);
     }
 
     void convert(const float from[4], float to[4]);
@@ -364,23 +395,22 @@ protected:
     const ColourSpace from;
     const ColourSpace to;
 
-    GLuint storageBuffer;
     StorageData storageData;
 };
 
-class ColourPickProgram : public Program {
+class ColourPickProgram : public ToolProgram {
 public:
     ColourPickProgram(const Buffer::Format format) :
-        Program(typeid(ColourPickProgram), {static_cast<int>(format.componentType), format.componentSize, format.componentCount}),
+        ToolProgram(),
         format(format),
-        storageBuffer(0), storageData{}
+        storageData{}
     {
-        glGenBuffers(1, &storageBuffer);
+        updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount});
+
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     }
     virtual ~ColourPickProgram() override {
-        glDeleteBuffers(1, &storageBuffer);
     }
 
     QColor pick(Buffer *const src, const QPointF pos);
@@ -395,7 +425,6 @@ protected:
 
     const Buffer::Format format;
 
-    GLuint storageBuffer;
     StorageData storageData;
 };
 
