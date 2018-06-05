@@ -1,15 +1,15 @@
-#include "coloursliderwidget.h"
+#include "colourcomponentsliderwidget.h"
 
 #include "application.h"
 #include "utils.h"
 
 namespace GfxPaint {
 
-const QVector<GLsizei> ColourSliderWidget::markerAttributeSizes = {
+const QVector<GLsizei> ColourComponentSliderWidget::markerAttributeSizes = {
     2, 4,
 };
 
-const QVector<GLfloat> ColourSliderWidget::markerVertices = {
+const QVector<GLfloat> ColourComponentSliderWidget::markerVertices = {
     0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
     0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
     -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
@@ -18,32 +18,31 @@ const QVector<GLfloat> ColourSliderWidget::markerVertices = {
     0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
 };
 
-const QVector<GLushort> ColourSliderWidget::markerIndices = {
+const QVector<GLushort> ColourComponentSliderWidget::markerIndices = {
     0, 1, 2,
     3, 4, 5,
 };
 
-const QVector<GLushort> ColourSliderWidget::markerElementSizes = {
+const QVector<GLushort> ColourComponentSliderWidget::markerElementSizes = {
     3,
     3,
 };
 
-ColourSliderWidget::ColourSliderWidget(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent) :
+ColourComponentSliderWidget::ColourComponentSliderWidget(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent) :
     RenderedWidget(parent),
     colourSpace(colourSpace), component(component), quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
     program(nullptr), pickProgram(nullptr), markerProgram(nullptr),
     m_pos(0.0), m_colour(255, 0, 0, 255),
     m_palette(nullptr), markerModel(nullptr)
 {
-
 }
 
-ColourSliderWidget::ColourSliderWidget(QWidget *const parent) :
-    ColourSliderWidget(ColourSpace::HSL, 0, false, Buffer::Format(), parent)
+ColourComponentSliderWidget::ColourComponentSliderWidget(QWidget *const parent) :
+    ColourComponentSliderWidget(ColourSpace::HSL, 0, false, Buffer::Format(), parent)
 {
 }
 
-ColourSliderWidget::~ColourSliderWidget()
+ColourComponentSliderWidget::~ColourComponentSliderWidget()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     delete program;
@@ -52,7 +51,7 @@ ColourSliderWidget::~ColourSliderWidget()
     delete markerModel;
 }
 
-void ColourSliderWidget::mouseEvent(QMouseEvent *event)
+void ColourComponentSliderWidget::mouseEvent(QMouseEvent *event)
 {
     if (event->buttons() & Qt::LeftButton) {
         m_pos = clamp(0.0, 1.0, static_cast<qreal>(event->pos().x()) / static_cast<qreal>(width() - 1));
@@ -63,7 +62,7 @@ void ColourSliderWidget::mouseEvent(QMouseEvent *event)
     else event->ignore();
 }
 
-void ColourSliderWidget::resizeGL(int w, int h)
+void ColourComponentSliderWidget::resizeGL(int w, int h)
 {
     RenderedWidget::resizeGL(w, h);
 
@@ -78,7 +77,7 @@ void ColourSliderWidget::resizeGL(int w, int h)
     markerModel = new Model(GL_TRIANGLES, markerAttributeSizes, markerVertices, markerIndices, markerElementSizes);
 }
 
-void ColourSliderWidget::setColour(const QColor &colour)
+void ColourComponentSliderWidget::setColour(const QColor &colour)
 {
     if (m_colour != colour) {
         m_colour = colour;
@@ -87,7 +86,7 @@ void ColourSliderWidget::setColour(const QColor &colour)
     }
 }
 
-void ColourSliderWidget::setPalette(const Buffer *const palette)
+void ColourComponentSliderWidget::setPalette(const Buffer *const palette)
 {
     if (m_palette != palette) {
         m_palette = palette;
@@ -95,7 +94,7 @@ void ColourSliderWidget::setPalette(const Buffer *const palette)
     }
 }
 
-void ColourSliderWidget::setPos(const qreal pos)
+void ColourComponentSliderWidget::setPos(const qreal pos)
 {
     if (m_pos != pos) {
         m_pos = pos;
@@ -104,7 +103,7 @@ void ColourSliderWidget::setPos(const qreal pos)
     }
 }
 
-void ColourSliderWidget::render()
+void ColourComponentSliderWidget::render()
 {
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);

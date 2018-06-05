@@ -31,7 +31,6 @@ SOURCES +=\
     brushviewwidget.cpp \
     buffer.cpp \
     colourplanewidget.cpp \
-    coloursliderwidget.cpp \
     dabeditorwidget.cpp \
     documentmanager.cpp \
     documentsmodel.cpp \
@@ -57,7 +56,8 @@ SOURCES +=\
     scenemodel.cpp \
     scenetreewidget.cpp \
     colourspacesliderswidget.cpp \
-    model.cpp
+    model.cpp \
+    colourcomponentsliderwidget.cpp
 
 HEADERS  += \
     application.h \
@@ -65,7 +65,6 @@ HEADERS  += \
     brushviewwidget.h \
     buffer.h \
     colourplanewidget.h \
-    coloursliderwidget.h \
     dabeditorwidget.h \
     documentmanager.h \
     documentsmodel.h \
@@ -91,7 +90,8 @@ HEADERS  += \
     scenemodel.h \
     scenetreewidget.h \
     colourspacesliderswidget.h \
-    model.h
+    model.h \
+    colourcomponentsliderwidget.h
 
 FORMS    += \
     mainwindow.ui \

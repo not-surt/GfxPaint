@@ -7,6 +7,11 @@
 
 namespace GfxPaint {
 
+typedef struct {
+    GLfloat rgba[4];
+    GLuint index;
+} Colour;
+
 enum class AttributelessModel {
     SingleVertex,
     ClipQuad,
@@ -27,14 +32,14 @@ enum class ColourSpace {
     HCY,
 };
 
-typedef std::tuple<ColourSpace, ColourSpace> ColourSpaceConversion;
+typedef std::pair<ColourSpace, ColourSpace> ColourSpaceConversion;
 
 struct ColourSpaceInfo {
     QString label;
     QString funcName;
     int componentCount;
     QStringList componentLabels;
-    QList<QPair<qreal, qreal>> componentRanges;
+    QList<std::pair<qreal, qreal>> componentRanges;
 };
 
 extern QMap<ColourSpace, ColourSpaceInfo> colourSpaceInfo;

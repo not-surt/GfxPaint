@@ -1,5 +1,5 @@
-#ifndef COLOURSLIDERWIDGET_H
-#define COLOURSLIDERWIDGET_H
+#ifndef COLOURCOMPONENTSLIDERWIDGET_H
+#define COLOURCOMPONENTSLIDERWIDGET_H
 
 #include "renderedwidget.h"
 
@@ -7,14 +7,14 @@
 
 namespace GfxPaint {
 
-class ColourSliderWidget : public GfxPaint::RenderedWidget
+class ColourComponentSliderWidget : public GfxPaint::RenderedWidget
 {
     Q_OBJECT
 
 public:
-    explicit ColourSliderWidget(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent = nullptr);
-    explicit ColourSliderWidget(QWidget *const parent = nullptr);
-    virtual ~ColourSliderWidget() override;
+    explicit ColourComponentSliderWidget(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent = nullptr);
+    explicit ColourComponentSliderWidget(QWidget *const parent = nullptr);
+    virtual ~ColourComponentSliderWidget() override;
 
     virtual QSize sizeHint() const override { return QSize(128, 32); }
     virtual QSize minimumSizeHint() const override { return QSize(64, 16); }
@@ -62,4 +62,4 @@ protected:
 
 } // namespace GfxPaint
 
-#endif // COLOURSLIDERWIDGET_H
+#endif // COLOURCOMPONENTSLIDERWIDGET_H

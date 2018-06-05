@@ -19,54 +19,54 @@ const QTransform RenderManager::flipTransform(
         0.0, 0.0, 1.0);
 
 const QMap<ColourSpaceConversion, QString> RenderManager::colourSpaceConversionShaderFunctionNames = {
-    {ColourSpaceConversion(ColourSpace::RGB, ColourSpace::sRGB), "rgb_to_srgb"},
-    {ColourSpaceConversion(ColourSpace::RGB, ColourSpace::XYZ), "rgb_to_xyz"},
-    {ColourSpaceConversion(ColourSpace::RGB, ColourSpace::xyY), "rgb_to_xyY"},
-    {ColourSpaceConversion(ColourSpace::RGB, ColourSpace::HSV), "rgb_to_hsv"},
-    {ColourSpaceConversion(ColourSpace::RGB, ColourSpace::HSL), "rgb_to_hsl"},
-    {ColourSpaceConversion(ColourSpace::RGB, ColourSpace::HCY), "rgb_to_hcy"},
+    {{ColourSpace::RGB, ColourSpace::sRGB}, "rgb_to_srgb"},
+    {{ColourSpace::RGB, ColourSpace::XYZ}, "rgb_to_xyz"},
+    {{ColourSpace::RGB, ColourSpace::xyY}, "rgb_to_xyY"},
+    {{ColourSpace::RGB, ColourSpace::HSV}, "rgb_to_hsv"},
+    {{ColourSpace::RGB, ColourSpace::HSL}, "rgb_to_hsl"},
+    {{ColourSpace::RGB, ColourSpace::HCY}, "rgb_to_hcy"},
 
-    {ColourSpaceConversion(ColourSpace::sRGB, ColourSpace::RGB), "srgb_to_rgb"},
-    {ColourSpaceConversion(ColourSpace::sRGB, ColourSpace::XYZ), "srgb_to_xyz"},
-    {ColourSpaceConversion(ColourSpace::sRGB, ColourSpace::xyY), "srgb_to_xyY"},
-    {ColourSpaceConversion(ColourSpace::sRGB, ColourSpace::HSV), "srgb_to_hsv"},
-    {ColourSpaceConversion(ColourSpace::sRGB, ColourSpace::HSL), "srgb_to_hsl"},
-    {ColourSpaceConversion(ColourSpace::sRGB, ColourSpace::HCY), "srgb_to_hcy"},
+    {{ColourSpace::sRGB, ColourSpace::RGB}, "srgb_to_rgb"},
+    {{ColourSpace::sRGB, ColourSpace::XYZ}, "srgb_to_xyz"},
+    {{ColourSpace::sRGB, ColourSpace::xyY}, "srgb_to_xyY"},
+    {{ColourSpace::sRGB, ColourSpace::HSV}, "srgb_to_hsv"},
+    {{ColourSpace::sRGB, ColourSpace::HSL}, "srgb_to_hsl"},
+    {{ColourSpace::sRGB, ColourSpace::HCY}, "srgb_to_hcy"},
 
-    {ColourSpaceConversion(ColourSpace::XYZ, ColourSpace::RGB), "xyz_to_rgb"},
-    {ColourSpaceConversion(ColourSpace::XYZ, ColourSpace::sRGB), "xyz_to_srgb"},
-    {ColourSpaceConversion(ColourSpace::XYZ, ColourSpace::xyY), "xyz_to_xyY"},
-    {ColourSpaceConversion(ColourSpace::XYZ, ColourSpace::HSV), "xyz_to_hsv"},
-    {ColourSpaceConversion(ColourSpace::XYZ, ColourSpace::HSL), "xyz_to_hsl"},
-    {ColourSpaceConversion(ColourSpace::XYZ, ColourSpace::HCY), "xyz_to_hcy"},
+    {{ColourSpace::XYZ, ColourSpace::RGB}, "xyz_to_rgb"},
+    {{ColourSpace::XYZ, ColourSpace::sRGB}, "xyz_to_srgb"},
+    {{ColourSpace::XYZ, ColourSpace::xyY}, "xyz_to_xyY"},
+    {{ColourSpace::XYZ, ColourSpace::HSV}, "xyz_to_hsv"},
+    {{ColourSpace::XYZ, ColourSpace::HSL}, "xyz_to_hsl"},
+    {{ColourSpace::XYZ, ColourSpace::HCY}, "xyz_to_hcy"},
 
-    {ColourSpaceConversion(ColourSpace::xyY, ColourSpace::RGB), "xyY_to_rgb"},
-    {ColourSpaceConversion(ColourSpace::xyY, ColourSpace::sRGB), "xyY_to_srgb"},
-    {ColourSpaceConversion(ColourSpace::xyY, ColourSpace::XYZ), "xyY_to_xyz"},
-    {ColourSpaceConversion(ColourSpace::xyY, ColourSpace::HSV), "xyY_to_hsv"},
-    {ColourSpaceConversion(ColourSpace::xyY, ColourSpace::HSL), "xyY_to_hsl"},
-    {ColourSpaceConversion(ColourSpace::xyY, ColourSpace::HCY), "xyY_to_hcy"},
+    {{ColourSpace::xyY, ColourSpace::RGB}, "xyY_to_rgb"},
+    {{ColourSpace::xyY, ColourSpace::sRGB}, "xyY_to_srgb"},
+    {{ColourSpace::xyY, ColourSpace::XYZ}, "xyY_to_xyz"},
+    {{ColourSpace::xyY, ColourSpace::HSV}, "xyY_to_hsv"},
+    {{ColourSpace::xyY, ColourSpace::HSL}, "xyY_to_hsl"},
+    {{ColourSpace::xyY, ColourSpace::HCY}, "xyY_to_hcy"},
 
-    {ColourSpaceConversion(ColourSpace::HSV, ColourSpace::RGB), "hsv_to_rgb"},
-    {ColourSpaceConversion(ColourSpace::HSV, ColourSpace::sRGB), "hsv_to_srgb"},
-    {ColourSpaceConversion(ColourSpace::HSV, ColourSpace::XYZ), "hsv_to_xyz"},
-    {ColourSpaceConversion(ColourSpace::HSV, ColourSpace::xyY), "hsv_to_xyY"},
-    {ColourSpaceConversion(ColourSpace::HSV, ColourSpace::HSL), "hsv_to_hsl"},
-    {ColourSpaceConversion(ColourSpace::HSV, ColourSpace::HCY), "hsv_to_hcy"},
+    {{ColourSpace::HSV, ColourSpace::RGB}, "hsv_to_rgb"},
+    {{ColourSpace::HSV, ColourSpace::sRGB}, "hsv_to_srgb"},
+    {{ColourSpace::HSV, ColourSpace::XYZ}, "hsv_to_xyz"},
+    {{ColourSpace::HSV, ColourSpace::xyY}, "hsv_to_xyY"},
+    {{ColourSpace::HSV, ColourSpace::HSL}, "hsv_to_hsl"},
+    {{ColourSpace::HSV, ColourSpace::HCY}, "hsv_to_hcy"},
 
-    {ColourSpaceConversion(ColourSpace::HSL, ColourSpace::RGB), "hsl_to_rgb"},
-    {ColourSpaceConversion(ColourSpace::HSL, ColourSpace::sRGB), "hsl_to_srgb"},
-    {ColourSpaceConversion(ColourSpace::HSL, ColourSpace::XYZ), "hsl_to_xyz"},
-    {ColourSpaceConversion(ColourSpace::HSL, ColourSpace::xyY), "hsl_to_xyY"},
-    {ColourSpaceConversion(ColourSpace::HSL, ColourSpace::HSV), "hsl_to_hsv"},
-    {ColourSpaceConversion(ColourSpace::HSL, ColourSpace::HCY), "hsl_to_hcy"},
+    {{ColourSpace::HSL, ColourSpace::RGB}, "hsl_to_rgb"},
+    {{ColourSpace::HSL, ColourSpace::sRGB}, "hsl_to_srgb"},
+    {{ColourSpace::HSL, ColourSpace::XYZ}, "hsl_to_xyz"},
+    {{ColourSpace::HSL, ColourSpace::xyY}, "hsl_to_xyY"},
+    {{ColourSpace::HSL, ColourSpace::HSV}, "hsl_to_hsv"},
+    {{ColourSpace::HSL, ColourSpace::HCY}, "hsl_to_hcy"},
 
-    {ColourSpaceConversion(ColourSpace::HCY, ColourSpace::RGB), "hcy_to_rgb"},
-    {ColourSpaceConversion(ColourSpace::HCY, ColourSpace::sRGB), "hcy_to_srgb"},
-    {ColourSpaceConversion(ColourSpace::HCY, ColourSpace::XYZ), "hcy_to_xyz"},
-    {ColourSpaceConversion(ColourSpace::HCY, ColourSpace::xyY), "hcy_to_xyY"},
-    {ColourSpaceConversion(ColourSpace::HCY, ColourSpace::HSV), "hcy_to_hsv"},
-    {ColourSpaceConversion(ColourSpace::HCY, ColourSpace::HSL), "hcy_to_hsl"},
+    {{ColourSpace::HCY, ColourSpace::RGB}, "hcy_to_rgb"},
+    {{ColourSpace::HCY, ColourSpace::sRGB}, "hcy_to_srgb"},
+    {{ColourSpace::HCY, ColourSpace::XYZ}, "hcy_to_xyz"},
+    {{ColourSpace::HCY, ColourSpace::xyY}, "hcy_to_xyY"},
+    {{ColourSpace::HCY, ColourSpace::HSV}, "hcy_to_hsv"},
+    {{ColourSpace::HCY, ColourSpace::HSL}, "hcy_to_hsl"},
 };
 
 const QList<RenderManager::DistanceMetricInfo> RenderManager::distanceMetrics = {
@@ -202,7 +202,7 @@ const vec2 vertices[4] = vec2[](
     return src;
 }
 
-QString RenderManager::geometryVertexShaderPart()
+QString RenderManager::modelVertexShaderPart()
 {
     QString src;
     src +=
@@ -297,7 +297,14 @@ QString RenderManager::bufferShaderPart(const QString &name, const GLint bufferT
 R"(
 uniform layout(location = %2) %3 %1Texture;
 
+Colour %1Sample(const vec2 pos) {
+    return Colour(vec4(1, 0, 0, 1), UINT_MAX);
+}
+
 vec4 %1(const vec2 pos) {
+    Colour c = %1Sample(pos);
+    c.rgba = vec4(1, 0, 0, 1);
+    c.index = UINT_MAX;
 )";
     if (indexed && paletteFormat.isValid()) src +=
 R"(
@@ -327,7 +334,7 @@ R"(
     return src;
 }
 
-QString RenderManager::geometryShaderPart(const QString &name)
+QString RenderManager::modelFragmentShaderPart(const QString &name)
 {
     QString src;
     src +=
@@ -555,6 +562,22 @@ void main(void) {
 }
 )";
     return src;
+}
+
+void RenderManager::bindBufferShaderPart(QOpenGLShaderProgram &program, const QString &name, const GLint bufferTextureLocation, const Buffer * const buffer)
+{
+    glUniform1i(program.uniformLocation(name + "Texture"), bufferTextureLocation);
+    buffer->bindTextureUnit(bufferTextureLocation);
+//    glUniform1i(program.uniformLocation(name + "Image"), 0);
+//    buffer->bindImageUnit(0);
+}
+
+void RenderManager::bindIndexedBufferShaderPart(QOpenGLShaderProgram &program, const QString &name, const GLint bufferTextureLocation, const Buffer *const buffer, const bool indexed, const GLint paletteTextureLocation, const Buffer *const palette)
+{
+    bindBufferShaderPart(program, name, bufferTextureLocation, buffer);
+    if (indexed && palette) {
+        bindBufferShaderPart(program, name + "Palette", paletteTextureLocation, palette);
+    }
 }
 
 } // namespace GfxPaint

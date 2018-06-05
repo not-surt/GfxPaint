@@ -288,7 +288,10 @@ bool Editor::handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifie
             BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
             if (bufferNode) {
                 const QPointF mouseBufferPos = state.transform.inverted().map(mouseWorldPos);
-                setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, mouseBufferPos));
+                int index = -2;
+                qDebug() << index << state.palette;
+                ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+                setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, mouseBufferPos, &index));
             }
         }
     }
@@ -391,7 +394,8 @@ void Editor::wheelEvent(QWheelEvent *event)
     const QPointF mouseViewportPos = mouseTransform.map(event->posF());
     const QPointF mouseWorldPos = cameraTransform.inverted().map(QPointF(mouseViewportPos));
     const qreal delta = event->angleDelta().y() / (15.0 * 8.0);
-    qDebug() << delta << event->angleDelta() << event->pixelDelta() << event->phase();//////////////////////////////////
+    // why sometimes accumulate?
+//    qDebug() << delta << event->angleDelta() << event->pixelDelta() << event->phase();//////////////////////////////////
     const qreal scaling = pow(2, delta);
     const qreal rotation = -15.0 * delta;
     rotateScaleAtOrigin(cameraTransform,

@@ -3,7 +3,7 @@
 
 #include <QWidget>
 
-#include "coloursliderwidget.h"
+#include "colourcomponentsliderwidget.h"
 
 namespace GfxPaint {
 
@@ -25,13 +25,13 @@ public slots:
     void setColour(const QColor &colour);
     void setPalette(const Buffer *const palette);
 
-protected slots:
-    void updateColour();
-
 signals:
     void colourChanged(const QColor &colour);
 
 private:
+    void updateSliderColours();
+    void updateSliderPositions();
+    void updateColourFromSliders();
     void updateWidgets();
 
     Ui::ColourSpaceSlidersWidget *ui;

@@ -2,6 +2,7 @@
 #include "ui_colourspacesliderswidget.h"
 
 #include "application.h"
+#include "utils.h"
 
 namespace GfxPaint {
 
@@ -19,6 +20,7 @@ ColourSpaceSlidersWidget::ColourSpaceSlidersWidget(QWidget *parent) :
     QObject::connect(ui->quantiseCheckBox, &QCheckBox::toggled, this, &ColourSpaceSlidersWidget::updateWidgets);
 
     updateWidgets();
+    setColour(m_colour);
 }
 
 ColourSpaceSlidersWidget::~ColourSpaceSlidersWidget()
@@ -41,7 +43,9 @@ void ColourSpaceSlidersWidget::setColour(const QColor &colour)
 {
     if (m_colour != colour) {
         m_colour = colour;
-        updateColour();
+        updateSliderColours();
+        updateSliderPositions();
+        emit colourChanged(m_colour);
     }
 }
 
@@ -53,17 +57,45 @@ void ColourSpaceSlidersWidget::setPalette(const Buffer *const palette)
     }
 }
 
-void ColourSpaceSlidersWidget::updateColour()
+void ColourSpaceSlidersWidget::updateSliderColours()
 {
     const ColourSpace colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
     for (int i = 0; i < componentCount; ++i) {
-        ColourSliderWidget *const colourSlider = static_cast<ColourSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
+        ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
         colourSlider->blockSignals(true);
         colourSlider->setColour(m_colour);
         colourSlider->blockSignals(false);
     }
-    emit colourChanged(m_colour);
+}
+
+void ColourSpaceSlidersWidget::updateSliderPositions()
+{
+    const ColourSpace colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
+    const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
+    GLfloat rgbColour[4], spaceColour[4];
+    qColorCopyToGLArray(m_colour, rgbColour);
+    fromRGBConversionProgram->convert(rgbColour, spaceColour);
+    for (int i = 0; i < componentCount; ++i) {
+        ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
+        colourSlider->blockSignals(true);
+        colourSlider->setPos(clamp(0.0f, 1.0f, spaceColour[i]));
+        colourSlider->blockSignals(false);
+    }
+}
+
+void ColourSpaceSlidersWidget::updateColourFromSliders()
+{
+    const ColourSpace colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
+    const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
+    GLfloat spaceColour[componentCount];
+    for (int i = 0; i < componentCount; ++i) {
+        ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
+        spaceColour[i] = clamp(0.0, 1.0, colourSlider->pos());
+    }
+    GLfloat rgbColour[4];
+    toRGBConversionProgram->convert(spaceColour, rgbColour);
+    qColorFillFromGLArray(m_colour, rgbColour);
 }
 
 void ColourSpaceSlidersWidget::updateWidgets()
@@ -81,17 +113,17 @@ void ColourSpaceSlidersWidget::updateWidgets()
     }
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
     for (int i = 0; i < componentCount; ++i) {
-        ColourSliderWidget *const colourSlider = new ColourSliderWidget(colourSpace, i, ui->quantiseCheckBox->isChecked() && m_palette, m_palette ? m_palette->format() : Buffer::Format());
+        ColourComponentSliderWidget *const colourSlider = new ColourComponentSliderWidget(colourSpace, i, ui->quantiseCheckBox->isChecked() && m_palette, m_palette ? m_palette->format() : Buffer::Format());
         ui->colourSliderLayout->addWidget(colourSlider);
-        colourSlider->setColour(m_colour);
         colourSlider->setPalette(m_palette);
-        QObject::connect(colourSlider, &ColourSliderWidget::colourChanged, this, &ColourSpaceSlidersWidget::setColour);
-        QObject::connect(colourSlider, &ColourSliderWidget::posChanged, [this](const GLfloat pos){
-//            setColour(toRGBConversionProgram->convert());
+        QObject::connect(colourSlider, &ColourComponentSliderWidget::posChanged, [this](const GLfloat pos){
+            updateColourFromSliders();
+            updateSliderColours();
+            emit colourChanged(m_colour);
         });
     }
-
-    updateColour();
+    updateSliderPositions();
+    updateSliderColours();
 }
 
 } // namespace GfxPaint

@@ -130,8 +130,6 @@ public:
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
     }
-    virtual ~BufferProgram() override {
-    }
 
     void render(Buffer *const src, const Buffer *const srcPalette, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
 
@@ -156,8 +154,6 @@ public:
         uniformData{}
     {
         updateKey(typeid(this), {});
-    }
-    virtual ~ModelProgram() override {
     }
 
     void render(Model *const model, const QColor &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
@@ -373,11 +369,6 @@ public:
         storageData{}
     {
         updateKey(typeid(this), {static_cast<int>(from), static_cast<int>(to)});
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
-    }
-    virtual ~ColourConversionProgram() override {
     }
 
     void convert(const float from[4], float to[4]);
@@ -400,20 +391,15 @@ protected:
 
 class ColourPickProgram : public ToolProgram {
 public:
-    ColourPickProgram(const Buffer::Format format) :
+    ColourPickProgram(const Buffer::Format format, const bool indexed, const Buffer::Format paletteFormat) :
         ToolProgram(),
-        format(format),
+        format(format), indexed(indexed), paletteFormat(paletteFormat),
         storageData{}
     {
-        updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount});
-
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
-    }
-    virtual ~ColourPickProgram() override {
+        updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount, indexed, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
 
-    QColor pick(Buffer *const src, const QPointF pos);
+    QColor pick(const Buffer *const src, const Buffer *const srcPalette, const QPointF pos, int *const index = nullptr);
 
 protected:
     struct StorageData {
@@ -424,6 +410,8 @@ protected:
     virtual QOpenGLShaderProgram *createProgram() const override;
 
     const Buffer::Format format;
+    const bool indexed;
+    const Buffer::Format paletteFormat;
 
     StorageData storageData;
 };

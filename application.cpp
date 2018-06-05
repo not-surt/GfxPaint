@@ -113,7 +113,7 @@ Application::Application(int &argc, char **argv)
     m_paletteActions.setExclusive(true);
     setPalette(palettes["Default"]);
 
-    QList<QPair<QString, QString>> stylesheetFilenames = {
+    QList<std::pair<QString, QString>> stylesheetFilenames = {
         {"QDarkStyle", ":qdarkstyle/style.qss"},
         {"Dark Orange", ":/darkorange.qss"}
     };

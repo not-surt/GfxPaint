@@ -44,7 +44,7 @@ void EditingContext::updatePrograms()
             Traversal::State &state = m_states[node];
             m_bufferNodeContexts.insert(bufferNode, new BufferNodeContext(
                 new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_brush.dab.blendMode, m_brush.dab.composeMode),
-                new ColourPickProgram(bufferNode->buffer.format()),
+                new ColourPickProgram(bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format()),
                 new Buffer(bufferNode->buffer),
                 new Buffer(bufferNode->buffer.size(), Buffer::Format(Buffer::Format::ComponentType::Float, 4, 3))
             ));

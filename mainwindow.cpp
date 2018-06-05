@@ -153,7 +153,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     mainMenuToolButton->setMenu(mainMenu);
     ui->mainToolBar->insertWidget(ui->mainToolBar->actions()[0], centringWidget(mainMenuToolButton));
 
-    const QList<QPair<QList<QAction *>, QAction *>> toolGroups = {
+    const QList<std::pair<QList<QAction *>, QAction *>> toolGroups = {
         {{ui->actionDot, ui->actionDottedFreehand, ui->actionContinuousFreehand}, ui->actionContinuousFreehand},
         {{ui->actionLineSingle, ui->actionLineMulti}, ui->actionLineSingle},
         {{ui->actionCurveSingle, ui->actionCurveDouble}, ui->actionCurveSingle},
@@ -589,6 +589,7 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::colourChanged, activeEditor, &Editor::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->brushViewWidget, &BrushViewWidget::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::setPalette);
+//        ui->colourSpaceSlidersWidget->setColour(activeEditor->editingContext().colour());
 
         ui->sceneTreeWidget->setEnabled(true);
         ui->sceneTreeWidget->setEditor(editor);
