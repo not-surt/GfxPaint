@@ -391,7 +391,7 @@ R"(
 uniform layout(location = 3) vec2 pos;
 layout(std430, binding = 0) buffer storageData
 {
-    vec4 colour;
+    vec4 rgba;
     uint index;
 };
 )";
@@ -402,16 +402,18 @@ R"(
 R"(
 layout (local_size_x = 1, local_size_y = 1) in;
 void main() {
-    colour = vec4(src(pos));
+    Colour colour = src(pos);
 )";
     if (indexed) compSrc +=
 R"(
-    colour = vec4(texelFetch(srcPaletteTexture, ivec2(1, 0)).x);
-    index = 1;
+    index = colour.index;
+//    rgba = vec4(texelFetch(srcPaletteTexture, ivec2(index, 0)));
+    rgba = srcPalette(index);
 )";
     else compSrc +=
 R"(
-    index = 0;
+    rgba = colour.rgba;
+    index = colour.index;
 )";
     compSrc +=
 R"(
@@ -423,7 +425,7 @@ R"(
     return program;
 }
 
-QColor ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcPalette, const QPointF pos, int *const index)
+QColor ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcPalette, const QPointF pos, uint *const index)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
@@ -440,7 +442,7 @@ QColor ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcP
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(StorageData), &storageData);
     QColor colour;
-    qColorFillFromGLArray(colour, storageData.colour);
+    qColorFillFromGLArray(colour, storageData.rgba);
     if (index) *index = (indexed ? storageData.index : -1);
     return colour;
 }

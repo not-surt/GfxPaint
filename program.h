@@ -399,11 +399,11 @@ public:
         updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount, indexed, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
 
-    QColor pick(const Buffer *const src, const Buffer *const srcPalette, const QPointF pos, int *const index = nullptr);
+    QColor pick(const Buffer *const src, const Buffer *const srcPalette, const QPointF pos, uint *const index = nullptr);
 
 protected:
     struct StorageData {
-        GLfloat colour[4];
+        GLfloat rgba[4];
         GLuint index;
     };
 

@@ -18,5 +18,6 @@
         <file>blending.glsl</file>
         <file>distance.glsl</file>
         <file>quantise.glsl</file>
+        <file>header.glsl</file>
     </qresource>
 </RCC>

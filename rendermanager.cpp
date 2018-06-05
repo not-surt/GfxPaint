@@ -162,6 +162,7 @@ QString RenderManager::headerShaderPart()
 R"(
 #version %1 core
 )";
+    src += fileToString(":/shaders/header.glsl");
     src += fileToString(":/shaders/util.glsl");
     return src.arg(OPENGL_GLSL_VERSION_STRING);
 }
@@ -297,32 +298,26 @@ QString RenderManager::bufferShaderPart(const QString &name, const GLint bufferT
 R"(
 uniform layout(location = %2) %3 %1Texture;
 
-Colour %1Sample(const vec2 pos) {
-    return Colour(vec4(1, 0, 0, 1), UINT_MAX);
-}
-
-vec4 %1(const vec2 pos) {
-    Colour c = %1Sample(pos);
-    c.rgba = vec4(1, 0, 0, 1);
-    c.index = UINT_MAX;
+Colour %1(const vec2 pos) {
+    uint index = UINT_MAX;
 )";
     if (indexed && paletteFormat.isValid()) src +=
 R"(
-    const uint index = texelFetch(%1Texture, ivec2(floor(pos))).x;
-    const vec4 colour = %1Palette(index);
+    index = texelFetch(%1Texture, ivec2(floor(pos))).x;
+    const vec4 rgba = %1Palette(index);
 )";
     else if (indexed && !paletteFormat.isValid()) src +=
 R"(
     const float grey = texelFetch(%1Texture, ivec2(floor(pos))).x / float(%4);
-    const vec4 colour = vec4(grey, grey, grey, 1.0);
+    const vec4 rgba = vec4(grey, grey, grey, 1.0);
 )";
     else src +=
 R"(
-    const vec4 colour = vec4(texelFetch(%1Texture, ivec2(floor(pos)))) / float(%4);
+    const vec4 rgba = vec4(texelFetch(%1Texture, ivec2(floor(pos)))) / float(%4);
 )";
     src +=
 R"(
-    return colour;
+    return Colour(rgba, index);
 }
 )";
     stringMultiReplace(src, {
@@ -342,8 +337,8 @@ R"(
 //in layout(location = 0) vec2 pos;
 in layout(location = 1) vec4 colour;
 
-vec4 %1(const vec2 pos) {
-    return colour;
+Colour %1(const vec2 pos) {
+    return Colour(colour, UINT_MAX);
 }
 )";
     stringMultiReplace(src, {
@@ -393,12 +388,12 @@ layout(std140, binding = 0) uniform Data {
 uniform float %1Hardness = 0.0;
 uniform float %1Opacity = 1.0;
 uniform vec4 %1Colour = vec4(0.0, 0.25, 0.75, 1.0);
-vec4 %1(const vec2 pos) {
+Colour %1(const vec2 pos) {
     float weight;
     weight = clamp(1.0 - %1Brush(pos), 0.0, 1.0);
     weight = clamp(weight * (1.0 / (1.0 - %1Hardness)), 0.0, 1.0);
     weight *= %1Opacity;
-    return vec4(%1Colour.rgb, %1Colour.a * weight);
+    return Colour(vec4(%1Colour.rgb, %1Colour.a * weight), UINT_MAX);
 }
 )";
     stringMultiReplace(src, {
@@ -422,7 +417,7 @@ layout(std140, binding = 0) uniform Data {
     vec4 colour;
 } data;
 vec4 %1Colour = data.colour;
-vec4 %1(const vec2 pos) {
+Colour %1(const vec2 pos) {
 )";
     if (component == colourSpaceInfo[colourSpace].componentCount) src +=
 R"(
@@ -448,7 +443,7 @@ R"(
 )";
     src +=
 R"(
-    return vec4(rgb, alpha);
+    return Colour(vec4(rgb, alpha), UINT_MAX);
 }
 )";
     stringMultiReplace(src, {
@@ -462,46 +457,6 @@ R"(
 
 QString RenderManager::colourPlaneShaderPart(const QString &name, const ColourSpace colourSpace, const int componentX, const int componentY, const bool quantise)
 {
-    QString src;
-    src += fileToString(":/shaders/thirdparty/ColorSpaces.inc.glsl");
-    src +=
-R"(
-layout(std140, binding = 0) uniform Data {
-    vec4 colour;
-} data;
-vec4 %1Colour = data.colour;
-vec4 %1(const vec2 pos) {
-)";
-    if (componentX == colourSpaceInfo[colourSpace].componentCount) src +=
-R"(
-    const float alpha = pos.x;
-    const vec3 rgb = %1Colour.rgb;
-)";
-    else if (colourSpace != ColourSpace::RGB) src +=
-R"(
-    const float alpha = %1Colour.a;
-    vec3 %2 = rgb_to_%2(%1Colour.rgb);
-    %2[%3] = pos.x;
-    const vec3 rgb = %2_to_rgb(%2);
-)";
-    else src +=
-R"(
-    const float alpha = %1Colour.a;
-    vec3 rgb = %1Colour.rgb;
-    rgb[%3] = pos.x;
-)";
-    src +=
-R"(
-    return vec4(rgb, alpha);
-}
-)";
-    stringMultiReplace(src, {
-        {"%1", name},
-        {"%2", colourSpaceInfo[colourSpace].funcName},
-        {"%3", QString::number(componentX)},
-        {"%4", QString::number(componentY)},
-    });
-    return src;
 }
 
 QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat, const int blendMode, const int composeMode)
@@ -517,10 +472,10 @@ in layout(location = 0) vec2 pos;
 out %1 fragment;
 
 void main(void) {
-    const vec4 destColour = dest(gl_FragCoord.xy);
-    const vec4 srcColour = src(pos);
-    const vec4 blended = vec4(%4(destColour.rgb, srcColour.rgb), srcColour.a);
-    const vec4 fragmentColour = unpremultiply(%5(destColour, blended));
+    const Colour destColour = dest(gl_FragCoord.xy);
+    const Colour srcColour = src(pos);
+    const vec4 blended = vec4(%4(destColour.rgba.rgb, srcColour.rgba.rgb), srcColour.rgba.a);
+    const vec4 fragmentColour = unpremultiply(%5(destColour.rgba, blended));
 )";
     if (indexed && paletteFormat.isValid()) src +=
 R"(
@@ -558,7 +513,7 @@ in layout(location = 0) vec2 pos;
 out vec4 fragment;
 
 void main(void) {
-    fragment = premultiply(src(pos));
+    fragment = premultiply(src(pos).rgba);
 }
 )";
     return src;
