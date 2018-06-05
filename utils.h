@@ -11,6 +11,7 @@
 #include <QTransform>
 #include "opengl.h"
 #include "buffer.h"
+#include "types.h"
 
 namespace GfxPaint {
 
@@ -52,11 +53,11 @@ void stringMultiReplace(QString &string, const QMap<QString, QString> &replaceme
 
 QTransform viewportTransform(const QSize size);
 
-void qTransformCopyToGLArray(const QTransform &transform, GLfloat array[3][3]);
-void qTransformFillFromGLArray(QTransform &transform, const GLfloat array[3][3]);
+void qTransformCopyToGLArray(const QTransform &transform, mat3 &matrix);
+void qTransformFillFromGLArray(QTransform &transform, const mat3 &matrix);
 
-void qColorCopyToGLArray(const QColor &colour, GLfloat array[4]);
-void qColorFillFromGLArray(QColor &colour, const GLfloat array[4]);
+void qColorCopyToGLArray(const QColor &qColor, vec4 &colour);
+void qColorFillFromGLArray(QColor &qColor, const vec4 &colour);
 
 Buffer bufferFromImageFile(const QString &filename, Buffer *const palette = nullptr);
 

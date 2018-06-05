@@ -63,7 +63,7 @@ public:
 
 public slots:
     void setBrush(const Brush &brush);
-    void setColour(const QColor &colour);
+    void setColour(const Colour &colour);
     void setTransformMode(const TransformMode transformMode);
     void setTransform(const QTransform &transform);
     void updateContext();
@@ -81,7 +81,7 @@ protected slots:
 
 signals:
     void brushChanged(const Brush &brush);
-    void colourChanged(const QColor &colour);
+    void colourChanged(const Colour &colour);
     void paletteChanged(Buffer *const palette);
     void transformModeChanged(const TransformMode transformMode);
     void transformChanged(const QTransform &transform);
@@ -100,8 +100,8 @@ protected:
     static QTransform transformPointToPoint(const QPointF origin, const QPointF from, const QPointF to);
     bool handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifiers modifiers, const Qt::MouseButton button, const QPoint pos);
     qreal strokeSegmentDabs(const QPointF start, const QPointF end, const qreal spacing, const qreal offset, QList<QPointF> &output);
-    void drawDab(const Dab &dab, const QColor &colour, BufferNode &node, const QPointF worldPos);
-    void drawSegment(const Dab &dab, const Stroke &stroke, const QColor &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset);
+    void drawDab(const Dab &dab, const Colour &colour, BufferNode &node, const QPointF worldPos);
+    void drawSegment(const Dab &dab, const Stroke &stroke, const Colour &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset);
     EditingContext m_editingContext;
 
     QTransform cameraTransform;

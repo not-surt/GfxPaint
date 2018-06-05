@@ -19,16 +19,16 @@ public:
     virtual QSize sizeHint() const override { return QSize(128, 32); }
     virtual QSize minimumSizeHint() const override { return QSize(64, 16); }
 
-    QColor colour() const { return m_colour; }
+    Colour colour() const { return m_colour; }
     qreal pos() const { return m_pos; }
 
 public slots:
-    void setColour(const QColor &colour);
+    void setColour(const Colour &colour);
     void setPalette(const Buffer *const palette);
     void setPos(const qreal pos);
 
 signals:
-    void colourChanged(const QColor &colour);
+    void colourChanged(const Colour &colour);
     void posChanged(const qreal pos);
 
 protected:
@@ -50,7 +50,7 @@ protected:
     ModelProgram *markerProgram;
 
     qreal m_pos;
-    QColor m_colour;
+    Colour m_colour;
     const Buffer *m_palette;
     Model *markerModel;
 

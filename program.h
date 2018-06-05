@@ -135,7 +135,7 @@ public:
 
 protected:
     struct UniformData {
-        GLfloat matrix[3][3];
+        mat3 matrix;
     };
 
     virtual QOpenGLShaderProgram *createProgram() const override;
@@ -156,11 +156,11 @@ public:
         updateKey(typeid(this), {});
     }
 
-    void render(Model *const model, const QColor &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(Model *const model, const Colour &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     struct UniformData {
-        GLfloat matrix[3][3];
+        mat3 matrix;
     };
 
     virtual QOpenGLShaderProgram *createProgram() const override;
@@ -185,12 +185,12 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void render(const Dab &dab, const QColor &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const Dab &dab, const Colour &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     struct UniformData {
-        GLfloat matrix[3][3];
-        GLfloat colour[4];
+        mat3 matrix;
+        Colour colour;
         GLfloat hardness;
         GLfloat alpha;
     };
@@ -223,11 +223,11 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void render(const QColor &colour, const ColourSpace colourSpace, const int component, const QTransform &transform, Buffer *const dest, const Buffer *const quantisePalette);
+    void render(const Colour &colour, const ColourSpace colourSpace, const int component, const QTransform &transform, Buffer *const dest, const Buffer *const quantisePalette);
 
 protected:
     struct UniformData {
-        GLfloat colour[4];
+        Colour colour;
     };
 
     virtual QOpenGLShaderProgram *createProgram() const override;
@@ -249,7 +249,7 @@ public:
         Program(),
         colourSpace(colourSpace), component(component),
         quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
-        uniformBuffer(0), storageBuffer(0), storageData{}
+        uniformBuffer(0), storageBuffer(0)
     {
         updateKey(typeid(this), {static_cast<int>(colourSpace), component, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount});
 
@@ -266,13 +266,9 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    QColor pick(QColor colour, const float pos, const Buffer *const quantisePalette);
+    Colour pick(Colour colour, const float pos, const Buffer *const quantisePalette);
 
 protected:
-    struct StorageData {
-        GLfloat colour[4];
-    };
-
     virtual QOpenGLShaderProgram *createProgram() const override;
 
     const ColourSpace colourSpace;
@@ -282,7 +278,6 @@ protected:
 
     GLuint uniformBuffer;
     GLuint storageBuffer;
-    StorageData storageData;
 };
 
 class ColourPlaneProgram : public Program {
@@ -305,11 +300,11 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void render(const QColor &colour, const ColourSpace colourSpace, const int componentX, const int componentY, const QTransform &transform, Buffer *const dest);
+    void render(const Colour &colour, const ColourSpace colourSpace, const int componentX, const int componentY, const QTransform &transform, Buffer *const dest);
 
 protected:
     struct UniformData {
-        GLfloat colour[4];
+        Colour colour;
     };
 
     virtual QOpenGLShaderProgram *createProgram() const override;
@@ -365,55 +360,37 @@ class ColourConversionProgram : public ToolProgram {
 public:
     ColourConversionProgram(const ColourSpace from, const ColourSpace to) :
         ToolProgram(),
-        from(from), to(to),
-        storageData{}
+        from(from), to(to)
     {
         updateKey(typeid(this), {static_cast<int>(from), static_cast<int>(to)});
     }
 
-    void convert(const float from[4], float to[4]);
-    void convert(float value[4]) {
-        convert(value, value);
-    }
+    Colour convert(const Colour &colour);
 
 protected:
-    struct StorageData {
-        GLfloat colour[4];
-    };
-
     virtual QOpenGLShaderProgram *createProgram() const override;
 
     const ColourSpace from;
     const ColourSpace to;
-
-    StorageData storageData;
 };
 
 class ColourPickProgram : public ToolProgram {
 public:
     ColourPickProgram(const Buffer::Format format, const bool indexed, const Buffer::Format paletteFormat) :
         ToolProgram(),
-        format(format), indexed(indexed), paletteFormat(paletteFormat),
-        storageData{}
+        format(format), indexed(indexed), paletteFormat(paletteFormat)
     {
         updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount, indexed, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
 
-    QColor pick(const Buffer *const src, const Buffer *const srcPalette, const QPointF pos, uint *const index = nullptr);
+    Colour pick(const Buffer *const src, const Buffer *const srcPalette, const QPointF pos);
 
 protected:
-    struct StorageData {
-        GLfloat rgba[4];
-        GLuint index;
-    };
-
     virtual QOpenGLShaderProgram *createProgram() const override;
 
     const Buffer::Format format;
     const bool indexed;
     const Buffer::Format paletteFormat;
-
-    StorageData storageData;
 };
 
 class ProgramManager {

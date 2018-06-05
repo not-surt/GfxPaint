@@ -36,11 +36,11 @@ public:
     void updatePrograms();
 
     void setBrush(const Brush &brush);
-    void setColour(const QColor &colour);
+    void setColour(const Colour &colour);
     void setPalette(Buffer *const palette);
 
     const Brush &brush() const { return m_brush; }
-    const QColor colour() const { return m_colour; }
+    const Colour colour() const { return m_colour; }
     Buffer *palette() const { return m_palette; }
     BufferNodeContext *bufferNodeContext(Node *const node) const {
         return m_bufferNodeContexts.value(node);
@@ -51,7 +51,7 @@ public:
 private:
     Scene &scene;
     Brush m_brush;
-    QColor m_colour;
+    Colour m_colour;
     Buffer *m_palette;
     QMap<Node *, BufferNodeContext *> m_bufferNodeContexts;
     QMap<Node *, Traversal::State> m_states;

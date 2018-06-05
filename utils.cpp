@@ -47,36 +47,34 @@ QTransform viewportTransform(const QSize size)
     );
 }
 
-void qTransformCopyToGLArray(const QTransform &transform, GLfloat array[3][3])
+void qTransformCopyToGLArray(const QTransform &transform, mat3 &matrix)
 {
-    const float matrix[3][3] = {
-        {static_cast<GLfloat>(transform.m11()), static_cast<GLfloat>(transform.m12()), static_cast<GLfloat>(transform.m13())},
-        {static_cast<GLfloat>(transform.m21()), static_cast<GLfloat>(transform.m22()), static_cast<GLfloat>(transform.m23())},
-        {static_cast<GLfloat>(transform.m31()), static_cast<GLfloat>(transform.m32()), static_cast<GLfloat>(transform.m33())}
+    matrix = mat3{
+        vec3{static_cast<GLfloat>(transform.m11()), static_cast<GLfloat>(transform.m12()), static_cast<GLfloat>(transform.m13())},
+        vec3{static_cast<GLfloat>(transform.m21()), static_cast<GLfloat>(transform.m22()), static_cast<GLfloat>(transform.m23())},
+        vec3{static_cast<GLfloat>(transform.m31()), static_cast<GLfloat>(transform.m32()), static_cast<GLfloat>(transform.m33())}
     };
-    memcpy(array, matrix, sizeof(GLfloat) * 3 * 3);
 }
 
-void qTransformFillFromGLArray(QTransform &transform, const GLfloat array[3][3])
+void qTransformFillFromGLArray(QTransform &transform, const mat3 &matrix)
 {
     transform.setMatrix(
-        static_cast<qreal>(array[0][0]), static_cast<qreal>(array[0][1]), static_cast<qreal>(array[0][2]),
-        static_cast<qreal>(array[1][0]), static_cast<qreal>(array[1][1]), static_cast<qreal>(array[1][2]),
-        static_cast<qreal>(array[2][0]), static_cast<qreal>(array[2][1]), static_cast<qreal>(array[2][2])
+        static_cast<qreal>(matrix[0][0]), static_cast<qreal>(matrix[0][1]), static_cast<qreal>(matrix[0][2]),
+        static_cast<qreal>(matrix[1][0]), static_cast<qreal>(matrix[1][1]), static_cast<qreal>(matrix[1][2]),
+        static_cast<qreal>(matrix[2][0]), static_cast<qreal>(matrix[2][1]), static_cast<qreal>(matrix[2][2])
     );
 }
 
-void qColorCopyToGLArray(const QColor &colour, GLfloat array[])
+void qColorCopyToGLArray(const QColor &qColor, vec4 &colour)
 {
-    const float matrix[4] = {
-        static_cast<GLfloat>(colour.redF()), static_cast<GLfloat>(colour.greenF()), static_cast<GLfloat>(colour.blueF()), static_cast<GLfloat>(colour.alphaF())
+    colour = vec4{
+        static_cast<GLfloat>(qColor.redF()), static_cast<GLfloat>(qColor.greenF()), static_cast<GLfloat>(qColor.blueF()), static_cast<GLfloat>(qColor.alphaF())
     };
-    memcpy(array, matrix, sizeof(GLfloat) * 4);
 }
 
-void qColorFillFromGLArray(QColor &colour, const GLfloat array[])
+void qColorFillFromGLArray(QColor &qColor, const vec4 &colour)
 {
-    colour.setRgbF(static_cast<qreal>(array[0]), static_cast<qreal>(array[1]), static_cast<qreal>(array[2]), static_cast<qreal>(array[3]));
+    qColor.setRgbF(static_cast<qreal>(colour[0]), static_cast<qreal>(colour[1]), static_cast<qreal>(colour[2]), static_cast<qreal>(colour[3]));
 }
 
 Buffer bufferFromImageFile(const QString &filename, Buffer *const palette)

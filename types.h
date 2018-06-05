@@ -7,10 +7,34 @@
 
 namespace GfxPaint {
 
-typedef struct {
-    GLfloat rgba[4];
-    GLuint index;
-} Colour;
+typedef std::array<GLint, 2> ivec2;
+typedef std::array<GLint, 3> ivec3;
+typedef std::array<GLint, 4> ivec4;
+
+typedef std::array<GLuint, 2> uvec2;
+typedef std::array<GLuint, 3> uvec3;
+typedef std::array<GLuint, 4> uvec4;
+
+typedef std::array<GLfloat, 2> vec2;
+typedef std::array<GLfloat, 3> vec3;
+typedef std::array<GLfloat, 4> vec4;
+
+typedef std::array<vec2, 2> mat2;
+typedef std::array<vec3, 3> mat3;
+typedef std::array<vec4, 4> mat4;
+
+struct Colour {
+    vec4 rgba = {{0.0f}};
+    GLuint index = std::numeric_limits<GLuint>::max();
+
+    inline bool operator==(const Colour &rhs) const {
+        return std::equal(std::begin(rgba), std::end(rgba), std::begin(rhs.rgba))
+                && index == rhs.index;
+    }
+    inline bool operator!=(const Colour &rhs) const {
+        return !operator==(rhs);
+    }
+};
 
 enum class AttributelessModel {
     SingleVertex,

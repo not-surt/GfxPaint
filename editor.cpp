@@ -96,7 +96,7 @@ void Editor::setBrush(const Brush &brush)
     }
 }
 
-void Editor::setColour(const QColor &colour)
+void Editor::setColour(const Colour &colour)
 {
     if (m_editingContext.colour() != colour) {
         m_editingContext.setColour(colour);
@@ -181,7 +181,7 @@ qreal Editor::strokeSegmentDabs(const QPointF start, const QPointF end, const  q
     return pos - length;
 }
 
-void Editor::drawDab(const Dab &dab, const QColor &colour, BufferNode &node, const QPointF worldPos)
+void Editor::drawDab(const Dab &dab, const Colour &colour, BufferNode &node, const QPointF worldPos)
 {
     Q_ASSERT( m_editingContext.bufferNodeContext(&node));
 
@@ -212,7 +212,7 @@ void Editor::drawDab(const Dab &dab, const QColor &colour, BufferNode &node, con
     bufferNodeContext->dabProgram->render(dab, colour, spaceTransform * QTransform().translate(objectSpacePos.x(), objectSpacePos.y()) * GfxPaint::viewportTransform(node.buffer.size()), &node.buffer, palette);
 }
 
-void Editor::drawSegment(const Dab &dab, const Stroke &stroke, const QColor &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset)
+void Editor::drawSegment(const Dab &dab, const Stroke &stroke, const Colour &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset)
 {
 }
 
@@ -290,8 +290,9 @@ bool Editor::handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifie
                 const QPointF mouseBufferPos = state.transform.inverted().map(mouseWorldPos);
                 uint index = UINT_MAX;
                 ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-                setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, mouseBufferPos, &index));
-                qDebug() << index;/////////////////////////////////////
+                Colour colour = bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, mouseBufferPos);
+                setColour(colour);
+                qDebug() << colour.index;/////////////////////////////////////
             }
         }
     }

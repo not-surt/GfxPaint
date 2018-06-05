@@ -7,7 +7,7 @@ namespace GfxPaint {
 EditingContext::EditingContext(Scene &scene) :
     scene(scene),
     m_brush(),
-    m_colour(255, 0, 0, 255),
+    m_colour{{1.0, 0.0, 0.0, 1.0}, UINT_MAX},
     m_palette(nullptr),
     m_bufferNodeContexts(),
     m_selectionModel(qApp->documentManager.documentModel(&scene))
@@ -59,7 +59,7 @@ void EditingContext::setBrush(const Brush &brush)
     updatePrograms();
 }
 
-void EditingContext::setColour(const QColor &colour)
+void EditingContext::setColour(const Colour &colour)
 {
     this->m_colour = colour;
 }

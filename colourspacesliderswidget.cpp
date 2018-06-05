@@ -10,7 +10,7 @@ ColourSpaceSlidersWidget::ColourSpaceSlidersWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::ColourSpaceSlidersWidget),
     fromRGBConversionProgram(nullptr), toRGBConversionProgram(nullptr),
-    m_colour(255, 0, 0, 255),
+    m_colour{{1.0, 0.0, 0.0, 1.0}, UINT_MAX},
     m_palette(nullptr)
 {
     ui->setupUi(this);
@@ -34,12 +34,12 @@ ColourSpaceSlidersWidget::~ColourSpaceSlidersWidget()
     }
 }
 
-QColor ColourSpaceSlidersWidget::colour() const
+Colour ColourSpaceSlidersWidget::colour() const
 {
     return m_colour;
 }
 
-void ColourSpaceSlidersWidget::setColour(const QColor &colour)
+void ColourSpaceSlidersWidget::setColour(const Colour &colour)
 {
     if (m_colour != colour) {
         m_colour = colour;
@@ -73,13 +73,11 @@ void ColourSpaceSlidersWidget::updateSliderPositions()
 {
     const ColourSpace colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
-    GLfloat rgbColour[4], spaceColour[4];
-    qColorCopyToGLArray(m_colour, rgbColour);
-    fromRGBConversionProgram->convert(rgbColour, spaceColour);
+    Colour spaceColour = fromRGBConversionProgram->convert(m_colour);
     for (int i = 0; i < componentCount; ++i) {
         ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
         colourSlider->blockSignals(true);
-        colourSlider->setPos(clamp(0.0f, 1.0f, spaceColour[i]));
+        colourSlider->setPos(clamp(0.0f, 1.0f, spaceColour.rgba[i]));
         colourSlider->blockSignals(false);
     }
 }
@@ -88,14 +86,12 @@ void ColourSpaceSlidersWidget::updateColourFromSliders()
 {
     const ColourSpace colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
-    GLfloat spaceColour[componentCount];
+    Colour spaceColour;
     for (int i = 0; i < componentCount; ++i) {
         ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
-        spaceColour[i] = clamp(0.0, 1.0, colourSlider->pos());
+        spaceColour.rgba[i] = clamp(0.0, 1.0, colourSlider->pos());
     }
-    GLfloat rgbColour[4];
-    toRGBConversionProgram->convert(spaceColour, rgbColour);
-    qColorFillFromGLArray(m_colour, rgbColour);
+    m_colour = toRGBConversionProgram->convert(spaceColour);
 }
 
 void ColourSpaceSlidersWidget::updateWidgets()

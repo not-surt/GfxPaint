@@ -20,7 +20,7 @@ public:
 
 public slots:
     void setBrush(const Brush &brush);    
-    void setColour(const QColor &colour)
+    void setColour(const Colour &colour)
     {
         if (this->colour != colour) {
             this->colour = colour;
@@ -32,7 +32,7 @@ protected:
     virtual void render() override;
 
     Brush brush;
-    QColor colour;
+    Colour colour;
 
     DabProgram *dabProgram;
 };

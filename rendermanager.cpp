@@ -381,7 +381,7 @@ float %1Brush(const vec2 pos) {
 R"(
 layout(std140, binding = 0) uniform Data {
     mat3 matrix;
-    vec4 colour;
+    Colour colour;
     float hardness;
     float opacity;
 } data;

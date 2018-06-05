@@ -32,7 +32,7 @@ ColourComponentSliderWidget::ColourComponentSliderWidget(const ColourSpace colou
     RenderedWidget(parent),
     colourSpace(colourSpace), component(component), quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
     program(nullptr), pickProgram(nullptr), markerProgram(nullptr),
-    m_pos(0.0), m_colour(255, 0, 0, 255),
+    m_pos(0.0), m_colour{{1.0, 0.0, 0.0, 1.0}, UINT_MAX},
     m_palette(nullptr), markerModel(nullptr)
 {
 }
@@ -77,7 +77,7 @@ void ColourComponentSliderWidget::resizeGL(int w, int h)
     markerModel = new Model(GL_TRIANGLES, markerAttributeSizes, markerVertices, markerIndices, markerElementSizes);
 }
 
-void ColourComponentSliderWidget::setColour(const QColor &colour)
+void ColourComponentSliderWidget::setColour(const Colour &colour)
 {
     if (m_colour != colour) {
         m_colour = colour;
@@ -111,7 +111,7 @@ void ColourComponentSliderWidget::render()
     QTransform markerTransform;
     markerTransform.translate(m_pos * 2.0 - 1.0, 0.0);
     markerTransform.scale((qreal)height() / (qreal)width(), 1.0);
-    markerProgram->render(markerModel, Qt::white, markerTransform, widgetBuffer, nullptr);
+    markerProgram->render(markerModel, {{1.0, 0.0, 0.0, 1.0}, UINT_MAX}, markerTransform, widgetBuffer, nullptr);
 }
 
 } // namespace GfxPaint

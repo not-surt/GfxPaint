@@ -19,14 +19,14 @@ public:
     explicit ColourSpaceSlidersWidget(QWidget *parent = nullptr);
     ~ColourSpaceSlidersWidget();
 
-    QColor colour() const;
+    Colour colour() const;
 
 public slots:
-    void setColour(const QColor &colour);
+    void setColour(const Colour &colour);
     void setPalette(const Buffer *const palette);
 
 signals:
-    void colourChanged(const QColor &colour);
+    void colourChanged(const Colour &colour);
 
 private:
     void updateSliderColours();
@@ -39,7 +39,7 @@ private:
     ColourConversionProgram *fromRGBConversionProgram;
     ColourConversionProgram *toRGBConversionProgram;
 
-    QColor m_colour;
+    Colour m_colour;
     const Buffer *m_palette;
 };
 
