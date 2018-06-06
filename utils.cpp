@@ -47,34 +47,32 @@ QTransform viewportTransform(const QSize size)
     );
 }
 
-void qTransformCopyToGLArray(const QTransform &transform, mat3 &matrix)
+mat3 qTransformToMat3(const QTransform &transform)
 {
-    matrix = mat3{
+    return mat3{
         vec3{static_cast<GLfloat>(transform.m11()), static_cast<GLfloat>(transform.m12()), static_cast<GLfloat>(transform.m13())},
         vec3{static_cast<GLfloat>(transform.m21()), static_cast<GLfloat>(transform.m22()), static_cast<GLfloat>(transform.m23())},
         vec3{static_cast<GLfloat>(transform.m31()), static_cast<GLfloat>(transform.m32()), static_cast<GLfloat>(transform.m33())}
     };
 }
 
-void qTransformFillFromGLArray(QTransform &transform, const mat3 &matrix)
+QTransform qTransformFromMat3(const mat3 &matrix)
 {
-    transform.setMatrix(
+    return QTransform(
         static_cast<qreal>(matrix[0][0]), static_cast<qreal>(matrix[0][1]), static_cast<qreal>(matrix[0][2]),
         static_cast<qreal>(matrix[1][0]), static_cast<qreal>(matrix[1][1]), static_cast<qreal>(matrix[1][2]),
         static_cast<qreal>(matrix[2][0]), static_cast<qreal>(matrix[2][1]), static_cast<qreal>(matrix[2][2])
     );
 }
 
-void qColorCopyToGLArray(const QColor &qColor, vec4 &colour)
+vec4 qColorToVec4(const QColor &qColor)
 {
-    colour = vec4{
-        static_cast<GLfloat>(qColor.redF()), static_cast<GLfloat>(qColor.greenF()), static_cast<GLfloat>(qColor.blueF()), static_cast<GLfloat>(qColor.alphaF())
-    };
+    return vec4{static_cast<GLfloat>(qColor.redF()), static_cast<GLfloat>(qColor.greenF()), static_cast<GLfloat>(qColor.blueF()), static_cast<GLfloat>(qColor.alphaF())};
 }
 
-void qColorFillFromGLArray(QColor &qColor, const vec4 &colour)
+QColor qColorFromVec4(const vec4 &colour)
 {
-    qColor.setRgbF(static_cast<qreal>(colour[0]), static_cast<qreal>(colour[1]), static_cast<qreal>(colour[2]), static_cast<qreal>(colour[3]));
+    return QColor(static_cast<qreal>(colour[0]), static_cast<qreal>(colour[1]), static_cast<qreal>(colour[2]), static_cast<qreal>(colour[3]));
 }
 
 Buffer bufferFromImageFile(const QString &filename, Buffer *const palette)

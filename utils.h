@@ -53,11 +53,11 @@ void stringMultiReplace(QString &string, const QMap<QString, QString> &replaceme
 
 QTransform viewportTransform(const QSize size);
 
-void qTransformCopyToGLArray(const QTransform &transform, mat3 &matrix);
-void qTransformFillFromGLArray(QTransform &transform, const mat3 &matrix);
+mat3 qTransformToMat3(const QTransform &transform);
+QTransform qTransformFromMat3(const mat3 &matrix);
 
-void qColorCopyToGLArray(const QColor &qColor, vec4 &colour);
-void qColorFillFromGLArray(QColor &qColor, const vec4 &colour);
+vec4 qColorToVec4(const QColor &qColor);
+QColor qColorFromVec4(const vec4 &colour);
 
 Buffer bufferFromImageFile(const QString &filename, Buffer *const palette = nullptr);
 

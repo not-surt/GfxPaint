@@ -32,7 +32,7 @@ ColourComponentSliderWidget::ColourComponentSliderWidget(const ColourSpace colou
     RenderedWidget(parent),
     colourSpace(colourSpace), component(component), quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
     program(nullptr), pickProgram(nullptr), markerProgram(nullptr),
-    m_pos(0.0), m_colour{{1.0, 0.0, 0.0, 1.0}, UINT_MAX},
+    m_pos(0.0), m_colour{},
     m_palette(nullptr), markerModel(nullptr)
 {
 }
@@ -69,8 +69,7 @@ void ColourComponentSliderWidget::resizeGL(int w, int h)
     QList<Program *> oldPrograms = {program, pickProgram, markerProgram};
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     program = new ColourSliderProgram(colourSpace, component, widgetBuffer->format(), 0, quantise, quantisePaletteFormat);
-    //pickProgram = new ColourSliderPickProgram(colourSpace, component, quantise, m_palette ? m_palette->format() : Buffer::Format());
-    pickProgram = new ColourSliderPickProgram(colourSpace, component, false, Buffer::Format());
+    pickProgram = new ColourSliderPickProgram(colourSpace, component, quantise, m_palette ? m_palette->format() : Buffer::Format());
     markerProgram = new ModelProgram(widgetBuffer->format(), false, Buffer::Format(), 0, RenderManager::composeModeDefault);
     qDeleteAll(oldPrograms);
     delete markerModel;
@@ -111,7 +110,7 @@ void ColourComponentSliderWidget::render()
     QTransform markerTransform;
     markerTransform.translate(m_pos * 2.0 - 1.0, 0.0);
     markerTransform.scale((qreal)height() / (qreal)width(), 1.0);
-    markerProgram->render(markerModel, {{1.0, 0.0, 0.0, 1.0}, UINT_MAX}, markerTransform, widgetBuffer, nullptr);
+    markerProgram->render(markerModel, {}, markerTransform, widgetBuffer, nullptr);
 }
 
 } // namespace GfxPaint

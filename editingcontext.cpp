@@ -7,7 +7,7 @@ namespace GfxPaint {
 EditingContext::EditingContext(Scene &scene) :
     scene(scene),
     m_brush(),
-    m_colour{{1.0, 0.0, 0.0, 1.0}, UINT_MAX},
+    m_colour{},
     m_palette(nullptr),
     m_bufferNodeContexts(),
     m_selectionModel(qApp->documentManager.documentModel(&scene))
@@ -35,8 +35,6 @@ void EditingContext::updatePrograms()
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     QMap<Node *, BufferNodeContext *> oldNodeContexts = m_bufferNodeContexts;
     m_bufferNodeContexts.clear();
-    // Update node states (non render)
-//    scene.render(nullptr, false, nullptr, QTransform(), &m_states);
     for (auto index : m_selectionModel.selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);

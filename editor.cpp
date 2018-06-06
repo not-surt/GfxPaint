@@ -288,11 +288,8 @@ bool Editor::handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifie
             BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
             if (bufferNode) {
                 const QPointF mouseBufferPos = state.transform.inverted().map(mouseWorldPos);
-                uint index = UINT_MAX;
                 ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-                Colour colour = bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, mouseBufferPos);
-                setColour(colour);
-                qDebug() << colour.index;/////////////////////////////////////
+                setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, mouseBufferPos));
             }
         }
     }

@@ -23,9 +23,12 @@ typedef std::array<vec2, 2> mat2;
 typedef std::array<vec3, 3> mat3;
 typedef std::array<vec4, 4> mat4;
 
+#define RGBA_INVALID vec4{std::numeric_limits<GLfloat>::infinity()}
+#define INDEX_INVALID std::numeric_limits<GLuint>::max()
+
 struct Colour {
-    vec4 rgba = {{0.0f}};
-    GLuint index = std::numeric_limits<GLuint>::max();
+    vec4 rgba{RGBA_INVALID};
+    GLuint index{INDEX_INVALID};
 
     inline bool operator==(const Colour &rhs) const {
         return std::equal(std::begin(rgba), std::end(rgba), std::begin(rhs.rgba))

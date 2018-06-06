@@ -164,6 +164,18 @@ R"(
 )";
     src += fileToString(":/shaders/header.glsl");
     src += fileToString(":/shaders/util.glsl");
+    for (auto key : colourSpaceInfo.keys()) {
+        QString str =
+R"(
+vec3 %1_to_%1(vec3 rgb) {
+    return rgb;
+}
+)";
+        stringMultiReplace(str, {
+            {"%1", colourSpaceInfo[key].funcName},
+        });
+        src += str;
+    }
     return src.arg(OPENGL_GLSL_VERSION_STRING);
 }
 
@@ -278,7 +290,7 @@ R"(
 uniform layout(location = %2) %3 %1PaletteTexture;
 
 vec4 %1Palette(const uint index) {
-    return vec4(texelFetch(%1PaletteTexture, ivec2(index, 0))) / float(%4);
+    return toUnit(texelFetch(%1PaletteTexture, ivec2(index, 0.5)), %4);
 }
 )";
     stringMultiReplace(src, {
@@ -299,7 +311,7 @@ R"(
 uniform layout(location = %2) %3 %1Texture;
 
 Colour %1(const vec2 pos) {
-    uint index = UINT_MAX;
+    uint index = INDEX_INVALID;
 )";
     if (indexed && paletteFormat.isValid()) src +=
 R"(
@@ -308,12 +320,12 @@ R"(
 )";
     else if (indexed && !paletteFormat.isValid()) src +=
 R"(
-    const float grey = texelFetch(%1Texture, ivec2(floor(pos))).x / float(%4);
+    const float grey = toUnit(texelFetch(%1Texture, ivec2(floor(pos))).x, %4);
     const vec4 rgba = vec4(grey, grey, grey, 1.0);
 )";
     else src +=
 R"(
-    const vec4 rgba = vec4(texelFetch(%1Texture, ivec2(floor(pos)))) / float(%4);
+    const vec4 rgba = toUnit(texelFetch(%1Texture, ivec2(floor(pos))), %4);
 )";
     src +=
 R"(
@@ -338,7 +350,7 @@ R"(
 in layout(location = 1) vec4 colour;
 
 Colour %1(const vec2 pos) {
-    return Colour(colour, UINT_MAX);
+    return Colour(colour, INDEX_INVALID);
 }
 )";
     stringMultiReplace(src, {
@@ -393,7 +405,7 @@ Colour %1(const vec2 pos) {
     weight = clamp(1.0 - %1Brush(pos), 0.0, 1.0);
     weight = clamp(weight * (1.0 / (1.0 - %1Hardness)), 0.0, 1.0);
     weight *= %1Opacity;
-    return Colour(vec4(%1Colour.rgb, %1Colour.a * weight), UINT_MAX);
+    return Colour(vec4(%1Colour.rgb, %1Colour.a * weight), INDEX_INVALID);
 }
 )";
     stringMultiReplace(src, {
@@ -414,36 +426,33 @@ QString RenderManager::colourSliderShaderPart(const QString &name, const ColourS
     src +=
 R"(
 layout(std140, binding = 0) uniform Data {
-    vec4 colour;
+    Colour colour;
 } data;
-vec4 %1Colour = data.colour;
+
+vec4 colourComponentSlider(const vec4 colour, const int component, const float pos) {
+    vec4 colour0 = colour;
+    colour0[component] = 0.0;
+    vec4 colour1 = colour;
+    colour1[component] = 1.0;
+    return mix(colour0, colour1, pos);
+}
+
+Colour %1Colour = data.colour;
 Colour %1(const vec2 pos) {
+    uint index = INDEX_INVALID;
+    vec4 col = %1Colour.rgba;
+    col = vec4(rgb_to_%2(col.rgb), col.a);
+    col = colourComponentSlider(col, %3, pos.x);
+    col = vec4(%2_to_rgb(col.rgb), col.a);
 )";
-    if (component == colourSpaceInfo[colourSpace].componentCount) src +=
+    if (quantise && quantisePaletteFormat.isValid()) src +=
 R"(
-    const float alpha = pos.x;
-    vec3 rgb = %1Colour.rgb;
-)";
-    else if (colourSpace != ColourSpace::RGB) src +=
-R"(
-    const float alpha = %1Colour.a;
-    vec3 %2 = rgb_to_%2(%1Colour.rgb);
-    %2[%3] = pos.x;
-    vec3 rgb = %2_to_rgb(%2);
-)";
-    else src +=
-R"(
-    const float alpha = %1Colour.a;
-    vec3 rgb = %1Colour.rgb;
-    rgb[%3] = pos.x;
-)";
-    if (quantise) src +=
-R"(
-    rgb = quantisePalette(quantise(quantisePaletteTexture, %4, vec4(rgb, 1.0))).rgb;
+    index = quantise(quantisePaletteTexture, %4, vec4(col.rgb, 1.0));
+    col = vec4(quantisePalette(index).rgb, col.a);
 )";
     src +=
 R"(
-    return Colour(vec4(rgb, alpha), UINT_MAX);
+    return Colour(col, index);
 }
 )";
     stringMultiReplace(src, {
@@ -483,11 +492,11 @@ R"(
 )";
     else if (indexed && !paletteFormat.isValid()) src +=
 R"(
-    fragment = %1((fragmentColour.r + fragmentColour.g + fragmentColour.b) / 3.0 * %2);
+    fragment = %1(fromUnit((fragmentColour.r + fragmentColour.g + fragmentColour.b) / 3.0, %2));
 )";
     else src +=
 R"(
-    fragment = %1(fragmentColour * %2);
+    fragment = %1(fromUnit(fragmentColour, %2));
 )";
     src +=
 R"(

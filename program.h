@@ -9,45 +9,160 @@
 #include "buffer.h"
 #include "brush.h"
 #include "model.h"
+#include "utils.h"
 
 namespace GfxPaint {
 
-class ProgramComponent : protected OpenGL {
-public:
-    ProgramComponent() :
-        OpenGL(true),
-        srcs(),
-        uniformBuffer(0), storageBuffer(0)
-    {
-        glGenBuffers(1, &uniformBuffer);
-        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
-        glGenBuffers(1, &storageBuffer);
-        glBindBuffer(GL_UNIFORM_BUFFER, storageBuffer);
-    }
-    virtual ~ProgramComponent() {
-        glDeleteBuffers(1, &storageBuffer);
-        glDeleteBuffers(1, &uniformBuffer);
-    }
+struct SimpleProgramState {
+    GLint attributeLocation = 0;
+    GLint uniformLocation = 0;
 
-    QMap<QOpenGLShader::ShaderType, QString> srcs;
-
-    GLuint uniformBuffer;
-    GLuint storageBuffer;
+    GLint nextAttributeLocation() {
+        return attributeLocation++;
+    }
+    GLint nextUniformLocation() {
+        return uniformLocation++;
+    }
 };
 
-class TransformProgramComponent : public ProgramComponent {
-public:
-    TransformProgramComponent() :
-        transform()
-    {
-        srcs[QOpenGLShader::Vertex] = "";
-        srcs[QOpenGLShader::Fragment] = "";
-    }
-
-    QTransform transform;
+struct SimpleProgramComponent {
+    virtual QOpenGLShader::ShaderType stages() const = 0;
+    virtual QString definitions(SimpleProgramState &state) const { return QString(); }
+    virtual QString main(SimpleProgramState &state) const { return QString(); }
+    virtual void bind() const {}
 };
 
-typedef QList<ProgramComponent *> ProgramComponentList;
+struct VertexPositionProgramComponent {
+    virtual QOpenGLShader::ShaderType stages() { return QOpenGLShader::Vertex; }
+    virtual QString definitions(SimpleProgramState &state) const {
+        return QString("in layout(location = %1) vec2 vertexPos;\n").arg(state.nextAttributeLocation());
+    }
+    virtual QString main(SimpleProgramState &state) const { return QString(); }
+};
+
+struct SimpleProgram {
+    const QList<SimpleProgramComponent *> components;
+
+    SimpleProgram(const QList<SimpleProgramComponent *> &components) :
+        components(components)
+    {
+        static const QList<QOpenGLShader::ShaderTypeBit> stages = {
+            QOpenGLShader::Geometry, QOpenGLShader::Vertex, QOpenGLShader::Fragment, QOpenGLShader::Compute,
+        };
+
+        QOpenGLShaderProgram *program = new QOpenGLShaderProgram();
+        QMap<QOpenGLShader::ShaderTypeBit, QString> definitions, main;
+        SimpleProgramState state;
+        for (auto stage : stages) {
+            for (const auto component : components) {
+                if (component->stages() & stage) {
+                    definitions[stage] += component->definitions(state);
+                    main[stage] += component->main(state);
+                }
+            }
+            if (!main[stage].isEmpty()) {
+                QString src;
+                src += definitions[stage];
+                src += "void main() {\n";
+                src += main[stage];
+                src += "}\n";
+                program->addShaderFromSourceCode(stage, src);
+            }
+        }
+        program->link();
+    }
+    virtual ~SimpleProgram() {
+        qDeleteAll(components);
+    }
+
+    void bind() {
+        for (const auto component : components) {
+            component->bind();
+        }
+    }
+};
+
+struct ProgramComponent {
+    struct Uniform {
+        QOpenGLShader::ShaderType stages;
+        GLuint location;
+        QString name;
+    };
+    struct Storage {
+        QOpenGLShader::ShaderType stages;
+        GLuint binding;
+        QString name;
+    };
+    struct Attribute {
+        QOpenGLShader::ShaderType stages;
+        GLuint location;
+        QString name;
+    };
+    struct Output {
+        QOpenGLShader::ShaderType stages;
+        GLuint location;
+        QString name;
+    };
+    struct Input {
+        QOpenGLShader::ShaderType stages;
+        GLuint location;
+        QString name;
+    };
+    struct IncludeSrc {
+        QOpenGLShader::ShaderType stages;
+        QString path;
+    };
+    struct DefinitionsSrc {
+        QOpenGLShader::ShaderType stages;
+        QString src;
+    };
+    struct MainSrc {
+        QOpenGLShader::ShaderType stages;
+        QString src;
+    };
+
+    QList<Uniform> uniforms;
+    QList<Storage> storages;
+    QList<Attribute> attributes;
+    QList<Output> outputs;
+    QList<Input> inputs;
+    QList<IncludeSrc> includeSrcs;
+    QList<DefinitionsSrc> definitionsSrcs;
+    QList<MainSrc> mainSrcs;
+};
+
+struct ComponentProgram {
+    QString inputDefinition() {
+        QString str = "layout(location = %1) in %2 %3;";
+        stringMultiReplace(str, {
+            {"%1", "location"},
+            {"%2", "type"},
+            {"%3", "name"},
+        });
+        return str;
+    }
+    QString outputDefinition() {
+        QString str = "layout(location = %1) out %2 %3;";
+        stringMultiReplace(str, {
+            {"%1", "location"},
+            {"%2", "type"},
+            {"%3", "name"},
+        });
+        return str;
+    }
+
+    QList<ProgramComponent> components = {};
+
+    QOpenGLShaderProgram *createProgram() const {
+        static const QList<QOpenGLShader::ShaderTypeBit> stages = {
+            QOpenGLShader::Geometry, QOpenGLShader::Vertex, QOpenGLShader::Fragment, QOpenGLShader::Compute,
+        };
+
+        for (auto stage : stages) {
+
+        }
+    }
+};
 
 class Program : protected OpenGL {
 public:
@@ -64,8 +179,6 @@ protected:
         key.second.append(values);
     }
     virtual QOpenGLShaderProgram *createProgram() const = 0;
-
-    QList<ProgramComponent> components;
 
 private:
     Key key;
@@ -88,7 +201,6 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-
 protected:
     const Buffer::Format destFormat;
     const bool destIndexed;
@@ -99,9 +211,9 @@ protected:
     GLuint uniformBuffer;
 };
 
-class WidgetProgram : public Program {
+class RenderedWidgetProgram : public Program {
 public:
-    WidgetProgram(const Buffer::Format srcFormat, const bool srcIndexed, const Buffer::Format srcPaletteFormat) :
+    RenderedWidgetProgram(const Buffer::Format srcFormat, const bool srcIndexed, const Buffer::Format srcPaletteFormat) :
         Program(),
         srcFormat(srcFormat), srcIndexed(srcIndexed), srcPaletteFormat(srcPaletteFormat)
     {
@@ -243,43 +355,6 @@ protected:
     UniformData uniformData;
 };
 
-class ColourSliderPickProgram : public Program {
-public:
-    ColourSliderPickProgram(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat) :
-        Program(),
-        colourSpace(colourSpace), component(component),
-        quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
-        uniformBuffer(0), storageBuffer(0)
-    {
-        updateKey(typeid(this), {static_cast<int>(colourSpace), component, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount});
-
-        glGenBuffers(1, &uniformBuffer);
-        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
-
-        glGenBuffers(1, &storageBuffer);
-        glBindBuffer(GL_SHADER_STORAGE_BUFFER, storageBuffer);
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
-    }
-    virtual ~ColourSliderPickProgram() override {
-        glDeleteBuffers(1, &storageBuffer);
-        glDeleteBuffers(1, &uniformBuffer);
-    }
-
-    Colour pick(Colour colour, const float pos, const Buffer *const quantisePalette);
-
-protected:
-    virtual QOpenGLShaderProgram *createProgram() const override;
-
-    const ColourSpace colourSpace;
-    const int component;
-    const bool quantise;
-    const Buffer::Format quantisePaletteFormat;
-
-    GLuint uniformBuffer;
-    GLuint storageBuffer;
-};
-
 class ColourPlaneProgram : public Program {
 public:
     ColourPlaneProgram(const ColourSpace colourSpace, const int componentX, const int componentY, const Buffer::Format destFormat, const int blendMode, const bool quantise) :
@@ -354,6 +429,42 @@ public:
 
 protected:
     GLuint storageBuffer;
+};
+
+class ColourSliderPickProgram : public ToolProgram {
+public:
+    ColourSliderPickProgram(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat) :
+        ToolProgram(),
+        colourSpace(colourSpace), component(component),
+        quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
+        uniformBuffer(0), uniformData{{0.0}}
+    {
+        updateKey(typeid(this), {static_cast<int>(colourSpace), component, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount});
+
+        glGenBuffers(1, &uniformBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
+    }
+    virtual ~ColourSliderPickProgram() override {
+        glDeleteBuffers(1, &uniformBuffer);
+    }
+
+    Colour pick(const Colour &colour, const float pos, const Buffer *const quantisePalette);
+
+protected:
+    struct UniformData {
+        Colour colour;
+    };
+
+    virtual QOpenGLShaderProgram *createProgram() const override;
+
+    const ColourSpace colourSpace;
+    const int component;
+    const bool quantise;
+    const Buffer::Format quantisePaletteFormat;
+
+    GLuint uniformBuffer;
+    UniformData uniformData;
 };
 
 class ColourConversionProgram : public ToolProgram {

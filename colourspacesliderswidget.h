@@ -43,6 +43,6 @@ private:
     const Buffer *m_palette;
 };
 
-
 } // namespace GfxPaint
+
 #endif // COLOURSPACESLIDERSWIDGET_H

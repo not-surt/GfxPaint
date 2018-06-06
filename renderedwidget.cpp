@@ -65,7 +65,7 @@ void RenderedWidget::resizeGL(int w, int h)
         Program *old;
 
         old = widgetProgram;
-        widgetProgram = new WidgetProgram(widgetBuffer->format(), false, Buffer::Format());
+        widgetProgram = new RenderedWidgetProgram(widgetBuffer->format(), false, Buffer::Format());
         delete old;
 
         old = patternProgram;

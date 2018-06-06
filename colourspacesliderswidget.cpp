@@ -10,7 +10,7 @@ ColourSpaceSlidersWidget::ColourSpaceSlidersWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::ColourSpaceSlidersWidget),
     fromRGBConversionProgram(nullptr), toRGBConversionProgram(nullptr),
-    m_colour{{1.0, 0.0, 0.0, 1.0}, UINT_MAX},
+    m_colour{},
     m_palette(nullptr)
 {
     ui->setupUi(this);
@@ -86,7 +86,7 @@ void ColourSpaceSlidersWidget::updateColourFromSliders()
 {
     const ColourSpace colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
-    Colour spaceColour;
+    Colour spaceColour = m_colour;
     for (int i = 0; i < componentCount; ++i) {
         ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
         spaceColour.rgba[i] = clamp(0.0, 1.0, colourSlider->pos());

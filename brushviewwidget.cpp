@@ -7,7 +7,7 @@ namespace GfxPaint {
 BrushViewWidget::BrushViewWidget(QWidget *const parent) :
     RenderedWidget(parent),
     brush(),
-    colour{{1.0, 0.0, 0.0, 1.0}, UINT_MAX},
+    colour{},
     dabProgram(nullptr)
 {
 }
