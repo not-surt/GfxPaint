@@ -57,7 +57,7 @@ public:
 
     static QString headerShaderPart();
     static QString attributelessShaderPart(const AttributelessModel model);
-    static QString modelVertexShaderPart();
+    static QString modelVertexMainShaderPart();
     static QString vertexMainShaderPart();
     static QString patternShaderPart(const QString &name, const Pattern pattern);
     static QString dabShaderPart(const QString &name, const Dab::Type type, const int metric);

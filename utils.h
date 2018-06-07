@@ -59,7 +59,7 @@ QTransform qTransformFromMat3(const mat3 &matrix);
 vec4 qColorToVec4(const QColor &qColor);
 QColor qColorFromVec4(const vec4 &colour);
 
-Buffer bufferFromImageFile(const QString &filename, Buffer *const palette = nullptr);
+Buffer bufferFromImageFile(const QString &filename, Buffer *const palette = nullptr, Colour *const transparent = nullptr);
 
 template <typename T>
 T clamp(const T min, const T max, const T value) {

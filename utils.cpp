@@ -4,6 +4,7 @@
 #include <QFile>
 #include <QTextStream>
 #include "application.h"
+#include "types.h"
 
 namespace GfxPaint {
 
@@ -75,7 +76,7 @@ QColor qColorFromVec4(const vec4 &colour)
     return QColor(static_cast<qreal>(colour[0]), static_cast<qreal>(colour[1]), static_cast<qreal>(colour[2]), static_cast<qreal>(colour[3]));
 }
 
-Buffer bufferFromImageFile(const QString &filename, Buffer *const palette)
+Buffer bufferFromImageFile(const QString &filename, Buffer *const palette, Colour *const transparent)
 {
     static const QMap<QImage::Format, QImage::Format> imageFormatConversion = {
         {QImage::Format_Mono, QImage::Format_Indexed8},
@@ -85,12 +86,54 @@ Buffer bufferFromImageFile(const QString &filename, Buffer *const palette)
     };
     static const QMap<QImage::Format, Buffer::Format> imageFromatToBufferFormat = {
         {QImage::Format_Indexed8, Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 1)},
+        {QImage::Format_RGB32, Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 3)},
         {QImage::Format_ARGB32, Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 4)},
     };
     static const Buffer::Format paletteFormat = Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 4);
 
     Buffer buffer;
     QImage image(filename);
+
+    int transparentIndex = -1;
+    QColor transparentColour;
+    // Hackily set transparent index if only one partially transparent index and is fully transparent
+    if (image.format() == QImage::Format::Format_Indexed8) {
+        for (int index = 0; index < image.colorTable().length(); ++index) {
+            const int alpha = qAlpha(image.color(index));
+            if (transparentIndex == -1 && alpha == 0) {
+                transparentIndex = index;
+            }
+            else if (transparentIndex != -1 && alpha > 0 && alpha < 255) {
+                transparentIndex = -1;
+                break;
+            }
+        }
+        if (transparentIndex != -1) {
+            const QRgb colour = image.color(transparentIndex);
+            image.setColor(transparentIndex, qRgba(qRed(colour), qGreen(colour), qBlue(colour), 255));
+        }
+    }
+    // Hackily set transparent colour if only one partially transparent colour and is fully transparent
+    else if (image.format() == QImage::Format::Format_RGB32) {
+        for (const QRgb *pixel = reinterpret_cast<const QRgb *>(image.constBits()); pixel < reinterpret_cast<const QRgb *>(image.constBits() + image.sizeInBytes()); pixel += sizeof(QRgb)) {
+            const int alpha = qAlpha(*pixel);
+            if (!transparentColour.isValid() && alpha == 0) {
+                transparentColour = *pixel;
+            }
+            else if (transparentColour.isValid() && alpha > 0 && alpha < 255) {
+                transparentColour = QColor();
+                break;
+            }
+        }
+        if (transparentColour.isValid()) {
+            for (QRgb *pixel = reinterpret_cast<QRgb *>(image.bits()); pixel < reinterpret_cast<const QRgb *>(image.constBits() + image.sizeInBytes()); pixel += sizeof(QRgb)) {
+                const int alpha = qAlpha(*pixel);
+                if (alpha < 255) *pixel = transparentColour.rgba();
+            }
+        }
+    }
+    if (transparent) *transparent = Colour{qColorToVec4(transparentColour), transparentIndex == -1 ? INDEX_INVALID : transparentIndex};
+
     image = image.rgbSwapped();
     if (imageFormatConversion.contains(image.format())) image = image.convertToFormat(imageFormatConversion[image.format()]);
     if (imageFromatToBufferFormat.contains(image.format())) {

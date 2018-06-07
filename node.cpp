@@ -68,15 +68,17 @@ AbstractBufferNode::AbstractBufferNode(const AbstractBufferNode &other) :
 {
 }
 
-BufferNode::BufferNode(const Buffer &buffer, const bool indexed, const int blender, const QSizeF &pixelAspectRatio, const QSizeF &scrollScale) :
+BufferNode::BufferNode(const Buffer &buffer, const bool indexed, const int blendMode, const int composeMode, const Colour transparent, const QSizeF &pixelAspectRatio, const QSizeF &scrollScale) :
     SpatialNode(), AbstractBufferNode(buffer, indexed),
-    blender(blender), pixelAspectRatio(pixelAspectRatio), scrollScale(scrollScale)
+    blendMode(blendMode), composeMode(composeMode), transparent(transparent),
+    pixelAspectRatio(pixelAspectRatio), scrollScale(scrollScale)
 {
 }
 
 BufferNode::BufferNode(const BufferNode &other) :
     SpatialNode(other), AbstractBufferNode(other),
-    blender(other.blender), pixelAspectRatio(other.pixelAspectRatio), scrollScale(other.scrollScale)
+    blendMode(other.blendMode), composeMode(other.composeMode), transparent(other.transparent),
+    scrollScale(other.scrollScale)
 {
 }
 
@@ -84,9 +86,11 @@ Node *BufferNode::createFromFile(const QString &filename)
 {
     ContextBinder binder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Buffer palette;
-    Buffer buffer = bufferFromImageFile(filename, &palette);
+    Colour transparent;
+    Buffer buffer = bufferFromImageFile(filename, &palette, &transparent);
     if (!buffer.isNull()) {
         BufferNode *bufferNode = new BufferNode(buffer, !palette.isNull());
+        bufferNode->transparent = transparent;
         if (!palette.isNull()) {
             PaletteNode *paletteNode = new PaletteNode(palette, false);
             paletteNode->insertChild(paletteNode->children.size(), bufferNode);
@@ -104,7 +108,7 @@ Node *BufferNode::createFromDialog(QWidget *const parentWindow)
     if (result == QDialog::Accepted) {
         ContextBinder binder(&qApp->renderManager.context, &qApp->renderManager.surface);
         Buffer buffer(dialog.imageSize(), dialog.format());
-        return new BufferNode(buffer, false, 0, dialog.pixelRatio());
+        return new BufferNode(buffer, dialog.indexed(), 0, RenderManager::composeModeDefault, Colour{}, dialog.pixelRatio());
     }
     else return nullptr;
 }

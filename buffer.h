@@ -74,6 +74,7 @@ public:
         QString shaderSamplerType() const { return componentInfo().shaderSamplerType; }
         GLenum format() const { return componentInfo().formats[this->componentCount - 1]; }
         QString shaderValueType() const { return componentInfo().shaderValueTypes[this->componentCount - 1]; }
+        QString shaderScalarValueType() const { return componentInfo().shaderValueTypes[0]; }
         GLenum type() const {
             Q_ASSERT(componentInfo().sizes.contains(this->componentSize));
             return componentInfo().sizes[this->componentSize].type;

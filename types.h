@@ -23,6 +23,9 @@ typedef std::array<vec2, 2> mat2;
 typedef std::array<vec3, 3> mat3;
 typedef std::array<vec4, 4> mat4;
 
+typedef vec4 Rgba;
+typedef GLuint Index;
+
 #define RGBA_INVALID vec4{std::numeric_limits<GLfloat>::infinity()}
 #define INDEX_INVALID std::numeric_limits<GLuint>::max()
 

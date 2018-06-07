@@ -7,7 +7,7 @@ namespace GfxPaint {
 EditingContext::EditingContext(Scene &scene) :
     scene(scene),
     m_brush(),
-    m_colour{},
+    m_colour{{0.0, 0.0, 0.0, 1.0}, INDEX_INVALID},
     m_palette(nullptr),
     m_bufferNodeContexts(),
     m_selectionModel(qApp->documentManager.documentModel(&scene))

@@ -2,7 +2,7 @@
 
 uniform mat3 matrix;
 
-out vec2 pos;
+out layout(location = 0) vec2 pos;
 
 const vec2 vertices[4] = vec2[](
     vec2(-1.0,  1.0),

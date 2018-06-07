@@ -4,6 +4,7 @@
 #include <QSettings>
 #include <QDebug>
 #include "buffer.h"
+#include "rendermanager.h"
 
 namespace GfxPaint {
 
@@ -11,8 +12,8 @@ static const struct {
     QString label;
     Buffer::Buffer::Format::ComponentType componentType;
 } componentTypes[] = {
-{ "Unsigned Normalized", Buffer::Format::ComponentType::UNorm},
-{ "Signed Normalized", Buffer::Format::ComponentType::SNorm},
+{ "Unsigned Normalised", Buffer::Format::ComponentType::UNorm},
+{ "Signed Normalised", Buffer::Format::ComponentType::SNorm},
 { "Unsigned Integer", Buffer::Format::ComponentType::UInt},
 { "Signed Integer", Buffer::Format::ComponentType::SInt},
 { "Floating-point", Buffer::Format::ComponentType::Float},
@@ -34,16 +35,23 @@ NewBufferDialog::NewBufferDialog(QWidget *parent, Qt::WindowFlags flags) :
         }
     });
 
-    ui->componentTypeComboBox->clear();
     for (auto component : componentTypes) {
         if (component.label.isEmpty()) ui->componentTypeComboBox->insertSeparator(ui->componentTypeComboBox->count());
         else ui->componentTypeComboBox->addItem(component.label, static_cast<int>(component.componentType));
     }
 
-    ui->componentCountComboBox->clear();
     for (int i = 1; i <= 4; ++i) {
         ui->componentCountComboBox->addItem(QString::number(i) + " channel" + (i > 1 ? "s" : ""), i);
     }
+
+    for (auto blendMode : RenderManager::blendModes) {
+        ui->blendModeComboBox->addItem(blendMode.label);
+    }
+
+    for (auto composeMode : RenderManager::composeModes) {
+        ui->composeModeComboBox->addItem(composeMode.label);
+    }
+    ui->composeModeComboBox->setCurrentIndex(RenderManager::composeModeDefault);
 
     QSettings settings;
     if (settings.contains("window/newBuffer/geometry")) setGeometry(settings.value("window/newBuffer/geometry").toRect());
@@ -57,26 +65,18 @@ NewBufferDialog::NewBufferDialog(QWidget *parent, Qt::WindowFlags flags) :
         ui->pixelWidthSpinBox->setValue(pixelRatio.width());
         ui->pixelHeightSpinBox->setValue(pixelRatio.height());
     }
+    if (settings.contains("window/newBuffer/formatComponentType")) ui->componentTypeComboBox->setCurrentIndex(settings.value("window/newBuffer/formatComponentType").toInt());
+    if (settings.contains("window/newBuffer/formatComponentSize")) ui->componentSizeComboBox->setCurrentIndex(settings.value("window/newBuffer/formatComponentSize").toInt());
+    if (settings.contains("window/newBuffer/formatComponentCount")) ui->componentCountComboBox->setCurrentIndex(settings.value("window/newBuffer/formatComponentCount").toInt());
+    if (settings.contains("window/newBuffer/indexed")) ui->indexedCheckBox->setChecked(settings.value("window/newBuffer/indexed").toBool());
+    if (settings.contains("window/newBuffer/blendMode")) ui->blendModeComboBox->setCurrentIndex(settings.value("window/newBuffer/blendMode").toInt());
+    if (settings.contains("window/newBuffer/composeMode")) ui->blendModeComboBox->setCurrentIndex(settings.value("window/newBuffer/composeMode").toInt());
+    if (settings.contains("window/newBuffer/opacity")) ui->opacitySpinBox->setValue(settings.value("window/newBuffer/opacity").toFloat());
 }
 
 NewBufferDialog::~NewBufferDialog()
 {
     delete ui;
-}
-
-QSize NewBufferDialog::imageSize() const
-{
-    return QSize(ui->imageWidthSpinBox->value(), ui->imageHeightSpinBox->value());
-}
-
-Buffer::Format NewBufferDialog::format() const
-{
-    return Buffer::Format(static_cast<Buffer::Format::ComponentType>(ui->componentTypeComboBox->currentData().toInt()), ui->componentSizeComboBox->currentData().toInt(), ui->componentCountComboBox->currentData().toInt());
-}
-
-QSizeF NewBufferDialog::pixelRatio() const
-{
-    return QSizeF(ui->pixelWidthSpinBox->value(), ui->pixelHeightSpinBox->value());
 }
 
 void NewBufferDialog::hideEvent(QHideEvent *event)
@@ -85,6 +85,13 @@ void NewBufferDialog::hideEvent(QHideEvent *event)
     settings.setValue("window/newBuffer/geometry", normalGeometry());
     settings.setValue("window/newBuffer/imageSize", imageSize());
     settings.setValue("window/newBuffer/pixelRatio", pixelRatio());
+    settings.setValue("window/newBuffer/formatComponentType", ui->componentTypeComboBox->currentIndex());
+    settings.setValue("window/newBuffer/formatComponentSize", ui->componentSizeComboBox->currentIndex());
+    settings.setValue("window/newBuffer/formatComponentCount", ui->componentCountComboBox->currentIndex());
+    settings.setValue("window/newBuffer/indexed", indexed());
+    settings.setValue("window/newBuffer/blendMode", ui->blendModeComboBox->currentIndex());
+    settings.setValue("window/newBuffer/composeMode", ui->composeModeComboBox->currentIndex());
+    settings.setValue("window/newBuffer/opacity", ui->opacitySpinBox->value());
     QDialog::hideEvent(event);
 }
 

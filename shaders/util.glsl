@@ -39,7 +39,7 @@ TO_UNIT_FLOAT(vec4, vec4, float)
 
 #define FROM_UNIT_INT(unitType, valueType, scaleType)\
 valueType fromUnit(const unitType value, const scaleType scale) {\
-    return clamp(valueType(floor(value * (scale + 1))), 0, scale);\
+    return clamp(valueType(value * scale), 0, scale);\
 }
 FROM_UNIT_INT(float, int, int)
 FROM_UNIT_INT(vec4, ivec4, int)
@@ -48,9 +48,14 @@ FROM_UNIT_INT(vec4, uvec4, uint)
 
 #define TO_UNIT_INT(unitType, valueType, scaleType)\
 unitType toUnit(const valueType value, const scaleType scale) {\
-    return clamp(unitType(value) / unitType(scale + 1), 0.0, 1.0);\
+    return clamp(unitType(value) / unitType(scale), 0.0, 1.0);\
 }
 TO_UNIT_INT(float, int, int)
 TO_UNIT_INT(vec4, ivec4, int)
 TO_UNIT_INT(float, uint, uint)
 TO_UNIT_INT(vec4, uvec4, uint)
+
+#define PALETTE_SAMPLE(samplerType, valueType)\
+valueType paletteSample(samplerType palette, const Index index) {\
+    return texelFetch(palette, ivec2(index, 0));\
+}\

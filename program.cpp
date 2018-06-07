@@ -108,7 +108,7 @@ QOpenGLShaderProgram *ModelProgram::createProgram() const
 
     QString vertSrc;
     vertSrc += RenderManager::headerShaderPart();
-    vertSrc += RenderManager::modelVertexShaderPart();
+    vertSrc += RenderManager::modelVertexMainShaderPart();
     program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
 
     QString fragSrc;
