@@ -51,13 +51,14 @@ public:
         };
         struct ComponentInfo {
             QString shaderSamplerType;
+            QString shaderImageType;
             QList<GLenum> formats;
             QList<QString> shaderValueTypes;
             QMap<int, ComponentSizeInfo> sizes;
         };
         struct FormatInfo {
             GLint internalFormat;
-            QString shaderImageType;
+            QString shaderImageFormat;
         };
 
         static const QMap<ComponentType, ComponentInfo> components;
@@ -72,6 +73,7 @@ public:
             return formats[*this];
         }
         QString shaderSamplerType() const { return componentInfo().shaderSamplerType; }
+        QString shaderImageType() const { return componentInfo().shaderImageType; }
         GLenum format() const { return componentInfo().formats[this->componentCount - 1]; }
         QString shaderValueType() const { return componentInfo().shaderValueTypes[this->componentCount - 1]; }
         QString shaderScalarValueType() const { return componentInfo().shaderValueTypes[0]; }
@@ -84,7 +86,7 @@ public:
             return componentInfo().sizes[this->componentSize].scale;
         }
         GLint internalFormat() const { return formatInfo().internalFormat; }
-        QString shaderImageType() const { return formatInfo().shaderImageType; }
+        QString shaderImageFormat() const { return formatInfo().shaderImageFormat; }
     };
 
     BufferData();

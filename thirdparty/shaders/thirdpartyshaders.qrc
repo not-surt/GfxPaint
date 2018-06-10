@@ -1,0 +1,9 @@
+<RCC>
+    <qresource prefix="/shaders">
+        <file>psrdnoise2D.glsl</file>
+        <file>noise2D.glsl</file>
+        <file>ColorSpaces.inc.glsl</file>
+        <file>classicnoise2D.glsl</file>
+        <file>cellular2D.glsl</file>
+    </qresource>
+</RCC>

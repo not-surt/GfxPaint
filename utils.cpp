@@ -66,6 +66,25 @@ QTransform qTransformFromMat3(const mat3 &matrix)
     );
 }
 
+mat4 qTransformToMat4(const QTransform &transform)
+{
+    return mat4{
+        vec4{static_cast<GLfloat>(transform.m11()), static_cast<GLfloat>(transform.m12()), static_cast<GLfloat>(transform.m13()), 0.0},
+        vec4{static_cast<GLfloat>(transform.m21()), static_cast<GLfloat>(transform.m22()), static_cast<GLfloat>(transform.m23()), 0.0},
+        vec4{static_cast<GLfloat>(transform.m31()), static_cast<GLfloat>(transform.m32()), static_cast<GLfloat>(transform.m33()), 0.0},
+        vec4{0.0, 0.0, 0.0, 1.0}
+    };
+}
+
+QTransform qTransformFromMat4(const mat4 &matrix)
+{
+    return QTransform(
+        static_cast<qreal>(matrix[0][0]), static_cast<qreal>(matrix[0][1]), static_cast<qreal>(matrix[0][2]),
+        static_cast<qreal>(matrix[1][0]), static_cast<qreal>(matrix[1][1]), static_cast<qreal>(matrix[1][2]),
+        static_cast<qreal>(matrix[2][0]), static_cast<qreal>(matrix[2][1]), static_cast<qreal>(matrix[2][2])
+    );
+}
+
 vec4 qColorToVec4(const QColor &qColor)
 {
     return vec4{static_cast<GLfloat>(qColor.redF()), static_cast<GLfloat>(qColor.greenF()), static_cast<GLfloat>(qColor.blueF()), static_cast<GLfloat>(qColor.alphaF())};
@@ -82,17 +101,22 @@ Buffer bufferFromImageFile(const QString &filename, Buffer *const palette, Colou
         {QImage::Format_Mono, QImage::Format_Indexed8},
         {QImage::Format_Grayscale8, QImage::Format_Indexed8},
         {QImage::Format_RGB32, QImage::Format_ARGB32},
+//        {QImage::Format_RGB32, QImage::Format_RGB888},
         {QImage::Format_ARGB32_Premultiplied, QImage::Format_ARGB32},
     };
     static const QMap<QImage::Format, Buffer::Format> imageFromatToBufferFormat = {
         {QImage::Format_Indexed8, Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 1)},
-        {QImage::Format_RGB32, Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 3)},
+        {QImage::Format_RGB888, Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 3)},
         {QImage::Format_ARGB32, Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 4)},
     };
     static const Buffer::Format paletteFormat = Buffer::Format(Buffer::Format::ComponentType::UInt, 1, 4);
 
     Buffer buffer;
     QImage image(filename);
+
+//    image = image.convertToFormat(QImage::Format_RGB888);
+//    image = image.rgbSwapped();
+//    image = image.convertToFormat(QImage::Format_ARGB32);
 
     int transparentIndex = -1;
     QColor transparentColour;
@@ -114,7 +138,7 @@ Buffer bufferFromImageFile(const QString &filename, Buffer *const palette, Colou
         }
     }
     // Hackily set transparent colour if only one partially transparent colour and is fully transparent
-    else if (image.format() == QImage::Format::Format_RGB32) {
+    else if (image.format() == QImage::Format::Format_ARGB32) {
         for (const QRgb *pixel = reinterpret_cast<const QRgb *>(image.constBits()); pixel < reinterpret_cast<const QRgb *>(image.constBits() + image.sizeInBytes()); pixel += sizeof(QRgb)) {
             const int alpha = qAlpha(*pixel);
             if (!transparentColour.isValid() && alpha == 0) {
@@ -125,14 +149,17 @@ Buffer bufferFromImageFile(const QString &filename, Buffer *const palette, Colou
                 break;
             }
         }
+        qDebug() << "isv?" << transparentColour.isValid();//////////////////////////////////
         if (transparentColour.isValid()) {
             for (QRgb *pixel = reinterpret_cast<QRgb *>(image.bits()); pixel < reinterpret_cast<const QRgb *>(image.constBits() + image.sizeInBytes()); pixel += sizeof(QRgb)) {
                 const int alpha = qAlpha(*pixel);
                 if (alpha < 255) *pixel = transparentColour.rgba();
             }
+            image = image.convertToFormat(QImage::Format_RGB32, Qt::AutoColor | Qt::ThresholdDither | Qt::ThresholdAlphaDither | Qt::AvoidDither);
+            qDebug() << "CONVERTED!" << image.format();//////////////////////////////////
         }
     }
-    if (transparent) *transparent = Colour{qColorToVec4(transparentColour), transparentIndex == -1 ? INDEX_INVALID : transparentIndex};
+    if (transparent) *transparent = Colour{!transparentColour.isValid() ? RGBA_INVALID : qColorToVec4(transparentColour), transparentIndex == -1 ? INDEX_INVALID : transparentIndex};
 
     image = image.rgbSwapped();
     if (imageFormatConversion.contains(image.format())) image = image.convertToFormat(imageFormatConversion[image.format()]);
@@ -148,6 +175,20 @@ Buffer bufferFromImageFile(const QString &filename, Buffer *const palette, Colou
 void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements)
 {
     for (auto key : replacements.keys()) string.replace(key, replacements[key]);
+}
+
+float step(const float value, const float size) {
+    return round(value / size) * size;
+}
+
+float snap(const float offset, const float size, const float target, const bool relative, const float relativeTo) {
+    const float shift = (relative ? relativeTo : offset);
+    return size != 0.0 ? step(target - shift, size) + shift : target;
+}
+
+QPointF snap2d(const QPointF offset, const QSizeF size, const QPointF target, const bool relative, const QPointF relativeTo) {
+    return QPointF(snap(offset.x(), size.width(), target.x(), relative, relativeTo.x()),
+                   snap(offset.y(), size.height(), target.y(), relative, relativeTo.y()));
 }
 
 } // namespace GfxPaint

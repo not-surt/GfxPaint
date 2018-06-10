@@ -8,7 +8,7 @@ Dab::Dab() :
     space(Space::Object), type(Type::Distance), metric(0),
     size(16.0, 16.0), fixedRatio(false), ratio(1.0),
     angle(0.0),
-    origin(0.0, 0.0), pixelSnap(PixelSnap::None),
+    origin(0.0, 0.0), pixelSnapX(PixelSnap::Auto), pixelSnapY(PixelSnap::Auto),
     hardness(0.0), opacity(1.0),
     blendMode(0), composeMode(RenderManager::composeModeDefault),
     buffer()
@@ -19,7 +19,7 @@ Dab::Dab(const Dab &other) :
     space(other.space), type(other.type), metric(other.metric),
     size(other.size), fixedRatio(other.fixedRatio), ratio(other.ratio),
     angle(other.angle),
-    origin(other.origin), pixelSnap(other.pixelSnap),
+    origin(other.origin), pixelSnapX(other.pixelSnapX), pixelSnapY(other.pixelSnapY),
     hardness(other.hardness), opacity(other.opacity),
     blendMode(other.blendMode), composeMode(other.composeMode),
     buffer(other.buffer)

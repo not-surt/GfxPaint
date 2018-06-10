@@ -1,17 +1,12 @@
 <RCC>
     <qresource prefix="/shaders">
+        <file>header.glsl</file>
+        <file>quantise.glsl</file>
         <file>background.vert</file>
         <file>background.frag</file>
         <file>util.glsl</file>
-        <file>thirdparty/ColorSpaces.inc.glsl</file>
-        <file>thirdparty/psrdnoise2D.glsl</file>
-        <file>thirdparty/cellular2D.glsl</file>
-        <file>thirdparty/classicnoise2D.glsl</file>
-        <file>thirdparty/noise2D.glsl</file>
+        <file>distance.glsl</file>
         <file>compositing.glsl</file>
         <file>blending.glsl</file>
-        <file>distance.glsl</file>
-        <file>quantise.glsl</file>
-        <file>header.glsl</file>
     </qresource>
 </RCC>

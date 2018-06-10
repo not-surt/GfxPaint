@@ -241,14 +241,32 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="nodeDockWidget">
+  <widget class="QDockWidget" name="nodeEditorDockWidget">
    <property name="windowTitle">
     <string>Node</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
-   <widget class="QWidget" name="dockWidgetContents_8"/>
+   <widget class="QWidget" name="dockWidgetContents_8">
+    <layout class="QVBoxLayout" name="verticalLayout_9">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="GfXPaint::NodeEditorWidget" name="widget" native="true"/>
+     </item>
+    </layout>
+   </widget>
   </widget>
   <widget class="QDockWidget" name="colourSpaceSlidersDockWidget">
    <property name="windowTitle">
@@ -1401,6 +1419,12 @@
    <class>GfxPaint::SessionEditorWidget</class>
    <extends>QWidget</extends>
    <header>sessioneditorwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GfXPaint::NodeEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>nodeeditorwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

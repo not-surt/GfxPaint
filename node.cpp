@@ -89,8 +89,7 @@ Node *BufferNode::createFromFile(const QString &filename)
     Colour transparent;
     Buffer buffer = bufferFromImageFile(filename, &palette, &transparent);
     if (!buffer.isNull()) {
-        BufferNode *bufferNode = new BufferNode(buffer, !palette.isNull());
-        bufferNode->transparent = transparent;
+        BufferNode *bufferNode = new BufferNode(buffer, !palette.isNull(), 0, RenderManager::composeModeDefault, transparent);
         if (!palette.isNull()) {
             PaletteNode *paletteNode = new PaletteNode(palette, false);
             paletteNode->insertChild(paletteNode->children.size(), bufferNode);
@@ -154,7 +153,7 @@ void BufferNode::render(Traversal &traversal)
         // TODO: don't create new program for every render
         BufferProgram program(buffer.format(), indexed, paletteFormat, renderTarget.buffer->format(), renderTarget.indexed, renderTarget.palette ? renderTarget.palette->format() : Buffer::Format(), 0, 3);
         renderTarget.buffer->bindFramebuffer();
-        program.render(&buffer, palette, QTransform().scale(buffer.width(), buffer.height()) * transform * renderTarget.transform, renderTarget.buffer, renderTarget.palette);
+        program.render(&buffer, palette, transparent, QTransform().scale(buffer.width(), buffer.height()) * transform * renderTarget.transform, renderTarget.buffer, renderTarget.palette);
     }
 }
 

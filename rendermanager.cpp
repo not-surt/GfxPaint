@@ -6,17 +6,17 @@
 
 namespace GfxPaint {
 
-const QTransform RenderManager::unitToClipTransform(
+const QTransform RenderManager::unitToClipTransform{
         2.0, 0.0, 0.0,
         0.0, 2.0, 0.0,
-        -1.0, -1.0, 1.0);
+        -1.0, -1.0, 1.0};
 
 const QTransform RenderManager::clipToUnitTransform(RenderManager::unitToClipTransform.inverted());
 
-const QTransform RenderManager::flipTransform(
+const QTransform RenderManager::flipTransform{
         1.0, 0.0, 0.0,
         0.0, -1.0, 0.0,
-        0.0, 0.0, 1.0);
+        0.0, 0.0, 1.0};
 
 const QMap<ColourSpaceConversion, QString> RenderManager::colourSpaceConversionShaderFunctionNames = {
     {{ColourSpace::RGB, ColourSpace::sRGB}, "rgb_to_srgb"},
@@ -160,23 +160,26 @@ QString RenderManager::headerShaderPart()
     QString src;
     src +=
 R"(
-#version %1 core
+#version $GLSL_VERSION core
 )";
+    stringMultiReplace(src, {
+        {"$GLSL_VERSION", OPENGL_GLSL_VERSION_STRING},
+    });
     src += fileToString(":/shaders/header.glsl");
     src += fileToString(":/shaders/util.glsl");
     for (auto key : colourSpaceInfo.keys()) {
         QString str =
 R"(
-vec3 %1_to_%1(vec3 rgb) {
+vec3 $COLOURSPACE_to_$COLOURSPACE(vec3 rgb) {
     return rgb;
 }
 )";
         stringMultiReplace(str, {
-            {"%1", colourSpaceInfo[key].funcName},
+            {"$COLOURSPACE", colourSpaceInfo[key].funcName},
         });
         src += str;
     }
-    return src.arg(OPENGL_GLSL_VERSION_STRING);
+    return src;
 }
 
 QString RenderManager::attributelessShaderPart(const AttributelessModel model)
@@ -271,13 +274,13 @@ const float dark = base - offset;
 uniform vec4 lightColour = vec4(vec3(light), 1.0);
 uniform vec4 darkColour = vec4(vec3(dark), 1.0);
 
-vec4 %1(const vec2 pos) {
+vec4 $NAME(const vec2 pos) {
     const bool alternate = !((mod(pos.x, 2.0) >= 1.0) == (mod(pos.y, 2.0) >= 1.0));
     return alternate ? lightColour : darkColour;
 }
 )";
     stringMultiReplace(src, {
-        {"%1", name},
+        {"$NAME", name},
     });
     return src;
 }
@@ -287,46 +290,58 @@ QString RenderManager::paletteShaderPart(const QString &name, const GLint palett
     QString src;
     src +=
 R"(
-uniform layout(location = %2) %3 %1PaletteTexture;
+uniform layout(location = $LOCATION) $SAMPLER_TYPE $NAMEPaletteTexture;
 
-vec4 %1Palette(const uint index) {
-    return toUnit(texelFetch(%1PaletteTexture, ivec2(index, 0.5)), %5(%4));
+vec4 $NAMEPalette(const uint index) {
+    return toUnit(texelFetch($NAMEPaletteTexture, ivec2(index, 0.5)), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
 }
 )";
     stringMultiReplace(src, {
-        {"%1", name},
-        {"%2", QString::number(paletteTextureLocation)},
-        {"%3", paletteFormat.shaderSamplerType()},
-        {"%4", QString::number(paletteFormat.scale())},
-        {"%5", paletteFormat.shaderScalarValueType()},
+        {"$NAME", name},
+        {"$LOCATION", QString::number(paletteTextureLocation)},
+        {"$SAMPLER_TYPE", paletteFormat.shaderSamplerType()},
+        {"$SCALAR_VALUE_TYPE", paletteFormat.shaderScalarValueType()},
+        {"$FORMAT_SCALE", QString::number(paletteFormat.scale())},
     });
     return src;
 }
 
-QString RenderManager::bufferShaderPart(const QString &name, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat)
+QString RenderManager::bufferShaderPart(const QString &name, const GLint uniformBlockBinding, const GLint bufferImageBinding, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat)
 {
     QString src;
     if (indexed && paletteFormat.isValid()) src += paletteShaderPart(name, paletteTextureLocation, paletteFormat);
     src +=
 R"(
-uniform layout(location = %2) %3 %1Texture;
+uniform layout($IMAGE_FORMAT, binding = $IMAGE_BINDING) $IMAGE_TYPE $NAMEImage;
+uniform layout(location = $TEXTURE_LOCATION) $SAMPLER_TYPE $NAMETexture;
 
-Colour %1(const vec2 pos) {
+layout(std140, binding = $UNIFORM_BLOCK_BINDING) uniform $NAMEUniformData {
+    mat4 matrix;
+    Colour transparent;
+} $NAMEData;
+
+Colour $NAME(const vec2 pos) {
     uint index = INDEX_INVALID;
+    //Colour transparent = Colour(vec4(1.0, 1.0, 1.0, 1.0), 0);
+    Colour transparent = $NAMEData.transparent;
 )";
     if (indexed && paletteFormat.isValid()) src +=
 R"(
-    index = texelFetch(%1Texture, ivec2(floor(pos))).x;
-    const vec4 rgba = %1Palette(index);
+//    index = texelFetch($NAMETexture, ivec2(floor(pos))).x;
+    index = imageLoad($NAMEImage, ivec2(floor(pos))).x;
+    const vec4 rgba = (index == transparent.index ? vec4(0.0) : $NAMEPalette(index));
 )";
     else if (indexed && !paletteFormat.isValid()) src +=
 R"(
-    const float grey = toUnit(texelFetch(%1Texture, ivec2(floor(pos))).x, %5(%4));
-    const vec4 rgba = vec4(grey, grey, grey, 1.0);
+//    const float grey = toUnit(texelFetch($NAMETexture, ivec2(floor(pos))).x, $SCALAR_VALUE_TYPE($FORMAT_SCALE));
+    const float grey = toUnit(imageLoad($NAMEImage, ivec2(floor(pos))).x, $SCALAR_VALUE_TYPE($FORMAT_SCALE));
+    const vec4 rgba = (index == transparent.index ? vec4(0.0) : vec4(vec3(grey), 1.0));
 )";
     else src +=
 R"(
-    const vec4 rgba = toUnit(texelFetch(%1Texture, ivec2(floor(pos))), %5(%4));
+//    const vec4 texelRgba = toUnit(texelFetch($NAMETexture, ivec2(floor(pos))), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
+    const vec4 texelRgba = toUnit(imageLoad($NAMEImage, ivec2(floor(pos))), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
+    const vec4 rgba = (texelRgba == transparent.rgba ? vec4(0.0) : texelRgba);
 )";
     src +=
 R"(
@@ -334,11 +349,15 @@ R"(
 }
 )";
     stringMultiReplace(src, {
-        {"%1", name},
-        {"%2", QString::number(bufferTextureLocation)},
-        {"%3", bufferFormat.shaderSamplerType()},
-        {"%4", QString::number(bufferFormat.scale())},
-        {"%5", bufferFormat.shaderScalarValueType()},
+        {"$NAME", name},
+        {"$TEXTURE_LOCATION", QString::number(bufferTextureLocation)},
+        {"$SAMPLER_TYPE", bufferFormat.shaderSamplerType()},
+        {"$FORMAT_SCALE", QString::number(bufferFormat.scale())},
+        {"$SCALAR_VALUE_TYPE", bufferFormat.shaderScalarValueType()},
+        {"$IMAGE_BINDING", QString::number(bufferImageBinding)},
+        {"$IMAGE_TYPE", bufferFormat.shaderImageType()},
+        {"$IMAGE_FORMAT", bufferFormat.shaderImageFormat()},
+        {"$UNIFORM_BLOCK_BINDING", QString::number(uniformBlockBinding)},
     });
     return src;
 }
@@ -351,12 +370,12 @@ R"(
 //in layout(location = 0) vec2 pos;
 in layout(location = 1) vec4 colour;
 
-Colour %1(const vec2 pos) {
+Colour $NAME(const vec2 pos) {
     return Colour(colour, INDEX_INVALID);
 }
 )";
     stringMultiReplace(src, {
-        {"%1", name},
+        {"$NAME", name},
     });
     return src;
 }
@@ -366,21 +385,21 @@ QString RenderManager::dabShaderPart(const QString &name, const Dab::Type type, 
     const QMap<Dab::Type, QString> types = {
         { Dab::Type::Pixel,
 R"(
-float %1Brush(const vec2 pos) {
+float $NAMEBrush(const vec2 pos) {
     return 0.0;
 }
 )"
         },
         { Dab::Type::Distance,
 R"(
-float %1Brush(const vec2 pos) {
-    return %2(pos);
+float $NAMEBrush(const vec2 pos) {
+    return $METRIC(pos);
 }
 )"
         },
         { Dab::Type::Buffer,
 R"(
-float %1Brush(const vec2 pos) {
+float $NAMEBrush(const vec2 pos) {
     return 0.0;
 }
 )"
@@ -399,20 +418,20 @@ layout(std140, binding = 0) uniform Data {
     float hardness;
     float opacity;
 } data;
-uniform float %1Hardness = 0.0;
-uniform float %1Opacity = 1.0;
-uniform vec4 %1Colour = vec4(0.0, 0.25, 0.75, 1.0);
-Colour %1(const vec2 pos) {
+uniform float $NAMEHardness = 0.0;
+uniform float $NAMEOpacity = 1.0;
+uniform vec4 $NAMEColour = vec4(0.0, 0.25, 0.75, 1.0);
+Colour $NAME(const vec2 pos) {
     float weight;
-    weight = clamp(1.0 - %1Brush(pos), 0.0, 1.0);
-    weight = clamp(weight * (1.0 / (1.0 - %1Hardness)), 0.0, 1.0);
-    weight *= %1Opacity;
-    return Colour(vec4(%1Colour.rgb, %1Colour.a * weight), INDEX_INVALID);
+    weight = clamp(1.0 - $NAMEBrush(pos), 0.0, 1.0);
+    weight = clamp(weight * (1.0 / (1.0 - $NAMEHardness)), 0.0, 1.0);
+    weight *= $NAMEOpacity;
+    return Colour(vec4($NAMEColour.rgb, $NAMEColour.a * weight), INDEX_INVALID);
 }
 )";
     stringMultiReplace(src, {
-        {"%1", name},
-        {"%2", distanceMetrics[metric].functionName},
+        {"$NAME", name},
+        {"$METRIC", distanceMetrics[metric].functionName},
     });
     return src;
 }
@@ -420,7 +439,7 @@ Colour %1(const vec2 pos) {
 QString RenderManager::colourSliderShaderPart(const QString &name, const ColourSpace colourSpace, const int component, const bool quantise, const GLint quantisePaletteTextureLocation, const Buffer::Format quantisePaletteFormat)
 {
     QString src;
-    src += fileToString(":/shaders/thirdparty/ColorSpaces.inc.glsl");
+    src += fileToString(":/shaders/ColorSpaces.inc.glsl");
     if (quantise) {
         src += fileToString(":/shaders/quantise.glsl");
         src += paletteShaderPart("quantise", quantisePaletteTextureLocation, quantisePaletteFormat);
@@ -439,17 +458,17 @@ vec4 colourComponentSlider(const vec4 colour, const int component, const float p
     return mix(colour0, colour1, pos);
 }
 
-Colour %1Colour = data.colour;
-Colour %1(const vec2 pos) {
+Colour $NAMEColour = data.colour;
+Colour $NAME(const vec2 pos) {
     uint index = INDEX_INVALID;
-    vec4 col = %1Colour.rgba;
-    col = vec4(rgb_to_%2(col.rgb), col.a);
-    col = colourComponentSlider(col, %3, pos.x);
-    col = vec4(%2_to_rgb(col.rgb), col.a);
+    vec4 col = $NAMEColour.rgba;
+    col = vec4(rgb_to_$COLOURSPACE(col.rgb), col.a);
+    col = colourComponentSlider(col, $COMPONENT, pos.x);
+    col = vec4($COLOURSPACE_to_rgb(col.rgb), col.a);
 )";
     if (quantise && quantisePaletteFormat.isValid()) src +=
 R"(
-    index = quantiseBruteForce(quantisePaletteTexture, %4, vec4(col.rgb, 1.0), RGBA_INVALID, INDEX_INVALID);
+    index = quantiseBruteForce(quantisePaletteTexture, $PALETTE_FORMAT_SCALE, vec4(col.rgb, 1.0), 0.5, INDEX_INVALID);
     col = vec4(quantisePalette(index).rgb, col.a);
 )";
     src +=
@@ -458,10 +477,10 @@ R"(
 }
 )";
     stringMultiReplace(src, {
-        {"%1", name},
-        {"%2", colourSpaceInfo[colourSpace].funcName},
-        {"%3", QString::number(component)},
-        {"%4", QString::number(quantise ? quantisePaletteFormat.scale() : 0)},
+        {"$NAME", name},
+        {"$COLOURSPACE", colourSpaceInfo[colourSpace].funcName},
+        {"$COMPONENT", QString::number(component)},
+        {"$PALETTE_FORMAT_SCALE", QString::number(quantise ? quantisePaletteFormat.scale() : 0)},
     });
     return src;
 }
@@ -480,37 +499,37 @@ QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const
 R"(
 in layout(location = 0) vec2 pos;
 
-out layout(location = 0) %1 fragment;
+out layout(location = 0) $VALUE_TYPE fragment;
 
 void main(void) {
     const Colour destColour = dest(gl_FragCoord.xy);
     const Colour srcColour = src(pos);
-    const vec4 blended = vec4(%4(destColour.rgba.rgb, srcColour.rgba.rgb), srcColour.rgba.a);
-    const vec4 fragmentRgba = unpremultiply(%5(destColour.rgba, blended));
+    const vec4 blended = vec4($BLEND_MODE(destColour.rgba.rgb, srcColour.rgba.rgb), srcColour.rgba.a);
+    const vec4 fragmentRgba = unpremultiply($COMPOSE_MODE(destColour.rgba, blended));
 )";
     if (indexed && paletteFormat.isValid()) src +=
 R"(
-    fragment = %1(quantiseBruteForce(destPaletteTexture, %3, fragmentRgba, RGBA_INVALID, INDEX_INVALID));
+    fragment = $VALUE_TYPE(quantiseBruteForce(destPaletteTexture, $PALETTE_FORMAT_SCALE, fragmentRgba, 0.5, destData.transparent.index));
 )";
     else if (indexed && !paletteFormat.isValid()) src +=
 R"(
-    fragment = %1(fromUnit((fragmentRgba.r + fragmentRgba.g + fragmentRgba.b) / 3.0, %6(%2)));
+    fragment = $VALUE_TYPE(fromUnit((fragmentRgba.r + fragmentRgba.g + fragmentRgba.b) / 3.0, $SCALAR_VALUE_TYPE($FORMAT_SCALE)));
 )";
     else src +=
 R"(
-    fragment = %1(fromUnit(fragmentRgba, %6(%2)));
+    fragment = $VALUE_TYPE(fromUnit(fragmentRgba, $SCALAR_VALUE_TYPE($FORMAT_SCALE)));
 )";
     src +=
 R"(
 }
 )";
     stringMultiReplace(src, {
-        {"%1", format.shaderValueType()},
-        {"%2", QString::number(format.scale())},
-        {"%3", QString::number(indexed && paletteFormat.isValid() ? paletteFormat.scale() : 1.0)},
-        {"%4", RenderManager::blendModes[blendMode].functionName},
-        {"%5", RenderManager::composeModes[composeMode].functionName},
-        {"%6", format.shaderScalarValueType()},
+        {"$VALUE_TYPE", format.shaderValueType()},
+        {"$FORMAT_SCALE", QString::number(format.scale())},
+        {"$PALETTE_FORMAT_SCALE", QString::number(indexed && paletteFormat.isValid() ? paletteFormat.scale() : 1.0)},
+        {"$BLEND_MODE", RenderManager::blendModes[blendMode].functionName},
+        {"$COMPOSE_MODE", RenderManager::composeModes[composeMode].functionName},
+        {"$SCALAR_VALUE_TYPE", format.shaderScalarValueType()},
     });
     return src;
 }
@@ -531,19 +550,19 @@ void main(void) {
     return src;
 }
 
-void RenderManager::bindBufferShaderPart(QOpenGLShaderProgram &program, const QString &name, const GLint bufferTextureLocation, const Buffer * const buffer)
+void RenderManager::bindBufferShaderPart(QOpenGLShaderProgram &program, const QString &name, const GLint bufferImageBinding, const GLint bufferTextureLocation, const Buffer * const buffer)
 {
     glUniform1i(program.uniformLocation(name + "Texture"), bufferTextureLocation);
     buffer->bindTextureUnit(bufferTextureLocation);
-//    glUniform1i(program.uniformLocation(name + "Image"), 0);
-//    buffer->bindImageUnit(0);
+    glUniform1i(program.uniformLocation(name + "Image"), bufferImageBinding);
+    buffer->bindImageUnit(bufferImageBinding);
 }
 
-void RenderManager::bindIndexedBufferShaderPart(QOpenGLShaderProgram &program, const QString &name, const GLint bufferTextureLocation, const Buffer *const buffer, const bool indexed, const GLint paletteTextureLocation, const Buffer *const palette)
+void RenderManager::bindIndexedBufferShaderPart(QOpenGLShaderProgram &program, const QString &name, const GLint bufferImageBinding, const GLint bufferTextureLocation, const Buffer *const buffer, const bool indexed, const GLint paletteImageBinding, const GLint paletteTextureLocation, const Buffer *const palette)
 {
-    bindBufferShaderPart(program, name, bufferTextureLocation, buffer);
+    bindBufferShaderPart(program, name, bufferImageBinding, bufferTextureLocation, buffer);
     if (indexed && palette) {
-        bindBufferShaderPart(program, name + "Palette", paletteTextureLocation, palette);
+        bindBufferShaderPart(program, name + "Palette", paletteImageBinding, paletteTextureLocation, palette);
     }
 }
 

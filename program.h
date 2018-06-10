@@ -83,6 +83,11 @@ struct SimpleProgram {
 };
 
 struct ProgramComponent {
+    struct UniformBlock {
+        QOpenGLShader::ShaderType stages;
+        GLuint binding;
+        QString name;
+    };
     struct Uniform {
         QOpenGLShader::ShaderType stages;
         GLuint location;
@@ -121,6 +126,7 @@ struct ProgramComponent {
         QString src;
     };
 
+    QList<Uniform> uniformBlocks;
     QList<Uniform> uniforms;
     QList<Storage> storages;
     QList<Attribute> attributes;
@@ -234,29 +240,40 @@ class BufferProgram : public RenderProgram {
 public:
     BufferProgram(const Buffer::Format srcFormat, const bool srcIndexed, const Buffer::Format srcPaletteFormat, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
         RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
-        srcFormat(srcFormat), srcIndexed(srcIndexed), srcPaletteFormat(srcPaletteFormat),
-        uniformData()
+        srcFormat(srcFormat), srcIndexed(srcIndexed), srcPaletteFormat(srcPaletteFormat)
     {
         updateKey(typeid(this), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed), static_cast<int>(srcPaletteFormat.componentType), srcPaletteFormat.componentSize, srcPaletteFormat.componentCount});
-
-        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
     }
 
-    void render(Buffer *const src, const Buffer *const srcPalette, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(Buffer *const src, const Buffer *const srcPalette, const Colour &transparent, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
-    struct UniformData {
-        mat3 matrix;
+    struct BufferUniformData {
+        mat4 matrix;
+        Colour transparent;
     };
+
+    static QString uniformDataSrc(const QString &name, const GLint binding) {
+        QString src;
+        src +=
+R"(
+layout(std140, binding = $BINDING) uniform $NAMEBufferUniformData {
+    mat4 matrix;
+    Colour transparent;
+} $NAMEBufferData;
+)";
+        stringMultiReplace(src, {
+            {"$NAME", name},
+            {"$BINDING", QString::number(binding)},
+        });
+        return src;
+    }
 
     virtual QOpenGLShaderProgram *createProgram() const override;
 
     const Buffer::Format srcFormat;
     const bool srcIndexed;
     const Buffer::Format srcPaletteFormat;
-
-    UniformData uniformData;
 };
 
 class ModelProgram : public RenderProgram {
@@ -323,7 +340,7 @@ public:
         destFormat(destFormat),
         blendMode(blendMode),
         quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
-        uniformBuffer(0), uniformData{{0.0}}
+        uniformBuffer(0), uniformData()
     {
         updateKey(typeid(this), {static_cast<int>(colourSpace), component, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount});
 
@@ -363,7 +380,7 @@ public:
         destFormat(destFormat),
         blendMode(blendMode),
         quantise(quantise),
-        uniformBuffer(0), uniformData{{0.0}}
+        uniformBuffer(0), uniformData()
     {
         updateKey(typeid(this), {static_cast<int>(colourSpace), componentX, componentY, static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, quantise});
 
@@ -437,7 +454,7 @@ public:
         ToolProgram(),
         colourSpace(colourSpace), component(component),
         quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
-        uniformBuffer(0), uniformData{{0.0}}
+        uniformBuffer(0), uniformData()
     {
         updateKey(typeid(this), {static_cast<int>(colourSpace), component, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount});
 

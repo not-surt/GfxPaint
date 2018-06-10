@@ -107,6 +107,22 @@ protected:
     QTransform cameraTransform;
     TransformMode transformMode;
 
+    float pixelSnapOffset(const PixelSnap pixelSnap, const float target, const float size) {
+        switch (pixelSnap) {
+        case PixelSnap::Off: return target;
+        case PixelSnap::Centre: return 0.5f;
+        case PixelSnap::Edge: return 0.0f;
+        case PixelSnap::Both: return fabs(target - floor(target) - 0.5f) < 0.25f ? 0.5f : 1.0f;
+        case PixelSnap::Auto: return lround(size) % 2 == 0 ? 0.0f : 0.5f;
+        }
+    }
+    QPointF pixelSnap(const QPointF target) {
+        const Dab &dab = m_editingContext.brush().dab;
+        const float offsetX = pixelSnapOffset(dab.pixelSnapX, target.x(), dab.size.width());
+        const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.height());
+        return snap2d({offsetX, offsetY}, {1.0, 1.0}, target);
+    }
+
     qreal strokeOffset;
     QList<QPointF> strokePoints;
     QPointF mousePointToWorld(const QPointF &point) {
@@ -132,7 +148,8 @@ protected:
                 QList<QPointF> points;
                 strokeOffset = strokeSegmentDabs(prevWorldPoint, worldPoint, brush.stroke.absoluteSpacing.x(), strokeOffset, points);
                 for (auto point : points) {
-                    drawDab(brush.dab, m_editingContext.colour(), *bufferNode, point);
+                    const QPointF snappedPoint = pixelSnap(point);
+                    drawDab(brush.dab, m_editingContext.colour(), *bufferNode, snappedPoint);
                 }
             }
         }

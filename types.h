@@ -3,9 +3,13 @@
 
 #include <QImage>
 
+//#include <glm/glm.hpp>
+
 #include "opengl.h"
 
 namespace GfxPaint {
+
+//using namespace glm;
 
 typedef std::array<GLint, 2> ivec2;
 typedef std::array<GLint, 3> ivec3;
@@ -36,6 +40,7 @@ struct Colour {
     inline bool operator==(const Colour &rhs) const {
         return std::equal(std::begin(rgba), std::end(rgba), std::begin(rhs.rgba))
                 && index == rhs.index;
+//        return rgba == rhs.rgba && index == rhs.index;
     }
     inline bool operator!=(const Colour &rhs) const {
         return !operator==(rhs);

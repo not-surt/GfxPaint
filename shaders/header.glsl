@@ -3,7 +3,8 @@
 
 #define Index uint
 #define INDEX_INVALID 0xffffffff
-#define RGBA_INVALID vec4(INF)
+#define RGBA vec4
+#define RGBA_INVALID RGBA(INF)
 
 struct SubImage {
     ivec2 pos;
@@ -13,4 +14,10 @@ struct SubImage {
 struct Colour {
     vec4 rgba;
     Index index;
+};
+
+struct RenderData {
+    float opacity;
+    bool indexed;
+    Colour transparent;
 };

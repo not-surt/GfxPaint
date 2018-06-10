@@ -24,6 +24,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+INCLUDEPATH += thirdparty/libraries/glm
 
 SOURCES +=\
     application.cpp \
@@ -57,7 +58,8 @@ SOURCES +=\
     scenetreewidget.cpp \
     colourspacesliderswidget.cpp \
     model.cpp \
-    colourcomponentsliderwidget.cpp
+    colourcomponentsliderwidget.cpp \
+    nodeeditorwidget.cpp
 
 HEADERS  += \
     application.h \
@@ -91,7 +93,8 @@ HEADERS  += \
     scenetreewidget.h \
     colourspacesliderswidget.h \
     model.h \
-    colourcomponentsliderwidget.h
+    colourcomponentsliderwidget.h \
+    nodeeditorwidget.h
 
 FORMS    += \
     mainwindow.ui \
@@ -101,12 +104,14 @@ FORMS    += \
     sessioneditorwidget.ui \
     newbufferdialog.ui \
     scenetreewidget.ui \
-    colourspacesliderswidget.ui
+    colourspacesliderswidget.ui \
+    nodeeditorwidget.ui
 
 RESOURCES += \
-    shaders/shaders.qrc \
-    stylesheets/qdarkstyle/style.qrc \
-    stylesheets/darkorange/darkorange.qrc
+    thirdparty/stylesheets/qdarkstyle/style.qrc \
+    thirdparty/stylesheets/darkorange/darkorange.qrc \
+    thirdparty/shaders/thirdpartyshaders.qrc \
+    shaders/shaders.qrc
 
 DISTFILES += \
     LICENSE \

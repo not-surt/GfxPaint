@@ -55,6 +55,8 @@ QTransform viewportTransform(const QSize size);
 
 mat3 qTransformToMat3(const QTransform &transform);
 QTransform qTransformFromMat3(const mat3 &matrix);
+mat4 qTransformToMat4(const QTransform &transform);
+QTransform qTransformFromMat4(const mat4 &matrix);
 
 vec4 qColorToVec4(const QColor &qColor);
 QColor qColorFromVec4(const vec4 &colour);
@@ -65,6 +67,10 @@ template <typename T>
 T clamp(const T min, const T max, const T value) {
     return std::max(min, std::min(max, value));
 }
+
+float step(const float value, const float size);
+float snap(const float offset, const float size, const float target, const bool relative = false, const float relativeTo = 0.0);
+QPointF snap2d(const QPointF offset, const QSizeF size, const QPointF target, const bool relative = false, const QPointF relativeTo = QPointF());
 
 } // namespace GfxPaint
 

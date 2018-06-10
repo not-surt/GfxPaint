@@ -15,9 +15,9 @@ enum class Space {
 };
 
 enum class PixelSnap {
-    None,
-    Corners,
-    Centres,
+    Off,
+    Centre,
+    Edge,
     Both,
     Auto,
 };
@@ -42,7 +42,8 @@ public:
                 this->ratio == rhs.ratio &&
                 this->angle == rhs.angle &&
                 this->origin == rhs.origin &&
-                this->pixelSnap == rhs.pixelSnap &&
+                this->pixelSnapX == rhs.pixelSnapX &&
+                this->pixelSnapY == rhs.pixelSnapY &&
                 this->hardness == rhs.hardness &&
                 this->opacity == rhs.opacity &&
                 this->blendMode == rhs.blendMode &&
@@ -63,7 +64,8 @@ public:
     qreal ratio;
     qreal angle;
     QPointF origin;
-    PixelSnap pixelSnap;
+    PixelSnap pixelSnapX;
+    PixelSnap pixelSnapY;
     qreal hardness;
     qreal opacity;
     int blendMode;

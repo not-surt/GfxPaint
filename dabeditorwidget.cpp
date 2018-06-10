@@ -29,6 +29,8 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     QObject::connect(ui->angleSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->originXSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->originYSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->pixelSnapXComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->pixelSnapYComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->hardnessSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->opacitySpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->blendModeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
@@ -76,6 +78,8 @@ void DabEditorWidget::updateWidgets()
     ui->angleSpinBox->setValue(dab.angle);
     ui->originXSpinBox->setValue(dab.origin.x());
     ui->originYSpinBox->setValue(dab.origin.y());
+    ui->pixelSnapXComboBox->setCurrentIndex(static_cast<int>(dab.pixelSnapX));
+    ui->pixelSnapYComboBox->setCurrentIndex(static_cast<int>(dab.pixelSnapY));
     ui->hardnessSpinBox->setValue(dab.hardness);
     ui->opacitySpinBox->setValue(dab.opacity);
     ui->blendModeComboBox->setCurrentIndex(dab.blendMode);
@@ -113,6 +117,8 @@ void DabEditorWidget::updateDab()
 
     dab.angle = ui->angleSpinBox->value();
     dab.origin = {ui->originXSpinBox->value(), ui->originYSpinBox->value()};
+    dab.pixelSnapX = static_cast<PixelSnap>(ui->pixelSnapXComboBox->currentIndex());
+    dab.pixelSnapY = static_cast<PixelSnap>(ui->pixelSnapYComboBox->currentIndex());
 
     dab.hardness = ui->hardnessSpinBox->value();
     dab.opacity = ui->opacitySpinBox->value();

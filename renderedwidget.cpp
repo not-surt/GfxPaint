@@ -1,5 +1,7 @@
 #include "renderedwidget.h"
 
+#include <cmath>
+
 #include "application.h"
 #include "utils.h"
 
@@ -52,7 +54,7 @@ void RenderedWidget::resizeGL(int w, int h)
     const QTransform originTransform(
         1.0, 0.0, 0.0,
         0.0, 1.0, 0.0,
-        floor(w / 2.0), floor(h / 2.0), 1.0
+        std::floor(w / 2.0), std::floor(h / 2.0), 1.0
     );
     mouseTransform = originTransform.inverted();
     viewportTransform = originTransform * GfxPaint::viewportTransform({w, h});

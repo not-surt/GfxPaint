@@ -7,31 +7,34 @@ namespace GfxPaint {
 static const QString floatShaderSamplerType = "sampler2DRect";
 static const QString uIntShaderSamplerType = "usampler2DRect";
 static const QString sIntShaderSamplerType = "isampler2DRect";
+static const QString floatShaderImageType = "image2DRect";
+static const QString uIntShaderImageType = "uimage2DRect";
+static const QString sIntShaderImageType = "iimage2DRect";
 static const QList<GLenum> intFormats = {GL_RED_INTEGER, GL_RG_INTEGER, GL_RGB_INTEGER, GL_RGBA_INTEGER};
 static const QList<GLenum> floatFormats = {GL_RED, GL_RG, GL_RGB, GL_RGBA};
 static const QList<QString> floatShaderValueTypes = {"float", "vec2", "vec3", "vec4"};
 static const QList<QString> uIntShaderValueTypes = {"uint", "uvec2", "uvec3", "uvec4"};
 static const QList<QString> sIntShaderValueTypes = {"int", "ivec2", "ivec3", "ivec4"};
 const QMap<BufferData::Format::ComponentType, BufferData::Format::ComponentInfo> BufferData::Format::components = {
-    {ComponentType::UNorm, {floatShaderSamplerType, floatFormats, floatShaderValueTypes, {
+    {ComponentType::UNorm, {floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, {
          {1, {GL_UNSIGNED_BYTE, 1}},
          {2, {GL_UNSIGNED_SHORT, 1}},
      }}},
-    {ComponentType::SNorm, {floatShaderSamplerType, floatFormats, floatShaderValueTypes, {
+    {ComponentType::SNorm, {floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, {
          {1, {GL_BYTE, 1}},
          {2, {GL_SHORT, 1}},
      }}},
-    {ComponentType::UInt, {uIntShaderSamplerType, intFormats, uIntShaderValueTypes, {
+    {ComponentType::UInt, {uIntShaderSamplerType, uIntShaderImageType, intFormats, uIntShaderValueTypes, {
          {1, {GL_UNSIGNED_BYTE, std::numeric_limits<GLubyte>::max()}},
          {2, {GL_UNSIGNED_SHORT, std::numeric_limits<GLushort>::max()}},
          {4, {GL_UNSIGNED_INT, std::numeric_limits<GLuint>::max()}},
      }}},
-    {ComponentType::SInt, {sIntShaderSamplerType, intFormats, sIntShaderValueTypes, {
+    {ComponentType::SInt, {sIntShaderSamplerType, sIntShaderImageType, intFormats, sIntShaderValueTypes, {
          {1, {GL_BYTE, std::numeric_limits<GLbyte>::max()}},
          {2, {GL_SHORT, std::numeric_limits<GLshort>::max()}},
          {4, {GL_INT, std::numeric_limits<GLint>::max()}},
      }}},
-    {ComponentType::Float, {floatShaderSamplerType, floatFormats, floatShaderValueTypes, {
+    {ComponentType::Float, {floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, {
          {2, {GL_HALF_FLOAT, 1}},
          {4, {GL_FLOAT, 1}},
      }}},

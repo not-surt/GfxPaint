@@ -118,9 +118,12 @@ void Editor::render()
                 bufferNode->buffer.bindFramebuffer();
                 glDisable(GL_DEPTH_TEST);
                 glDisable(GL_BLEND);
-                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, cameraTransform.inverted().map(QPointF(mouseTransform.map(mapFromGlobal(QCursor::pos())))));
+
+                const QPointF point = mousePointToWorld(mapFromGlobal(QCursor::pos()));
+                const QPointF snappedPoint = pixelSnap(point);
+                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
                 bufferNodeContext->strokeBuffer->bindFramebuffer();
-                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, cameraTransform.inverted().map(QPointF(mouseTransform.map(mapFromGlobal(QCursor::pos())))));
+                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
             }
         }
     }    
