@@ -12,7 +12,7 @@
 #include <QOpenGLVertexArrayObject>
 #include "buffer.h"
 #include "brush.h"
-#include "types.h"
+#include "type.h"
 #include "program.h"
 
 namespace GfxPaint {

@@ -9,6 +9,7 @@
 #include <QElapsedTimer>
 #include <QOpenGLShaderProgram>
 #include <QItemSelectionModel>
+#include <cmath>
 #include "buffer.h"
 #include "brush.h"
 #include "rendermanager.h"
@@ -16,6 +17,7 @@
 #include "editingcontext.h"
 #include "utils.h"
 #include "application.h"
+#include "tool.h"
 
 namespace GfxPaint {
 
@@ -23,15 +25,6 @@ enum class TransformMode {
     View,
     Object,
     Brush,
-};
-
-struct StrokeData {
-    struct Point {
-        QPointF pos;
-        qreal presure;
-    };
-
-    QList<Point> points;
 };
 
 class Editor : public RenderedWidget
@@ -58,32 +51,57 @@ public:
     void removeSelectedNodes();
     void duplicateSelectedNodes();
 
+    QPointF mouseToViewport(const QPointF &point) {
+        return mouseTransform.map(point);
+    }
+    QPointF viewportToWorld(const QPointF &point) {
+        return cameraTransform.inverted().map(point);
+    }
+    QPointF mouseToWorld(const QPointF &point) {
+        return viewportToWorld(mouseToViewport(point));
+    }
+    float pixelSnapOffset(const PixelSnap pixelSnap, const float target, const float size) {
+        switch (pixelSnap) {
+        case PixelSnap::Centre: return 0.5f;
+        case PixelSnap::Edge: return 0.0f;
+        case PixelSnap::Both: return fabs(target - floor(target) - 0.5f) < 0.25f ? 0.5f : 1.0f;
+        case PixelSnap::Auto: return lround(size) % 2 == 0 ? 0.0f : 0.5f;
+        default: return target;
+        }
+    }
+    QPointF pixelSnap(const QPointF target) {
+        const Dab &dab = m_editingContext.brush().dab;
+        const float offsetX = pixelSnapOffset(dab.pixelSnapX, target.x(), dab.size.width());
+        const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.height());
+        return snap2d({offsetX, offsetY}, {1.0, 1.0}, target);
+    }
+    qreal strokeSegmentDabs(const QPointF start, const QPointF end, const qreal spacing, const qreal offset, QList<QPointF> &output);
+    void drawDab(const Dab &dab, const Colour &colour, BufferNode &node, const QPointF worldPos);
+    void drawSegment(const Dab &dab, const Stroke &stroke, const Colour &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset);
+
     Scene &scene;
     SceneModel &model;
+
+    StrokeTool strokeTool;
+    PickTool pickTool;
+    PanTool transformTool;
+    RotoScaleTool rotoScaleTool;
+
+    TransformMode transformMode() const { return m_transformMode; }
+    QTransform transform() const { return cameraTransform; }
 
 public slots:
     void setBrush(const Brush &brush);
     void setColour(const Colour &colour);
-    void setTransformMode(const TransformMode transformMode);
+    void setTransformMode(const TransformMode m_transformMode);
     void setTransform(const QTransform &transform);
     void updateContext();
-
-protected slots:
-    void primaryToolMousePress() {
-//        qDebug() << "Press" << inputState.mouseButtons << inputState.modifiers;
-    }
-    void primaryToolMouseMove() {
-//        qDebug() << "Move" << inputState.mouseButtons << inputState.modifiers;
-    }
-    void primaryToolMouseRelease() {
-//        qDebug() << "Release" << inputState.mouseButtons << inputState.modifiers;
-    }
 
 signals:
     void brushChanged(const Brush &brush);
     void colourChanged(const Colour &colour);
     void paletteChanged(Buffer *const palette);
-    void transformModeChanged(const TransformMode transformMode);
+    void transformModeChanged(const TransformMode m_transformMode);
     void transformChanged(const QTransform &transform);
 
 protected:
@@ -96,101 +114,74 @@ protected:
 
     void render() override;
 
-    static void rotateScaleAtOrigin(QTransform &transform, const qreal rotation, const qreal scaling, const QPointF origin);
-    static QTransform transformPointToPoint(const QPointF origin, const QPointF from, const QPointF to);
     bool handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifiers modifiers, const Qt::MouseButton button, const QPoint pos);
-    qreal strokeSegmentDabs(const QPointF start, const QPointF end, const qreal spacing, const qreal offset, QList<QPointF> &output);
-    void drawDab(const Dab &dab, const Colour &colour, BufferNode &node, const QPointF worldPos);
-    void drawSegment(const Dab &dab, const Stroke &stroke, const Colour &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset);
+
     EditingContext m_editingContext;
 
     QTransform cameraTransform;
-    TransformMode transformMode;
-
-    float pixelSnapOffset(const PixelSnap pixelSnap, const float target, const float size) {
-        switch (pixelSnap) {
-        case PixelSnap::Off: return target;
-        case PixelSnap::Centre: return 0.5f;
-        case PixelSnap::Edge: return 0.0f;
-        case PixelSnap::Both: return fabs(target - floor(target) - 0.5f) < 0.25f ? 0.5f : 1.0f;
-        case PixelSnap::Auto: return lround(size) % 2 == 0 ? 0.0f : 0.5f;
-        }
-    }
-    QPointF pixelSnap(const QPointF target) {
-        const Dab &dab = m_editingContext.brush().dab;
-        const float offsetX = pixelSnapOffset(dab.pixelSnapX, target.x(), dab.size.width());
-        const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.height());
-        return snap2d({offsetX, offsetY}, {1.0, 1.0}, target);
-    }
-
-    qreal strokeOffset;
-    QList<QPointF> strokePoints;
-    QPointF mousePointToWorld(const QPointF &point) {
-        return cameraTransform.inverted().map(QPointF(mouseTransform.map(point)));
-    }
-    void strokeStart(const QPointF &point) {
-        strokePoints.clear();
-        strokeOffset = 0.0;
-        strokePoints.append(mousePointToWorld(point));
-    }
-    void strokeAdd(const QPointF &point) {
-        const QPointF &prevWorldPoint = strokePoints.last();
-        const QPointF worldPoint = mousePointToWorld(point);
-        strokePoints.append(worldPoint);
-        for (auto index : m_editingContext.selectionModel().selectedRows()) {
-            Node *node = static_cast<Node *>(index.internalPointer());
-            const Traversal::State &state = m_editingContext.states().value(node);
-            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-            if (bufferNode) {
-                ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-                bufferNode->buffer.bindFramebuffer();
-                const Brush &brush = m_editingContext.brush();
-                QList<QPointF> points;
-                strokeOffset = strokeSegmentDabs(prevWorldPoint, worldPoint, brush.stroke.absoluteSpacing.x(), strokeOffset, points);
-                for (auto point : points) {
-                    const QPointF snappedPoint = pixelSnap(point);
-                    drawDab(brush.dab, m_editingContext.colour(), *bufferNode, snappedPoint);
-                }
-            }
-        }
-        update();
-    }
-    void strokeEnd(const QPointF &point) {
-        if (strokePoints.count() == 1) strokeAdd(point);
-    }
+    TransformMode m_transformMode;
 
     class InputState : private QObject {
     public:
         class ToolState : public QState {
         public:
-            ToolState(Editor *const editor ,QState *const parent = nullptr) :
+            ToolState(Editor *const editor, QState *const parent = nullptr) :
                 QState(parent),
-                editor(editor)
-            {
+                editor(editor), m_tool(nullptr)
+            {}
 
+            Tool *tool() const  {
+                return m_tool;
+            }
+            void setTool(Tool *tool) {
+                m_tool = tool;
             }
 
         protected:
             virtual void onEntry(QEvent *const event) override {
-                QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
-                if (unwrappedEvent->type() == QEvent::MouseButtonPress) {
-                    QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
-                    editor->strokeStart(mouseEvent->pos());
-                }
-                if (unwrappedEvent->type() == QEvent::MouseMove) {
-                    QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
-                    editor->strokeAdd(mouseEvent->pos());
+                if (m_tool) {
+                    QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
+                    if (unwrappedEvent->type() == QEvent::KeyPress || unwrappedEvent->type() == QEvent::MouseButtonPress) {
+                        QPointF pos;
+                        if (unwrappedEvent->type() == QEvent::KeyPress) {
+                            editor->grabMouse();
+                            pos = editor->mapFromGlobal(QCursor::pos());
+                        }
+                        else {
+                            QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
+                            pos = mouseEvent->pos();
+                        }
+                        m_tool->begin(editor->mouseToViewport(pos));
+                    }
+                    else if (unwrappedEvent->type() == QEvent::MouseMove) {
+                        QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
+                        QPointF pos = mouseEvent->pos();
+                        m_tool->update(editor->mouseToViewport(pos));
+                    }
+                    editor->update();
                 }
             }
             virtual void onExit(QEvent *const event) override {
-                QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
-                if (unwrappedEvent->type() == QEvent::MouseButtonRelease) {
-                    QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
-                    editor->strokeEnd(mouseEvent->pos());
+                if (m_tool) {
+                    QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
+                    if (unwrappedEvent->type() == QEvent::KeyRelease || unwrappedEvent->type() == QEvent::MouseButtonRelease) {
+                        QPointF pos;
+                        if (unwrappedEvent->type() == QEvent::KeyRelease) {
+                            editor->releaseMouse();
+                            pos = editor->mapFromGlobal(QCursor::pos());
+                        }
+                        else {
+                            QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
+                            pos = mouseEvent->pos();
+                        }
+                        m_tool->end(editor->mouseToViewport(pos));
+                    }
+                    editor->update();
                 }
             }
 
             Editor *const editor;
+            Tool *m_tool;
         };
 
         InputState(Editor *const editor,
@@ -211,13 +202,15 @@ protected:
             transformGroup(&machine), standardTransform(&transformGroup), alternateTransform(&transformGroup),
             alternateTransformKeyPress(editor, QEvent::KeyPress, altTransformKey), alternateTransformKeyRelease(editor, QEvent::KeyRelease, altTransformKey),
 
-            modeGroup(&machine), idle(&modeGroup), primaryTool(editor, &modeGroup), secondaryTool(&modeGroup), transform(&modeGroup),
+            modeGroup(&machine), idle(&modeGroup), primaryTool(editor, &modeGroup), secondaryTool(editor, &modeGroup), transformTool(editor, &modeGroup),
             primaryToolMousePress(editor, QEvent::MouseButtonPress, primaryToolMouseButton), primaryToolMouseMove(editor, QEvent::MouseMove, Qt::NoButton), primaryToolMouseRelease(editor, QEvent::MouseButtonRelease, primaryToolMouseButton),
             secondaryToolMousePress(editor, QEvent::MouseButtonPress, secondaryToolMouseButton), secondaryToolMouseMove(editor, QEvent::MouseMove, Qt::NoButton), secondaryToolMouseRelease(editor, QEvent::MouseButtonRelease, secondaryToolMouseButton),
-            transformMousePress(editor, QEvent::MouseButtonPress, transformMouseButton), transformMouseMove(editor, QEvent::MouseMove, Qt::NoButton), transformMouseRelease(editor, QEvent::MouseButtonRelease, transformMouseButton),
-            transformKeyPress(editor, QEvent::KeyPress, transformKey), transformKeyMove(editor, QEvent::MouseMove, Qt::NoButton), transformKeyRelease(editor, QEvent::KeyRelease, transformKey),
+            transformToolMousePress(editor, QEvent::MouseButtonPress, transformMouseButton), transformToolMouseMove(editor, QEvent::MouseMove, Qt::NoButton), transformToolMouseRelease(editor, QEvent::MouseButtonRelease, transformMouseButton),
+            transformToolKeyPress(editor, QEvent::KeyPress, transformKey), transformKeyMove(editor, QEvent::MouseMove, Qt::NoButton), transformToolKeyRelease(editor, QEvent::KeyRelease, transformKey),
 
             windowDeactivate(editor, QEvent::WindowDeactivate),
+
+            toolStates(),
 
             modifiers(Qt::NoModifier), mouseButtons{}, keys{}, mousePos{}
         {
@@ -250,44 +243,31 @@ protected:
 
             secondaryToolMousePress.setTargetState(&secondaryTool);
             idle.addTransition(&secondaryToolMousePress);
+            secondaryToolMouseMove.setTargetState(&secondaryTool);
+            secondaryTool.addTransition(&secondaryToolMouseMove);
             secondaryToolMouseRelease.setTargetState(&idle);
             secondaryTool.addTransition(&secondaryToolMouseRelease);
 
-            transformMousePress.setTargetState(&transform);
-            idle.addTransition(&transformMousePress);
-            transformMouseRelease.setTargetState(&idle);
-            transform.addTransition(&transformMouseRelease);
-            transformKeyPress.setTargetState(&transform);
-            idle.addTransition(&transformKeyPress);
-            transformKeyRelease.setTargetState(&idle);
-            transform.addTransition(&transformKeyRelease);
+            transformToolMousePress.setTargetState(&transformTool);
+            idle.addTransition(&transformToolMousePress);
+            transformToolMouseMove.setTargetState(&transformTool);
+            transformTool.addTransition(&transformToolMouseMove);
+            transformToolMouseRelease.setTargetState(&idle);
+            transformTool.addTransition(&transformToolMouseRelease);
+            transformToolKeyPress.setTargetState(&transformTool);
+            idle.addTransition(&transformToolKeyPress);
+            transformToolKeyRelease.setTargetState(&idle);
+            transformTool.addTransition(&transformToolKeyRelease);
 
-            transform.addTransition(&windowDeactivate);
+            transformTool.addTransition(&windowDeactivate);
             windowDeactivate.setTargetState(&idle);
-
-            QObject::connect(&transform, &QState::entered, editor, [editor](){editor->grabMouse();});
-            QObject::connect(&transform, &QState::exited, editor, [editor](){editor->releaseMouse();});
-
-//            QObject::connect(&primaryTool, &QState::entered, widget, [this, widget](){
-//                qDebug() << "Enter";
-//            });
-//            QObject::connect(&primaryTool, &QState::exited, widget, [this, widget](){
-//                qDebug() << "Exit";
-//            });
-            QObject::connect(&primaryToolMousePress, &QMouseEventTransition::triggered, editor, &Editor::primaryToolMousePress);
-            QObject::connect(&primaryToolMouseMove, &QMouseEventTransition::triggered, editor, &Editor::primaryToolMouseMove);
-            QObject::connect(&primaryToolMouseRelease, &QMouseEventTransition::triggered, editor, &Editor::primaryToolMouseRelease);
-//            QObject::connect(&primaryToolMouseMove, &QMouseEventTransition::triggered, widget, [this, widget](){
-//                qDebug() << "Move" << primaryToolMousePress.eventSource();
-//            });
-//            QObject::connect(&primaryToolMouseRelease, &QMouseEventTransition::triggered, widget, [this, widget](){
-//                qDebug() << "Release" << primaryToolMousePress.eventSource();
-//            });
 
             editor->installEventFilter(this);
 
-            primaryTool.installEventFilter(this);
-            primaryToolMousePress.installEventFilter(this);
+            primaryTool.setTool(&editor->strokeTool);
+            secondaryTool.setTool(&editor->pickTool);
+            transformTool.setTool(&editor->transformTool);
+//            transformTool.setTool(&editor->rotoScaleTool);
 
             machine.start();
         }
@@ -317,31 +297,29 @@ protected:
         QState modeGroup;
         QState idle;
         ToolState primaryTool;
-        QState secondaryTool;
-        QState transform;
+        ToolState secondaryTool;
+        ToolState transformTool;
         QMouseEventTransition primaryToolMousePress;
         QMouseEventTransition primaryToolMouseMove;
         QMouseEventTransition primaryToolMouseRelease;
         QMouseEventTransition secondaryToolMousePress;
         QMouseEventTransition secondaryToolMouseMove;
         QMouseEventTransition secondaryToolMouseRelease;
-        QMouseEventTransition transformMousePress;
-        QMouseEventTransition transformMouseMove;
-        QMouseEventTransition transformMouseRelease;
-        KeyEventTransition transformKeyPress;
+        QMouseEventTransition transformToolMousePress;
+        QMouseEventTransition transformToolMouseMove;
+        QMouseEventTransition transformToolMouseRelease;
+        KeyEventTransition transformToolKeyPress;
         QMouseEventTransition transformKeyMove;
-        KeyEventTransition transformKeyRelease;
+        KeyEventTransition transformToolKeyRelease;
 
         QEventTransition windowDeactivate; // TODO: why SIGABRT when change order?
+
+        QList<ToolState> toolStates;
 
         Qt::KeyboardModifiers modifiers;
         QSet<Qt::MouseButton> mouseButtons;
         QSet<int> keys;
         QPoint mousePos;
-
-        QPointF oldPos;
-        qreal strokeOffset;
-        QList<QPointF> strokePoints;        
 
     private:
         virtual bool eventFilter(QObject *watched, QEvent *event) override {
@@ -361,12 +339,6 @@ protected:
                     else if (event->type() == QEvent::MouseMove) ;
                     else if (event->type() == QEvent::MouseButtonRelease) mouseButtons.remove(mouseEvent->button());
                 }
-            }
-            else if (watched == &primaryTool) {
-                qDebug() << event;
-            }
-            else if (watched == &primaryToolMousePress) {
-                qDebug() << event;
             }
             return false;
         }

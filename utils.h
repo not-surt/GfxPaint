@@ -11,7 +11,7 @@
 #include <QTransform>
 #include "opengl.h"
 #include "buffer.h"
-#include "types.h"
+#include "type.h"
 
 namespace GfxPaint {
 
@@ -71,6 +71,9 @@ T clamp(const T min, const T max, const T value) {
 float step(const float value, const float size);
 float snap(const float offset, const float size, const float target, const bool relative = false, const float relativeTo = 0.0);
 QPointF snap2d(const QPointF offset, const QSizeF size, const QPointF target, const bool relative = false, const QPointF relativeTo = QPointF());
+
+void rotateScaleAtOrigin(QTransform &transform, const qreal rotation, const qreal scaling, const QPointF origin);
+QTransform transformPointToPoint(const QPointF origin, const QPointF from, const QPointF to);
 
 } // namespace GfxPaint
 

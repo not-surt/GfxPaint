@@ -58,4 +58,43 @@ TO_UNIT_INT(vec4, uvec4, uint)
 #define PALETTE_SAMPLE(samplerType, valueType)\
 valueType paletteSample(samplerType palette, const Index index) {\
     return texelFetch(palette, ivec2(index, 0));\
-}\
+}
+PALETTE_SAMPLE(sampler2DRect, vec4)
+PALETTE_SAMPLE(usampler2DRect, uvec4)
+PALETTE_SAMPLE(isampler2DRect, ivec4)
+
+float stairstep(const float value, const float size) {
+    return round(value / size) * size;
+}
+
+float snap(const float offset, const float size, const float target, const bool relative, const float relativeTo) {
+    const float shift = (relative ? relativeTo : offset);
+    return size != 0.0 ? stairstep(target - shift, size) + shift : target;
+}
+
+vec2 snap2d(const vec2 offset, const vec2 size, const vec2 target, const bool relative, const vec2 relativeTo) {
+    return vec2(snap(offset.x, size.x, target.x, relative, relativeTo.x),
+                snap(offset.y, size.y, target.y, relative, relativeTo.y));
+}
+
+#define PIXEL_SNAP_OFF 0
+#define PIXEL_SNAP_CENTRE 1
+#define PIXEL_SNAP_EDGE 2
+#define PIXEL_SNAP_BOTH 3
+#define PIXEL_SNAP_AUTO 4
+
+float pixelSnapOffset(const int pixelSnap, const float target, const float size) {
+    switch (pixelSnap) {
+    case PIXEL_SNAP_CENTRE: return 0.5f;
+    case PIXEL_SNAP_EDGE: return 0.0f;
+    case PIXEL_SNAP_BOTH: return abs(target - floor(target) - 0.5f) < 0.25f ? 0.5f : 1.0f;
+    case PIXEL_SNAP_AUTO: return int(round(size)) % 2 == 0 ? 0.0f : 0.5f;
+    default: return target;
+    }
+}
+
+vec2 pixelSnap(const ivec2 pixelSnap, const vec2 target, const vec2 size) {
+    const float offsetX = pixelSnapOffset(pixelSnap.x, target.x, size.x);
+    const float offsetY = pixelSnapOffset(pixelSnap.y, target.y, size.y);
+    return snap2d(vec2(offsetX, offsetY), vec2(1.0, 1.0), target, false, vec2(0.0, 0.0));
+}

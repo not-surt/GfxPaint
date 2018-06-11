@@ -36,7 +36,7 @@ QTransform Dab::transform() const
 }
 
 Stroke::Stroke() :
-    space(Space::Object),
+    space(Space::Object), metric(0),
     continuous(false),
     absoluteSpacing(0.0, 0.0), proportionalSpacing(0.25, 0.25),
     dabCount(0)
@@ -44,7 +44,7 @@ Stroke::Stroke() :
 }
 
 Stroke::Stroke(const Stroke &other) :
-    space(other.space),
+    space(other.space), metric(other.metric),
     continuous(other.continuous),
     absoluteSpacing(other.absoluteSpacing), proportionalSpacing(other.proportionalSpacing),
     dabCount(other.dabCount)

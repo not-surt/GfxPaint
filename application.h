@@ -11,7 +11,7 @@
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
 
-#include "types.h"
+#include "type.h"
 #include "documentmanager.h"
 #include "workbuffermanager.h"
 #include "sessionmanager.h"

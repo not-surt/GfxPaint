@@ -293,7 +293,7 @@ R"(
 uniform layout(location = $LOCATION) $SAMPLER_TYPE $NAMEPaletteTexture;
 
 vec4 $NAMEPalette(const uint index) {
-    return toUnit(texelFetch($NAMEPaletteTexture, ivec2(index, 0.5)), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
+    return toUnit(paletteSample($NAMEPaletteTexture, index), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
 }
 )";
     stringMultiReplace(src, {
@@ -501,23 +501,31 @@ in layout(location = 0) vec2 pos;
 
 out layout(location = 0) $VALUE_TYPE fragment;
 
+vec4 blend(const vec4 dest, const vec4 src) {
+    return vec4($BLEND_MODE(dest.rgb, src.rgb), src.a);
+}
+
+vec4 compose(const vec4 dest, const vec4 src) {
+    return unpremultiply($COMPOSE_MODE(dest, src));
+}
+
 void main(void) {
     const Colour destColour = dest(gl_FragCoord.xy);
     const Colour srcColour = src(pos);
-    const vec4 blended = vec4($BLEND_MODE(destColour.rgba.rgb, srcColour.rgba.rgb), srcColour.rgba.a);
-    const vec4 fragmentRgba = unpremultiply($COMPOSE_MODE(destColour.rgba, blended));
+    const vec4 blended = blend(destColour.rgba, srcColour.rgba);
+    const vec4 composed = compose(destColour.rgba, blended);
 )";
     if (indexed && paletteFormat.isValid()) src +=
 R"(
-    fragment = $VALUE_TYPE(quantiseBruteForce(destPaletteTexture, $PALETTE_FORMAT_SCALE, fragmentRgba, 0.5, destData.transparent.index));
+    fragment = $VALUE_TYPE(quantiseBruteForce(destPaletteTexture, $PALETTE_FORMAT_SCALE, composed, 0.5, destData.transparent.index));
 )";
     else if (indexed && !paletteFormat.isValid()) src +=
 R"(
-    fragment = $VALUE_TYPE(fromUnit((fragmentRgba.r + fragmentRgba.g + fragmentRgba.b) / 3.0, $SCALAR_VALUE_TYPE($FORMAT_SCALE)));
+    fragment = $VALUE_TYPE(fromUnit((composed.r + composed.g + composed.b) / 3.0, $SCALAR_VALUE_TYPE($FORMAT_SCALE)));
 )";
     else src +=
 R"(
-    fragment = $VALUE_TYPE(fromUnit(fragmentRgba, $SCALAR_VALUE_TYPE($FORMAT_SCALE)));
+    fragment = $VALUE_TYPE(fromUnit(composed, $SCALAR_VALUE_TYPE($FORMAT_SCALE)));
 )";
     src +=
 R"(

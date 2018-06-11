@@ -3,7 +3,7 @@
 
 #include <QTransform>
 #include "buffer.h"
-#include "types.h"
+#include "type.h"
 
 namespace GfxPaint {
 
@@ -79,6 +79,7 @@ struct Stroke {
 
     inline bool operator==(const Stroke &rhs) const {
         return this->space == rhs.space &&
+                this->metric == rhs.metric &&
                 this->continuous == rhs.continuous &&
                 this->absoluteSpacing == rhs.absoluteSpacing &&
                 this->proportionalSpacing == rhs.proportionalSpacing &&
@@ -87,6 +88,7 @@ struct Stroke {
     inline bool operator!=(const Stroke &rhs) const { return !this->operator==(rhs); }
 
     Space space;
+    int metric;
     bool continuous;
     QPointF absoluteSpacing;
     QPointF proportionalSpacing;

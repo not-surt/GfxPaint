@@ -10,8 +10,9 @@ namespace GfxPaint {
 Editor::Editor(Scene &scene, QWidget *parent) :
     RenderedWidget(parent),
     scene(scene), model(*qApp->documentManager.documentModel(&scene)),
+    strokeTool(*this), pickTool(*this), transformTool(*this), rotoScaleTool(*this),
     m_editingContext(scene),
-    cameraTransform(), transformMode(),
+    cameraTransform(), m_transformMode(),
     inputState(this)
 {
     setMouseTracking(true);
@@ -23,8 +24,9 @@ Editor::Editor(Scene &scene, QWidget *parent) :
 Editor::Editor(const Editor &other) :
     RenderedWidget(other.parentWidget()),
     scene(other.scene), model(other.model),
+    strokeTool(other.strokeTool), pickTool(other.pickTool), transformTool(other.transformTool), rotoScaleTool(other.rotoScaleTool),
     m_editingContext(other.scene),
-    cameraTransform(other.cameraTransform), transformMode(other.transformMode),
+    cameraTransform(other.cameraTransform), m_transformMode(other.m_transformMode),
     inputState(this)
 {
     setMouseTracking(true);
@@ -62,7 +64,7 @@ QString Editor::label() const
 void Editor::activate()
 {
     emit brushChanged(m_editingContext.brush());
-    emit transformModeChanged(this->transformMode);
+    emit transformModeChanged(this->m_transformMode);
     emit transformChanged(this->cameraTransform);
     updateContext();
 }
@@ -119,7 +121,7 @@ void Editor::render()
                 glDisable(GL_DEPTH_TEST);
                 glDisable(GL_BLEND);
 
-                const QPointF point = mousePointToWorld(mapFromGlobal(QCursor::pos()));
+                const QPointF point = mouseToWorld(mapFromGlobal(QCursor::pos()));
                 const QPointF snappedPoint = pixelSnap(point);
                 drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
                 bufferNodeContext->strokeBuffer->bindFramebuffer();
@@ -143,26 +145,6 @@ void Editor::render()
             }
         }
     }
-}
-
-void Editor::rotateScaleAtOrigin(QTransform &transform, const qreal rotation, const qreal scaling, const QPointF origin)
-{
-    const QPointF pointBefore = (transform.inverted()).map(origin);
-    transform *= QTransform().scale(scaling, scaling) * QTransform().rotate(rotation);
-    const QPointF pointAfter = (transform.inverted()).map(origin);
-    const QPointF offset = pointAfter - pointBefore;
-    transform = QTransform().translate(offset.x(), offset.y()) * transform;
-}
-
-QTransform Editor::transformPointToPoint(const QPointF origin, const QPointF from, const QPointF to)
-{
-    const QVector2D fromVector = QVector2D(from - origin);
-    const QVector2D toVector = QVector2D(to - origin);
-    const qreal scaling = toVector.length() / fromVector.length();
-    const qreal rotation = qRadiansToDegrees(atan2(toVector.y(), toVector.x()) - atan2(fromVector.y(), fromVector.x()));
-    QTransform transform;
-    rotateScaleAtOrigin(transform, rotation, scaling, origin);
-    return transform;
 }
 
 qreal Editor::strokeSegmentDabs(const QPointF start, const QPointF end, const  qreal spacing, const qreal offset, QList<QPointF> &output) {
@@ -221,9 +203,9 @@ void Editor::drawSegment(const Dab &dab, const Stroke &stroke, const Colour &col
 
 void Editor::setTransformMode(const TransformMode transformMode)
 {
-    if (this->transformMode != transformMode) {
-        this->transformMode = transformMode;
-        emit transformModeChanged(this->transformMode);
+    if (this->m_transformMode != transformMode) {
+        this->m_transformMode = transformMode;
+        emit transformModeChanged(this->m_transformMode);
     }
 }
 
@@ -259,10 +241,10 @@ void Editor::updateContext()
 
 bool Editor::handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifiers modifiers, const Qt::MouseButton button, const QPoint pos)
 {
-    const QPointF oldMouseViewportPos = mouseTransform.map(inputState.oldPos);
-    const QPointF oldMouseWorldPos = cameraTransform.inverted().map(QPointF(oldMouseViewportPos));
-    const QPointF mouseViewportPos = mouseTransform.map(pos);
-    const QPointF mouseWorldPos = cameraTransform.inverted().map(QPointF(mouseViewportPos));
+//    const QPointF oldMouseViewportPos = mouseTransform.map(inputState.oldPos);
+//    const QPointF oldMouseWorldPos = cameraTransform.inverted().map(QPointF(oldMouseViewportPos));
+//    const QPointF mouseViewportPos = mouseTransform.map(pos);
+//    const QPointF mouseWorldPos = cameraTransform.inverted().map(QPointF(mouseViewportPos));
 
     const QSet<QAbstractState *> states = inputState.machine.configuration();
     if (states.contains(&inputState.primaryTool) && states.contains(&inputState.standardTool)) {
@@ -284,94 +266,93 @@ bool Editor::handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifie
 //        update();
     }
     else if (states.contains(&inputState.primaryTool) && states.contains(&inputState.alternateTool)) {
-        for (auto index : m_editingContext.selectionModel().selectedRows()) {
-            Node *node = static_cast<Node *>(index.internalPointer());
-            const Traversal::State &state = m_editingContext.states().value(node);
-            EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
-            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-            if (bufferNode) {
-                const QPointF mouseBufferPos = state.transform.inverted().map(mouseWorldPos);
-                ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-                setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, mouseBufferPos));
-            }
-        }
+//        for (auto index : m_editingContext.selectionModel().selectedRows()) {
+//            Node *node = static_cast<Node *>(index.internalPointer());
+//            const Traversal::State &state = m_editingContext.states().value(node);
+//            EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
+//            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+//            if (bufferNode) {
+//                const QPointF mouseBufferPos = state.transform.inverted().map(mouseWorldPos);
+//                ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+//                setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, mouseBufferPos));
+//            }
+//        }
     }
     else if (states.contains(&inputState.secondaryTool) && states.contains(&inputState.standardTool)) {
     }
     else if (states.contains(&inputState.secondaryTool) && states.contains(&inputState.alternateTool)) {
     }
-    else if (states.contains(&inputState.transform) && states.contains(&inputState.standardTool)) {
-        if (m_editingContext.selectionModel().selectedRows().isEmpty()) {
-            const QPointF translation = mouseWorldPos - oldMouseWorldPos;
-            const QTransform translationTransform = QTransform().translate(translation.x(), translation.y());
-            if (transformMode == TransformMode::View) {
-                cameraTransform = translationTransform * cameraTransform;
-                emit transformChanged(cameraTransform);
-            }
-        }
-        for (auto index : m_editingContext.selectionModel().selectedRows()) {
-            Node *node = static_cast<Node *>(index.internalPointer());
-            const Traversal::State &state = m_editingContext.states().value(node);
-            const QPointF translation = mouseWorldPos - oldMouseWorldPos;
-            const QTransform translationTransform = QTransform().translate(translation.x(), translation.y());
-            if (transformMode == TransformMode::View) {
-                cameraTransform = translationTransform * cameraTransform;
-                emit transformChanged(cameraTransform);
-            }
-            else if (transformMode == TransformMode::Object) {
-                SpatialNode *const spatialNode = dynamic_cast<SpatialNode *>(node);
-                if (spatialNode) {
-                    const QPointF translation = state.parentTransform.inverted().map(mouseWorldPos) - state.parentTransform.inverted().map(oldMouseWorldPos);
-                    spatialNode->setTransform(spatialNode->transform() * QTransform().translate(translation.x(), translation.y()));
-                }
-            }
-            else if (transformMode == TransformMode::Brush) {
+    else if (states.contains(&inputState.transformTool) && states.contains(&inputState.standardTool)) {
+//        if (m_editingContext.selectionModel().selectedRows().isEmpty()) {
+//            const QPointF translation = mouseWorldPos - oldMouseWorldPos;
+//            const QTransform translationTransform = QTransform().translate(translation.x(), translation.y());
+//            if (transformMode == TransformMode::View) {
+//                cameraTransform = translationTransform * cameraTransform;
+//                emit transformChanged(cameraTransform);
+//            }
+//        }
+//        for (auto index : m_editingContext.selectionModel().selectedRows()) {
+//            Node *node = static_cast<Node *>(index.internalPointer());
+//            const Traversal::State &state = m_editingContext.states().value(node);
+//            const QPointF translation = mouseWorldPos - oldMouseWorldPos;
+//            const QTransform translationTransform = QTransform().translate(translation.x(), translation.y());
+//            if (transformMode == TransformMode::View) {
+//                cameraTransform = translationTransform * cameraTransform;
+//                emit transformChanged(cameraTransform);
+//            }
+//            else if (transformMode == TransformMode::Object) {
+//                SpatialNode *const spatialNode = dynamic_cast<SpatialNode *>(node);
+//                if (spatialNode) {
+//                    const QPointF translation = state.parentTransform.inverted().map(mouseWorldPos) - state.parentTransform.inverted().map(oldMouseWorldPos);
+//                    spatialNode->setTransform(spatialNode->transform() * QTransform().translate(translation.x(), translation.y()));
+//                }
+//            }
+//            else if (transformMode == TransformMode::Brush) {
 
-            }
-        }
-        update();
+//            }
+//        }
+//        update();
     }
-    else if (states.contains(&inputState.transform) && states.contains(&inputState.alternateTool)) {
-        if (m_editingContext.selectionModel().selectedRows().isEmpty()) {
-            if (transformMode == TransformMode::View) {
-                cameraTransform *= transformPointToPoint(QPointF(0., 0.), oldMouseViewportPos, mouseViewportPos);
-                emit transformChanged(cameraTransform);
-            }
-        }
-        for (auto index : m_editingContext.selectionModel().selectedRows()) {
-            Node *node = static_cast<Node *>(index.internalPointer());
-            const Traversal::State &state = m_editingContext.states().value(node);
-            if (transformMode == TransformMode::View) {
-                cameraTransform *= transformPointToPoint(QPointF(0., 0.), oldMouseViewportPos, mouseViewportPos);
-                emit transformChanged(cameraTransform);
-            }
-            else if (transformMode == TransformMode::Object) {
-                SpatialNode *const spatialNode = dynamic_cast<SpatialNode *>(node);
-                if (spatialNode) {
-                    const QTransform transformSpace = (state.parentTransform * cameraTransform).inverted();
-                    spatialNode->setTransform(spatialNode->transform() * transformPointToPoint(transformSpace.map(QPointF(0., 0.)), transformSpace.map(oldMouseViewportPos), transformSpace.map(mouseViewportPos)));
-                }
-            }
-            else if (transformMode == TransformMode::Brush) {
+    else if (states.contains(&inputState.transformTool) && states.contains(&inputState.alternateTool)) {
+//        if (m_editingContext.selectionModel().selectedRows().isEmpty()) {
+//            if (m_transformMode == TransformMode::View) {
+//                cameraTransform *= transformPointToPoint(QPointF(0., 0.), oldMouseViewportPos, mouseViewportPos);
+//                emit transformChanged(cameraTransform);
+//            }
+//        }
+//        for (auto index : m_editingContext.selectionModel().selectedRows()) {
+//            Node *node = static_cast<Node *>(index.internalPointer());
+//            const Traversal::State &state = m_editingContext.states().value(node);
+//            if (m_transformMode == TransformMode::View) {
+//                cameraTransform *= transformPointToPoint(QPointF(0., 0.), oldMouseViewportPos, mouseViewportPos);
+//                emit transformChanged(cameraTransform);
+//            }
+//            else if (m_transformMode == TransformMode::Object) {
+//                SpatialNode *const spatialNode = dynamic_cast<SpatialNode *>(node);
+//                if (spatialNode) {
+//                    const QTransform transformSpace = (state.parentTransform * cameraTransform).inverted();
+//                    spatialNode->setTransform(spatialNode->transform() * transformPointToPoint(transformSpace.map(QPointF(0., 0.)), transformSpace.map(oldMouseViewportPos), transformSpace.map(mouseViewportPos)));
+//                }
+//            }
+//            else if (m_transformMode == TransformMode::Brush) {
 
-            }
-        }
-        update();
+//            }
+//        }
+//        update();
     }
     else if (inputState.machine.configuration().contains(&inputState.mouseIn)) {
         update();
     }
 
-    inputState.oldPos = pos;
+//    inputState.oldPos = pos;
 
     return true;
 }
 
+
+
 void Editor::mousePressEvent(QMouseEvent *event)
 {
-    inputState.oldPos = event->pos();
-    inputState.strokeOffset = 0.0;
-    inputState.strokePoints.clear();
     event->setAccepted(handleMouseEvent(event->type(), event->modifiers(), event->button(), event->pos()));
 }
 

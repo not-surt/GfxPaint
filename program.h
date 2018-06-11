@@ -5,7 +5,7 @@
 
 #include <typeindex>
 #include <QOpenGLShaderProgram>
-#include "types.h"
+#include "type.h"
 #include "buffer.h"
 #include "brush.h"
 #include "model.h"

@@ -1,10 +1,11 @@
 #include "utils.h"
 
+#include <QtMath>
 #include <QVBoxLayout>
 #include <QFile>
 #include <QTextStream>
 #include "application.h"
-#include "types.h"
+#include "type.h"
 
 namespace GfxPaint {
 
@@ -177,18 +178,38 @@ void stringMultiReplace(QString &string, const QMap<QString, QString> &replaceme
     for (auto key : replacements.keys()) string.replace(key, replacements[key]);
 }
 
-float step(const float value, const float size) {
+float stairstep(const float value, const float size) {
     return round(value / size) * size;
 }
 
 float snap(const float offset, const float size, const float target, const bool relative, const float relativeTo) {
     const float shift = (relative ? relativeTo : offset);
-    return size != 0.0 ? step(target - shift, size) + shift : target;
+    return size != 0.0 ? stairstep(target - shift, size) + shift : target;
 }
 
 QPointF snap2d(const QPointF offset, const QSizeF size, const QPointF target, const bool relative, const QPointF relativeTo) {
     return QPointF(snap(offset.x(), size.width(), target.x(), relative, relativeTo.x()),
                    snap(offset.y(), size.height(), target.y(), relative, relativeTo.y()));
+}
+
+void rotateScaleAtOrigin(QTransform &transform, const qreal rotation, const qreal scaling, const QPointF origin)
+{
+    const QPointF pointBefore = (transform.inverted()).map(origin);
+    transform *= QTransform().scale(scaling, scaling) * QTransform().rotate(rotation);
+    const QPointF pointAfter = (transform.inverted()).map(origin);
+    const QPointF offset = pointAfter - pointBefore;
+    transform = QTransform().translate(offset.x(), offset.y()) * transform;
+}
+
+QTransform transformPointToPoint(const QPointF origin, const QPointF from, const QPointF to)
+{
+    const QVector2D fromVector = QVector2D(from - origin);
+    const QVector2D toVector = QVector2D(to - origin);
+    const qreal scaling = toVector.length() / fromVector.length();
+    const qreal rotation = qRadiansToDegrees(atan2(toVector.y(), toVector.x()) - atan2(fromVector.y(), fromVector.x()));
+    QTransform transform;
+    rotateScaleAtOrigin(transform, rotation, scaling, origin);
+    return transform;
 }
 
 } // namespace GfxPaint

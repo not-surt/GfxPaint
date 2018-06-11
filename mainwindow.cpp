@@ -15,7 +15,7 @@
 
 #include "newbufferdialog.h"
 #include "application.h"
-#include "types.h"
+#include "type.h"
 #include "multitoolbutton.h"
 #include "utils.h"
 #include "editor.h"

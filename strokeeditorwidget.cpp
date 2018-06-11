@@ -11,6 +11,7 @@ StrokeEditorWidget::StrokeEditorWidget(QWidget *parent) :
     ui->setupUi(this);
 
     QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &StrokeEditorWidget::updateStroke);
+    QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->continuousCheckBox, &QCheckBox::toggled, this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->absoluteSpacingXSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->absoluteSpacingYSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
@@ -35,7 +36,7 @@ void StrokeEditorWidget::setStroke(const Stroke &stroke)
 void StrokeEditorWidget::updateWidgets()
 {
     const QWidgetList widgets = {
-        ui->spaceComboBox,
+        ui->spaceComboBox, ui->metricComboBox,
         ui->continuousCheckBox,
         ui->absoluteSpacingXSpinBox, ui->absoluteSpacingYSpinBox,
         ui->proportionalSpacingXSpinBox, ui->proportionalSpacingYSpinBox,
@@ -43,6 +44,7 @@ void StrokeEditorWidget::updateWidgets()
     };
     for (auto widget : widgets) widget->blockSignals(true);
     ui->spaceComboBox->setCurrentIndex(static_cast<int>(stroke.space));
+    ui->metricComboBox->setCurrentIndex(stroke.metric);
     ui->continuousCheckBox->setChecked(stroke.continuous);
     ui->absoluteSpacingXSpinBox->setValue(stroke.absoluteSpacing.x());
     ui->absoluteSpacingYSpinBox->setValue(stroke.absoluteSpacing.y());
@@ -56,6 +58,7 @@ void StrokeEditorWidget::updateWidgets()
 void StrokeEditorWidget::updateStroke()
 {
     stroke.space = static_cast<Space>(ui->spaceComboBox->currentIndex());
+    stroke.metric = ui->spaceComboBox->currentIndex();
     stroke.continuous = ui->continuousCheckBox->isChecked();
     stroke.absoluteSpacing = {ui->absoluteSpacingXSpinBox->value(), ui->absoluteSpacingYSpinBox->value()};
     stroke.proportionalSpacing = {ui->proportionalSpacingXSpinBox->value(), ui->proportionalSpacingYSpinBox->value()};

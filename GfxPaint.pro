@@ -59,7 +59,8 @@ SOURCES +=\
     colourspacesliderswidget.cpp \
     model.cpp \
     colourcomponentsliderwidget.cpp \
-    nodeeditorwidget.cpp
+    nodeeditorwidget.cpp \
+    tool.cpp
 
 HEADERS  += \
     application.h \
@@ -83,7 +84,6 @@ HEADERS  += \
     strokeeditorwidget.h \
     transformeditorwidget.h \
     transformmodel.h \
-    types.h \
     utils.h \
     workbuffermanager.h \
     sessioneditorwidget.h \
@@ -94,7 +94,9 @@ HEADERS  += \
     colourspacesliderswidget.h \
     model.h \
     colourcomponentsliderwidget.h \
-    nodeeditorwidget.h
+    nodeeditorwidget.h \
+    tool.h \
+    type.h
 
 FORMS    += \
     mainwindow.ui \

@@ -12,6 +12,7 @@ EditingContext::EditingContext(Scene &scene) :
     m_bufferNodeContexts(),
     m_selectionModel(qApp->documentManager.documentModel(&scene))
 {
+    updatePrograms();
 }
 
 EditingContext::EditingContext(EditingContext &other) :

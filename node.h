@@ -11,7 +11,7 @@
 #include <QFileInfo>
 #include <QJsonObject>
 
-#include "types.h"
+#include "type.h"
 #include "buffer.h"
 #include "opengl.h"
 #include "program.h"
