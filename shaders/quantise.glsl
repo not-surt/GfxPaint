@@ -11,7 +11,7 @@ Index quantiseBruteForce(samplerType palette, const uint componentScale, const v
     else {\
         Index nearestIndex = 0;\
         float nearestDistance = INF;\
-        for (Index index = 0; index < Index(textureSize(palette, 0).x); ++index) {\
+        for (Index index = 0; index < Index(textureSize(palette).x); ++index) {\
             if (index != destTransparent) {\
                 const vec4 paletteColour = vec4(toUnit(texelFetch(palette, ivec2(index, 0)), componentScale));\
                 const float colourDistance = distance(rgba, paletteColour);\
