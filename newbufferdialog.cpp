@@ -8,17 +8,6 @@
 
 namespace GfxPaint {
 
-static const struct {
-    QString label;
-    Buffer::Buffer::Format::ComponentType componentType;
-} componentTypes[] = {
-{ "Unsigned Normalised", Buffer::Format::ComponentType::UNorm},
-{ "Signed Normalised", Buffer::Format::ComponentType::SNorm},
-{ "Unsigned Integer", Buffer::Format::ComponentType::UInt},
-{ "Signed Integer", Buffer::Format::ComponentType::SInt},
-{ "Floating-point", Buffer::Format::ComponentType::Float},
-};
-
 NewBufferDialog::NewBufferDialog(QWidget *parent, Qt::WindowFlags flags) :
     QDialog(parent, flags),
     ui(new Ui::NewBufferDialog)
@@ -35,9 +24,8 @@ NewBufferDialog::NewBufferDialog(QWidget *parent, Qt::WindowFlags flags) :
         }
     });
 
-    for (auto component : componentTypes) {
-        if (component.label.isEmpty()) ui->componentTypeComboBox->insertSeparator(ui->componentTypeComboBox->count());
-        else ui->componentTypeComboBox->addItem(component.label, static_cast<int>(component.componentType));
+    for (auto key : BufferData::Format::componentTypeNames.keys()) {
+        if (key != BufferData::Format::ComponentType::Invalid) ui->componentTypeComboBox->addItem(BufferData::Format::componentTypeNames[key], static_cast<int>(key));
     }
 
     for (int i = 1; i <= 4; ++i) {

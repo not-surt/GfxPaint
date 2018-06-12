@@ -11,15 +11,17 @@ class Editor;
 class Tool {
 public:
     Tool(Editor &editor) :
-        editor(editor)
+        editor(editor), active(false)
     {}
-    virtual void begin(const QPointF point) = 0;
-    virtual void update(const QPointF point) = 0;
-    virtual void end(const QPointF point) = 0;
-    virtual void abort() = 0;
+    virtual void begin(const QPointF point) {}
+    virtual void update(const QPointF point) {}
+    virtual void end(const QPointF point) {}
+    virtual void abort() {}
+    virtual void wheel(const QPointF point, const QPointF delta) {}
 
 protected:
     Editor &editor;
+    bool active;
 };
 
 class StrokeTool : public Tool {
@@ -66,9 +68,9 @@ protected:
     QPointF oldPoint;
 };
 
-class RotoScaleTool : public Tool {
+class RotoZoomTool : public Tool {
 public:
-    RotoScaleTool(Editor &editor) :
+    RotoZoomTool(Editor &editor) :
         Tool(editor),
         oldPoint()
     {}
@@ -79,6 +81,22 @@ public:
 
 protected:
     QPointF oldPoint;
+};
+
+class ZoomTool : public Tool {
+public:
+    ZoomTool(Editor &editor) :
+        Tool(editor)
+    {}
+    virtual void wheel(const QPointF point, const QPointF delta) override;
+};
+
+class RotateTool : public Tool {
+public:
+    RotateTool(Editor &editor) :
+        Tool(editor)
+    {}
+    virtual void wheel(const QPointF point, const QPointF delta) override;
 };
 
 } // namespace GfxPaint

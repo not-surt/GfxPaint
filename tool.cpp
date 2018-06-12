@@ -105,12 +105,12 @@ void PanTool::end(const QPointF point)
 {
 }
 
-void RotoScaleTool::begin(const QPointF point)
+void RotoZoomTool::begin(const QPointF point)
 {
     oldPoint = point;
 }
 
-void RotoScaleTool::update(const QPointF point)
+void RotoZoomTool::update(const QPointF point)
 {
     if (editor.editingContext().selectionModel().selectedRows().isEmpty()) {
         if (editor.transformMode() == TransformMode::View) {
@@ -137,9 +137,25 @@ void RotoScaleTool::update(const QPointF point)
     oldPoint = point;
 }
 
-void RotoScaleTool::end(const QPointF point)
+void RotoZoomTool::end(const QPointF point)
 {
 
+}
+
+void ZoomTool::wheel(const QPointF point, const QPointF delta)
+{
+    const qreal scaling = pow(2, delta.y());
+    QTransform transform = editor.transform();
+    rotateScaleAtOrigin(transform, 0.0, scaling, point);
+    editor.setTransform(transform);
+}
+
+void RotateTool::wheel(const QPointF point, const QPointF delta)
+{
+    const qreal rotation = -15.0 * delta.y();
+    QTransform transform = editor.transform();
+    rotateScaleAtOrigin(transform, rotation, 1.0, point);
+    editor.setTransform(transform);
 }
 
 } // namespace GfxPaint

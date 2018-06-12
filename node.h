@@ -134,6 +134,15 @@ public:
 
     explicit AbstractBufferNode(const Buffer &buffer, const bool indexed);
     explicit AbstractBufferNode(const AbstractBufferNode &other);
+
+protected:
+    QString formatString() const {
+        QString str;
+        str += BufferData::Format::componentTypeNames[buffer.format().componentType];
+        str += ":" + QString::number(buffer.format().componentSize * 8) + "bpc";
+        str += ":" + QString::number(buffer.format().componentCount);
+        return str;
+    }
 };
 
 class BufferNode : public SpatialNode, public AbstractBufferNode
@@ -155,7 +164,7 @@ public:
     virtual QString typeName() const override { return "Buffer"; }
     virtual QString labelInfo() const override {
         QString info;
-        info += QString("%1x%2").arg(buffer.size().width()).arg(buffer.size().height());
+        info += QString("%1x%2:%3").arg(buffer.size().width()).arg(buffer.size().height()).arg(formatString());
         return info;
     }
 
@@ -182,7 +191,7 @@ public:
     virtual QString typeName() const override { return "Palette"; }
     virtual QString labelInfo() const override {
         QString info;
-        info += QString("%1").arg(buffer.size().width());
+        info += QString("%1:%2").arg(buffer.size().width()).arg(formatString());
         return info;
     }
 

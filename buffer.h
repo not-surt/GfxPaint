@@ -61,6 +61,7 @@ public:
             QString shaderImageFormat;
         };
 
+        static const QMap<ComponentType, QString> componentTypeNames;
         static const QMap<ComponentType, ComponentInfo> components;
         static const QMap<Format, FormatInfo> formats;
 

@@ -4,6 +4,8 @@
 #include "renderedwidget.h"
 
 #include <QStateMachine>
+#include <QEventTransition>
+#include <QSignalTransition>
 #include <QMouseEventTransition>
 #include <QKeyEventTransition>
 #include <QElapsedTimer>
@@ -84,8 +86,10 @@ public:
 
     StrokeTool strokeTool;
     PickTool pickTool;
-    PanTool transformTool;
-    RotoScaleTool rotoScaleTool;
+    PanTool panTool;
+    RotoZoomTool rotoZoomTool;
+    ZoomTool zoomTool;
+    RotateTool rotateTool;
 
     TransformMode transformMode() const { return m_transformMode; }
     QTransform transform() const { return cameraTransform; }
@@ -105,86 +109,87 @@ signals:
     void transformChanged(const QTransform &transform);
 
 protected:
-    virtual void mousePressEvent(QMouseEvent *event) override;
-    virtual void mouseReleaseEvent(QMouseEvent *event) override;
-    virtual void mouseMoveEvent(QMouseEvent *event) override;
-    virtual void wheelEvent(QWheelEvent *event) override;
-    virtual void keyPressEvent(QKeyEvent *event) override;
-    virtual void keyReleaseEvent(QKeyEvent *event) override;
-
     void render() override;
-
-    bool handleMouseEvent(const QEvent::Type type, const Qt::KeyboardModifiers modifiers, const Qt::MouseButton button, const QPoint pos);
 
     EditingContext m_editingContext;
 
     QTransform cameraTransform;
     TransformMode m_transformMode;
 
+    QList<Tool *> tools;
+    QList<std::tuple<Tool *, Tool *>> toolSlots;
+
     class InputState : private QObject {
     public:
         class ToolState : public QState {
         public:
-            ToolState(Editor *const editor, QState *const parent = nullptr) :
+            ToolState(Editor &editor, QState *const parent = nullptr) :
                 QState(parent),
-                editor(editor), m_tool(nullptr)
+                editor(editor), m_tool(nullptr), activeTool(nullptr)
             {}
 
-            Tool *tool() const  {
-                return m_tool;
-            }
-            void setTool(Tool *tool) {
-                m_tool = tool;
-            }
+            Tool *tool() const  { return m_tool; }
+            void setTool(Tool *tool) { m_tool = tool; }
 
         protected:
             virtual void onEntry(QEvent *const event) override {
-                if (m_tool) {
+                if (m_tool && !activeTool) {
                     QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
                     if (unwrappedEvent->type() == QEvent::KeyPress || unwrappedEvent->type() == QEvent::MouseButtonPress) {
                         QPointF pos;
                         if (unwrappedEvent->type() == QEvent::KeyPress) {
-                            editor->grabMouse();
-                            pos = editor->mapFromGlobal(QCursor::pos());
+                            editor.grabMouse();
+                            pos = editor.mapFromGlobal(QCursor::pos());
                         }
                         else {
-                            QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
-                            pos = mouseEvent->pos();
+                            const QMouseEvent *const mouseEvent = static_cast<const QMouseEvent *>(unwrappedEvent);
+                            pos = mouseEvent->localPos();
                         }
-                        m_tool->begin(editor->mouseToViewport(pos));
+                        activeTool = m_tool;
+                        activeTool->begin(editor.mouseToViewport(pos));
                     }
-                    else if (unwrappedEvent->type() == QEvent::MouseMove) {
-                        QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
-                        QPointF pos = mouseEvent->pos();
-                        m_tool->update(editor->mouseToViewport(pos));
+                    else if (unwrappedEvent->type() == QEvent::Wheel) {
+                        QWheelEvent *const wheelEvent = static_cast<QWheelEvent *>(unwrappedEvent);
+                        const qreal stepSize = 15.0 * 8.0;
+                        m_tool->wheel(editor.mouseToViewport(wheelEvent->posF()), QPointF(wheelEvent->angleDelta().x() / stepSize, wheelEvent->angleDelta().y() / stepSize));
                     }
-                    editor->update();
+                    editor.update();
+                }
+                else if (activeTool) {
+                    QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
+                    if (unwrappedEvent->type() == QEvent::MouseMove) {
+                        const QMouseEvent *const mouseEvent = static_cast<const QMouseEvent *>(unwrappedEvent);
+                        activeTool->update(editor.mouseToViewport(mouseEvent->localPos()));
+                    }
+                    editor.update();
                 }
             }
             virtual void onExit(QEvent *const event) override {
-                if (m_tool) {
+                if (activeTool) {
                     QEvent *const unwrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event)->event();
                     if (unwrappedEvent->type() == QEvent::KeyRelease || unwrappedEvent->type() == QEvent::MouseButtonRelease) {
                         QPointF pos;
                         if (unwrappedEvent->type() == QEvent::KeyRelease) {
-                            editor->releaseMouse();
-                            pos = editor->mapFromGlobal(QCursor::pos());
+                            pos = editor.mapFromGlobal(QCursor::pos());
                         }
                         else {
-                            QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(unwrappedEvent);
-                            pos = mouseEvent->pos();
+                            const QMouseEvent *const mouseEvent = static_cast<const QMouseEvent *>(unwrappedEvent);
+                            pos = mouseEvent->localPos();
                         }
-                        m_tool->end(editor->mouseToViewport(pos));
+                        editor.releaseMouse();
+                        activeTool->end(editor.mouseToViewport(pos));
+                        activeTool = nullptr;
                     }
-                    editor->update();
+                    editor.update();
                 }
             }
 
-            Editor *const editor;
+            Editor &editor;
             Tool *m_tool;
+            Tool *activeTool;
         };
 
-        InputState(Editor *const editor,
+        InputState(Editor &editor,
                    const Qt::MouseButton primaryToolMouseButton = Qt::LeftButton, const Qt::MouseButton secondaryToolMouseButton = Qt::RightButton, const Qt::MouseButton transformMouseButton = Qt::MiddleButton,
                    const Qt::Key transformKey = Qt::Key_Space, const Qt::Key altToolKey = Qt::Key_Control, const Qt::Key altTransformKey = Qt::Key_Alt) :
             QObject(),
@@ -194,21 +199,22 @@ protected:
             machine(QState::ParallelStates),
 
             mouseOverGroup(&machine), mouseOut(&mouseOverGroup), mouseIn(&mouseOverGroup),
-            mouseEnter(editor, QEvent::Enter), mouseLeave(editor, QEvent::Leave),
+            mouseEnter(&editor, QEvent::Enter), mouseLeave(&editor, QEvent::Leave),
 
-            toolGroup(&machine), standardTool(&toolGroup), alternateTool(&toolGroup),
-            alternateToolKeyPress(editor, QEvent::KeyPress, altToolKey), alternateToolKeyRelease(editor, QEvent::KeyRelease, altToolKey),
+            toolModeGroup(&machine), standardToolMode(&toolModeGroup), alternateToolMode(&toolModeGroup),
+            alternateToolKeyPress(&editor, QEvent::KeyPress, altToolKey), alternateToolKeyRelease(&editor, QEvent::KeyRelease, altToolKey),
 
             transformGroup(&machine), standardTransform(&transformGroup), alternateTransform(&transformGroup),
-            alternateTransformKeyPress(editor, QEvent::KeyPress, altTransformKey), alternateTransformKeyRelease(editor, QEvent::KeyRelease, altTransformKey),
+            alternateTransformKeyPress(&editor, QEvent::KeyPress, altTransformKey), alternateTransformKeyRelease(&editor, QEvent::KeyRelease, altTransformKey),
 
-            modeGroup(&machine), idle(&modeGroup), primaryTool(editor, &modeGroup), secondaryTool(editor, &modeGroup), transformTool(editor, &modeGroup),
-            primaryToolMousePress(editor, QEvent::MouseButtonPress, primaryToolMouseButton), primaryToolMouseMove(editor, QEvent::MouseMove, Qt::NoButton), primaryToolMouseRelease(editor, QEvent::MouseButtonRelease, primaryToolMouseButton),
-            secondaryToolMousePress(editor, QEvent::MouseButtonPress, secondaryToolMouseButton), secondaryToolMouseMove(editor, QEvent::MouseMove, Qt::NoButton), secondaryToolMouseRelease(editor, QEvent::MouseButtonRelease, secondaryToolMouseButton),
-            transformToolMousePress(editor, QEvent::MouseButtonPress, transformMouseButton), transformToolMouseMove(editor, QEvent::MouseMove, Qt::NoButton), transformToolMouseRelease(editor, QEvent::MouseButtonRelease, transformMouseButton),
-            transformToolKeyPress(editor, QEvent::KeyPress, transformKey), transformKeyMove(editor, QEvent::MouseMove, Qt::NoButton), transformToolKeyRelease(editor, QEvent::KeyRelease, transformKey),
+            toolGroup(&machine), idle(&toolGroup), primaryTool(editor, &toolGroup), secondaryTool(editor, &toolGroup), transformTool(editor, &toolGroup), mouseWheelTool(editor, &toolGroup),
+            primaryToolMousePress(&editor, QEvent::MouseButtonPress, primaryToolMouseButton), primaryToolMouseMove(&editor, QEvent::MouseMove, Qt::NoButton), primaryToolMouseRelease(&editor, QEvent::MouseButtonRelease, primaryToolMouseButton),
+            secondaryToolMousePress(&editor, QEvent::MouseButtonPress, secondaryToolMouseButton), secondaryToolMouseMove(&editor, QEvent::MouseMove, Qt::NoButton), secondaryToolMouseRelease(&editor, QEvent::MouseButtonRelease, secondaryToolMouseButton),
+            transformToolMousePress(&editor, QEvent::MouseButtonPress, transformMouseButton), transformToolMouseMove(&editor, QEvent::MouseMove, Qt::NoButton), transformToolMouseRelease(&editor, QEvent::MouseButtonRelease, transformMouseButton),
+            transformToolKeyPress(&editor, QEvent::KeyPress, transformKey), transformKeyMove(&editor, QEvent::MouseMove, Qt::NoButton), transformToolKeyRelease(&editor, QEvent::KeyRelease, transformKey),
+            mouseWheelIn(&editor, QEvent::Wheel), mouseWheelOut(&mouseWheelTool, &QState::entered),
 
-            windowDeactivate(editor, QEvent::WindowDeactivate),
+            windowDeactivate(&editor, QEvent::WindowDeactivate),
 
             toolStates(),
 
@@ -220,11 +226,11 @@ protected:
             mouseIn.addTransition(&mouseLeave);
             mouseLeave.setTargetState(&mouseOut);
 
-            toolGroup.setInitialState(&standardTool);
-            standardTool.addTransition(&alternateToolKeyPress);
-            alternateToolKeyPress.setTargetState(&alternateTool);
-            alternateTool.addTransition(&alternateToolKeyRelease);
-            alternateToolKeyRelease.setTargetState(&standardTool);
+            toolModeGroup.setInitialState(&standardToolMode);
+            standardToolMode.addTransition(&alternateToolKeyPress);
+            alternateToolKeyPress.setTargetState(&alternateToolMode);
+            alternateToolMode.addTransition(&alternateToolKeyRelease);
+            alternateToolKeyRelease.setTargetState(&standardToolMode);
 
             transformGroup.setInitialState(&standardTransform);
             standardTransform.addTransition(&alternateTransformKeyPress);
@@ -232,7 +238,7 @@ protected:
             alternateTransform.addTransition(&alternateTransformKeyRelease);
             alternateTransformKeyRelease.setTargetState(&standardTransform);
 
-            modeGroup.setInitialState(&idle);
+            toolGroup.setInitialState(&idle);
 
             primaryToolMousePress.setTargetState(&primaryTool);
             idle.addTransition(&primaryToolMousePress);
@@ -258,21 +264,41 @@ protected:
             idle.addTransition(&transformToolKeyPress);
             transformToolKeyRelease.setTargetState(&idle);
             transformTool.addTransition(&transformToolKeyRelease);
+            mouseWheelIn.setTargetState(&mouseWheelTool);
+            idle.addTransition(&mouseWheelIn);
+            mouseWheelOut.setTargetState(&idle);
+            mouseWheelTool.addTransition(&mouseWheelOut);
 
             transformTool.addTransition(&windowDeactivate);
             windowDeactivate.setTargetState(&idle);
 
-            editor->installEventFilter(this);
+            editor.installEventFilter(this);
 
-            primaryTool.setTool(&editor->strokeTool);
-            secondaryTool.setTool(&editor->pickTool);
-            transformTool.setTool(&editor->transformTool);
-//            transformTool.setTool(&editor->rotoScaleTool);
+            primaryTool.setTool(&editor.strokeTool);
+            transformTool.setTool(&editor.panTool);
+            mouseWheelTool.setTool(&editor.zoomTool);
+
+            QObject::connect(&alternateToolMode, &QState::entered, [this, &editor](){
+                for (auto slot : editor.toolSlots) {
+
+                }
+                primaryTool.setTool(&editor.pickTool);
+                transformTool.setTool(&editor.rotoZoomTool);
+                mouseWheelTool.setTool(&editor.rotateTool);
+            });
+            QObject::connect(&alternateToolMode, &QState::exited, [this, &editor](){
+                for (auto slot : editor.toolSlots) {
+
+                }
+                primaryTool.setTool(&editor.strokeTool);
+                transformTool.setTool(&editor.panTool);
+                mouseWheelTool.setTool(&editor.zoomTool);
+            });
 
             machine.start();
         }
 
-        Editor *const editor;
+        Editor &editor;
 
         QStateMachine machine;
 
@@ -282,9 +308,9 @@ protected:
         QEventTransition mouseEnter;
         QEventTransition mouseLeave;
 
-        QState toolGroup;
-        QState standardTool;
-        QState alternateTool;
+        QState toolModeGroup;
+        QState standardToolMode;
+        QState alternateToolMode;
         KeyEventTransition alternateToolKeyPress;
         KeyEventTransition alternateToolKeyRelease;
 
@@ -294,11 +320,12 @@ protected:
         KeyEventTransition alternateTransformKeyPress;
         KeyEventTransition alternateTransformKeyRelease;
 
-        QState modeGroup;
+        QState toolGroup;
         QState idle;
         ToolState primaryTool;
         ToolState secondaryTool;
         ToolState transformTool;
+        ToolState mouseWheelTool;
         QMouseEventTransition primaryToolMousePress;
         QMouseEventTransition primaryToolMouseMove;
         QMouseEventTransition primaryToolMouseRelease;
@@ -311,6 +338,8 @@ protected:
         KeyEventTransition transformToolKeyPress;
         QMouseEventTransition transformKeyMove;
         KeyEventTransition transformToolKeyRelease;
+        QEventTransition mouseWheelIn;
+        QSignalTransition mouseWheelOut;
 
         QEventTransition windowDeactivate; // TODO: why SIGABRT when change order?
 
@@ -323,7 +352,7 @@ protected:
 
     private:
         virtual bool eventFilter(QObject *watched, QEvent *event) override {
-            if (watched == editor) {
+            if (watched == &editor) {
                 static const QSet<QEvent::Type> keyEvents = {QEvent::KeyPress, QEvent::KeyRelease};
                 static const QSet<QEvent::Type> mouseEvents = {QEvent::MouseButtonPress, QEvent::MouseMove, QEvent::MouseButtonRelease};
                 if (keyEvents.contains(event->type())) {

@@ -5,7 +5,7 @@
 #include <QList>
 #include <QByteArray>
 #include <QWidget>
-#include <QEventTransition>
+#include <QKeyEventTransition>
 #include <QKeyEvent>
 #include <QStateMachine>
 #include <QTransform>
@@ -20,31 +20,20 @@ QString buildFilterString(QList<QByteArray> imageFormats, QString allLabel = QSt
 QWidget *centringWidget(QWidget *const widget);
 
 // Builtin version doesn't discard key repeats
-class KeyEventTransition : public QEventTransition {
+class KeyEventTransition : public QKeyEventTransition {
 public:
-    KeyEventTransition(QState *const sourceState = nullptr) : QEventTransition(sourceState) {}
-    KeyEventTransition(QObject *object, QEvent::Type type, int key, QState *sourceState = nullptr) :
-        QEventTransition(object, type, sourceState),
-        m_key(key)
-    {}
-    int key() const { return m_key; }
-    void setKey(int key) { m_key = key; }
-    Qt::KeyboardModifiers modifierMask() const { return m_modifierMask; }
-    void setModifierMask(Qt::KeyboardModifiers modifierMask) { m_modifierMask = modifierMask; }
+    KeyEventTransition(QState *const sourceState = nullptr) : QKeyEventTransition(sourceState) {}
+    KeyEventTransition(QObject *object, QEvent::Type type, int key, QState *sourceState = nullptr) : QKeyEventTransition(object, type, key, sourceState) {}
 
 protected:
     virtual bool eventTest(QEvent *event) override {
-        const bool baseResult = QEventTransition::eventTest(event);
-        QStateMachine::WrappedEvent *const wrappedEvent = static_cast<QStateMachine::WrappedEvent *>(event);
-        QKeyEvent *const keyEvent = static_cast<QKeyEvent *>(wrappedEvent->event());
-        return baseResult &&
-                keyEvent->key() == m_key &&
-                (m_modifierMask == Qt::NoModifier || keyEvent->modifiers() & m_modifierMask) &&
+        const QStateMachine::WrappedEvent *const wrappedEvent = static_cast<const QStateMachine::WrappedEvent *>(event);
+        const QKeyEvent *const keyEvent = static_cast<const QKeyEvent *>(wrappedEvent->event());
+        return QEventTransition::eventTest(event) &&
+                keyEvent->key() == key() &&
+                (modifierMask() == Qt::NoModifier || keyEvent->modifiers() & modifierMask()) &&
                 !keyEvent->isAutoRepeat();
     }
-
-    int m_key;
-    Qt::KeyboardModifiers m_modifierMask;
 };
 
 QString fileToString(const QString &path);

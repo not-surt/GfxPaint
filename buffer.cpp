@@ -4,6 +4,15 @@
 
 namespace GfxPaint {
 
+const QMap<BufferData::Format::ComponentType, QString> BufferData::Format::componentTypeNames = {
+    {BufferData::Format::ComponentType::Invalid, "Invalid"},
+    {BufferData::Format::ComponentType::UNorm, "Unsigned Normalised"},
+    {BufferData::Format::ComponentType::SNorm, "Signed Normalised"},
+    {BufferData::Format::ComponentType::UInt, "Unsigned Integer"},
+    {BufferData::Format::ComponentType::SInt, "Signed Integer"},
+    {BufferData::Format::ComponentType::Float, "Floating-point"},
+};
+
 static const QString floatShaderSamplerType = "sampler2DRect";
 static const QString uIntShaderSamplerType = "usampler2DRect";
 static const QString sIntShaderSamplerType = "isampler2DRect";
@@ -109,6 +118,7 @@ BufferData::BufferData(const QSize size, const Format format, const GLvoid *cons
     texture(createTexture(size, format, data)),
     framebuffer(createFramebuffer(format, texture))
 {
+    Q_ASSERT(Format::formats.contains(format));
 }
 
 BufferData::BufferData(const BufferData &other) :
@@ -117,6 +127,7 @@ BufferData::BufferData(const BufferData &other) :
     texture(createTexture(size, format, nullptr)),
     framebuffer(createFramebuffer(format, texture))
 {
+    Q_ASSERT(Format::formats.contains(format));
     copy(other);
 }
 
