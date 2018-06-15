@@ -8,6 +8,7 @@ void StrokeTool::begin(const QPointF point) {
     strokePoints.clear();
     strokeOffset = 0.0;
     strokePoints.append(editor.viewportToWorld(point));
+    qDebug() << "StrokeTool::begin";/////////////////////////////////////////////////
 }
 
 void StrokeTool::update(const QPointF point) {

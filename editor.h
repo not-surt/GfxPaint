@@ -15,7 +15,6 @@
 #include "utils.h"
 #include "application.h"
 #include "tool.h"
-#include "editorinputstate.h"
 
 namespace GfxPaint {
 
@@ -117,7 +116,124 @@ protected:
     QList<Tool *> tools;
     QList<std::tuple<Tool *, Tool *>> toolSlots;
 
-    EditorInputState inputState;
+    ToolSet toolSet;
+    Tool *activeTool;
+    bool mouseOver;
+
+protected:
+    void toolAbort() {
+        releaseMouse();
+        activeTool = nullptr;
+    }
+    Tool *toolSetTool(const Qt::KeyboardModifiers modifiers, const ToolTrigger trigger) {
+        if (toolSet.contains(modifiers) && toolSet[modifiers].contains(trigger)) return toolSet[modifiers][trigger];
+        else return nullptr;
+    }
+
+    virtual void mousePressEvent(QMouseEvent *const event) override
+    {
+        Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::MouseButton, event->button()});
+        if (tool) {
+            qDebug() << "begin!";//////////////////////////////////////
+            activeTool = tool;
+            tool->begin(mouseToViewport(event->localPos()));
+            event->accept();
+        }
+    }
+    virtual void mouseReleaseEvent(QMouseEvent *const event) override
+    {
+        Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::MouseButton, event->button()});
+        if (tool) {
+            qDebug() << "end!";//////////////////////////////////////
+            tool->end(mouseToViewport(event->localPos()));
+            activeTool = nullptr;
+            event->accept();
+        }
+    }
+    virtual void mouseMoveEvent(QMouseEvent *const event) override
+    {
+//        Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::MouseButton, event->button()});
+//        if (tool) {
+//            qDebug() << "update!";//////////////////////////////////////
+//            tool->update(mouseToViewport(event->localPos()));
+//            event->accept();
+//        }
+        if (activeTool) {
+            qDebug() << "update!";//////////////////////////////////////
+            activeTool->update(mouseToViewport(event->localPos()));
+            event->accept();
+        }
+    }
+    virtual void wheelEvent(QWheelEvent *const event) override
+    {
+        Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::MouseWheel, 0});
+        if (tool) {
+            qDebug() << "wheel!";//////////////////////////////////////
+            static const qreal stepSize = 15.0 * 8.0;
+            tool->wheel(mouseToViewport(event->posF()), {event->angleDelta().x() / stepSize, event->angleDelta().y() / stepSize});
+            event->accept();
+        }
+    }
+    virtual void keyPressEvent(QKeyEvent *const event) override
+    {
+        static const QSet<Qt::Key> modifiers = {Qt::Key_Shift, Qt::Key_Control, Qt::Key_Meta, Qt::Key_Alt, Qt::Key_AltGr};
+        if (modifiers.contains(static_cast<Qt::Key>(event->key()))) {
+
+        }
+        if (!event->isAutoRepeat()) {
+            Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::Key, event->key()});
+            if (tool) {
+                qDebug() << "begin!";//////////////////////////////////////
+                activeTool = tool;
+                grabMouse();
+                tool->begin(mouseToViewport(mapFromGlobal(QCursor::pos())));
+                event->accept();
+            }
+        }
+    }
+    virtual void keyReleaseEvent(QKeyEvent *const event) override
+    {
+        static const QSet<Qt::Key> modifiers = {Qt::Key_Shift, Qt::Key_Control, Qt::Key_Meta, Qt::Key_Alt, Qt::Key_AltGr};
+        if (modifiers.contains(static_cast<Qt::Key>(event->key()))) {
+
+        }
+        if (!event->isAutoRepeat()) {
+            Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::Key, event->key()});
+            if (tool) {
+                qDebug() << "end!";//////////////////////////////////////
+                tool->end(mouseToViewport(mapFromGlobal(QCursor::pos())));
+                releaseMouse();
+                activeTool = nullptr;
+                event->accept();
+            }
+        }
+    }
+
+    // QObject interface
+public:
+    virtual bool event(QEvent *const event) override
+    {
+        /*if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
+
+        }
+        else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
+
+        }
+        else if (event->type() == QEvent::Wheel) {
+
+        }
+        else */if (event->type() == QEvent::Enter) {
+            mouseOver = true;
+        }
+        else if (event->type() == QEvent::Leave) {
+            mouseOver = false;
+        }
+        else if (event->type() == QEvent::WindowDeactivate) {
+            toolAbort();
+            mouseOver = false;
+        }
+        else return RenderedWidget::event(event);
+    }
 };
 
 } // namespace GfxPaint

@@ -6,6 +6,7 @@
 #include <QByteArray>
 #include <QWidget>
 #include <QKeyEventTransition>
+#include <QMouseEventTransition>
 #include <QKeyEvent>
 #include <QStateMachine>
 #include <QTransform>
@@ -23,17 +24,29 @@ QWidget *centringWidget(QWidget *const widget);
 class KeyEventTransition : public QKeyEventTransition {
 public:
     KeyEventTransition(QState *const sourceState = nullptr) : QKeyEventTransition(sourceState) {}
-    KeyEventTransition(QObject *object, QEvent::Type type, int key, QState *sourceState = nullptr) : QKeyEventTransition(object, type, key, sourceState) {}
+    KeyEventTransition(QObject *const object, const QEvent::Type type, const int key, QState *const sourceState = nullptr) : QKeyEventTransition(object, type, key, sourceState) {}
 
 protected:
-    virtual bool eventTest(QEvent *event) override {
-        const QStateMachine::WrappedEvent *const wrappedEvent = static_cast<const QStateMachine::WrappedEvent *>(event);
-        const QKeyEvent *const keyEvent = static_cast<const QKeyEvent *>(wrappedEvent->event());
-        return QEventTransition::eventTest(event) &&
-                keyEvent->key() == key() &&
-                (modifierMask() == Qt::NoModifier || keyEvent->modifiers() & modifierMask()) &&
-                !keyEvent->isAutoRepeat();
-    }
+    virtual bool eventTest(QEvent *event) override;
+};
+
+class ModifierKeyEventTransition : public QEventTransition {
+public:
+    ModifierKeyEventTransition(QState *const sourceState = nullptr) : QEventTransition(sourceState) {}
+    ModifierKeyEventTransition(QObject *const object, QState *const sourceState = nullptr) : QEventTransition(object, QEvent::None, sourceState) {}
+
+protected:
+    virtual bool eventTest(QEvent *event) override;
+};
+
+// Builtin version doesn't exactly match modifier mask
+class MouseEventTransition : public QMouseEventTransition {
+public:
+    MouseEventTransition(QState *const sourceState = nullptr) : QMouseEventTransition(sourceState) {}
+    MouseEventTransition(QObject *const object, const QEvent::Type type, const Qt::MouseButton button, QState *const sourceState = nullptr) : QMouseEventTransition(object, type, button, sourceState) {}
+
+protected:
+    virtual bool eventTest(QEvent *event) override;
 };
 
 QString fileToString(const QString &path);

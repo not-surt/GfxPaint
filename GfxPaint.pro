@@ -60,8 +60,7 @@ SOURCES +=\
     model.cpp \
     colourcomponentsliderwidget.cpp \
     nodeeditorwidget.cpp \
-    tool.cpp \
-    editorinputstate.cpp
+    tool.cpp
 
 HEADERS  += \
     application.h \
@@ -97,8 +96,7 @@ HEADERS  += \
     colourcomponentsliderwidget.h \
     nodeeditorwidget.h \
     tool.h \
-    type.h \
-    editorinputstate.h
+    type.h
 
 FORMS    += \
     mainwindow.ui \

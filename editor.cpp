@@ -15,12 +15,27 @@ Editor::Editor(Scene &scene, QWidget *parent) :
     cameraTransform(), m_transformMode(),
     tools{&strokeTool, &pickTool, &panTool, &rotoZoomTool},
     toolSlots{std::tuple<Tool *, Tool *>{&strokeTool, &pickTool}, std::tuple<Tool *, Tool *>{&panTool, &rotoZoomTool}},
-    inputState(*this)
+    toolSet{}, activeTool(nullptr), mouseOver(false)
 {
     setMouseTracking(true);
     setFocusPolicy(Qt::WheelFocus);
 
     QObject::connect(&m_editingContext.selectionModel(), &QItemSelectionModel::selectionChanged, this, &Editor::updateContext);
+
+    toolSet = {
+        {Qt::NoModifier, {
+             {{ToolTrigger::Type::MouseButton, Qt::LeftButton}, &strokeTool},
+             {{ToolTrigger::Type::MouseButton, Qt::MiddleButton}, &panTool},
+             {{ToolTrigger::Type::Key, Qt::Key_Space}, &panTool},
+             {{ToolTrigger::Type::MouseWheel, 0}, &zoomTool},
+    }},
+        {Qt::ControlModifier, {
+             {{ToolTrigger::Type::MouseButton, Qt::LeftButton}, &pickTool},
+             {{ToolTrigger::Type::MouseButton, Qt::MiddleButton}, &rotoZoomTool},
+             {{ToolTrigger::Type::Key, Qt::Key_Space}, &rotoZoomTool},
+             {{ToolTrigger::Type::MouseWheel, 0}, &rotateTool},
+        }},
+    };
 }
 
 Editor::Editor(const Editor &other) :
@@ -29,7 +44,9 @@ Editor::Editor(const Editor &other) :
     strokeTool(other.strokeTool), pickTool(other.pickTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform), m_transformMode(other.m_transformMode),
-    inputState(*this)
+    tools(other.tools),
+    toolSlots(other.toolSlots),
+    toolSet(other.toolSet), activeTool(nullptr), mouseOver(false)
 {
     setMouseTracking(true);
     setFocusPolicy(Qt::WheelFocus);
@@ -117,7 +134,7 @@ void Editor::render()
         if (bufferNode && bufferNodeContext->workBuffer) {
             bufferNodeContext->workBuffer->copy(bufferNode->buffer);
             // Draw on-canvas brush preview
-            if (inputState.machine.configuration().contains(&inputState.mouseIn)) {
+            if (mouseOver) {
                 ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
                 bufferNode->buffer.bindFramebuffer();
                 glDisable(GL_DEPTH_TEST);
@@ -142,7 +159,7 @@ void Editor::render()
         const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode && bufferNodeContext->workBuffer) {
-            if (inputState.machine.configuration().contains(&inputState.mouseIn)) {
+            if (mouseOver) {
                 bufferNode->buffer.copy(*bufferNodeContext->workBuffer);
             }
         }

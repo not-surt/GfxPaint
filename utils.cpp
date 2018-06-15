@@ -212,4 +212,33 @@ QTransform transformPointToPoint(const QPointF origin, const QPointF from, const
     return transform;
 }
 
+bool KeyEventTransition::eventTest(QEvent *event) {
+    const QStateMachine::WrappedEvent *const wrappedEvent = static_cast<const QStateMachine::WrappedEvent *>(event);
+    const QKeyEvent *const keyEvent = static_cast<const QKeyEvent *>(wrappedEvent->event());
+    return QEventTransition::eventTest(event) &&
+            keyEvent->key() == key() &&
+            (modifierMask() == Qt::NoModifier || keyEvent->modifiers() & modifierMask()) &&
+            !keyEvent->isAutoRepeat();
+}
+
+bool MouseEventTransition::eventTest(QEvent *event) {
+    const QStateMachine::WrappedEvent *const wrappedEvent = static_cast<const QStateMachine::WrappedEvent *>(event);
+    const QMouseEvent *const mouseEvent = static_cast<const QMouseEvent *>(wrappedEvent->event());
+    return QEventTransition::eventTest(event) &&
+            mouseEvent->button() == button() &&
+            (modifierMask() == Qt::NoModifier || mouseEvent->modifiers() & modifierMask());
+}
+
+bool ModifierKeyEventTransition::eventTest(QEvent *event) {
+    static const QSet<Qt::Key> modifiers = {Qt::Key_Shift, Qt::Key_Control, Qt::Key_Meta, Qt::Key_Alt, Qt::Key_AltGr};
+    const QStateMachine::WrappedEvent *const wrappedEvent = static_cast<const QStateMachine::WrappedEvent *>(event);
+    if (wrappedEvent->object() == eventSource()) {
+        if ((wrappedEvent->event()->type() == QEvent::KeyPress || wrappedEvent->event()->type() == QEvent::KeyRelease)) {
+            const QKeyEvent *const keyEvent = static_cast<const QKeyEvent *>(wrappedEvent->event());
+            if (modifiers.contains(static_cast<Qt::Key>(keyEvent->key()))) return true;
+        }
+    }
+    return false;
+}
+
 } // namespace GfxPaint
