@@ -563,6 +563,7 @@ void MainWindow::activateEditor(Editor *const editor)
         QObject::disconnect(connection);
     }
     activeEditorConnections.clear();
+    removeEventFilter(activeEditor);
     activeEditor = editor;
     if (activeEditor) {
         ui->sessionEditorWidget->selectionModel()->select(qApp->documentManager.documentModelIndex(&activeEditor->scene), QItemSelectionModel::ClearAndSelect);
@@ -599,6 +600,8 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformChanged, activeEditor, &Editor::setTransform);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::transformModeChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransformMode);
         activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformMode);
+
+        installEventFilter(activeEditor);
 
         activeEditor->activate();
     }

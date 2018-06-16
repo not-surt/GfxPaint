@@ -7,10 +7,6 @@
 
 namespace GfxPaint {
 
-//uint qHash(const std::tuple<bool, bool, bool, bool> &key, uint seed) {
-//    return (static_cast<uint>(key.axis) + seed) << key.decrease << key.increase;
-//}
-
 Editor::Editor(Scene &scene, QWidget *parent) :
     RenderedWidget(parent),
     scene(scene), model(*qApp->documentManager.documentModel(&scene)),
@@ -56,34 +52,47 @@ Editor::~Editor()
 {
 }
 
+bool Editor::eventFilter(QObject *const watched, QEvent *const event)
+{
+    if (!hasFocus() && (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease))  {
+        const QKeyEvent *const keyEvent = static_cast<QKeyEvent *>(event);
+        QKeyEvent *eventCopy = new QKeyEvent(keyEvent->type(), keyEvent->key(), keyEvent->modifiers(), keyEvent->text(), keyEvent->isAutoRepeat(), keyEvent->count());
+        QApplication::postEvent(this, eventCopy);
+    }
+
+    return false;
+}
+
 bool Editor::event(QEvent *const event)
 {
-    // Keep track of press keys/buttons & mouse pos
+    // Handle input event
     const QKeyEvent *const keyEvent = static_cast<QKeyEvent *>(event);
-    const QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(event);
-    const QWheelEvent *const wheelEvent = static_cast<QWheelEvent *>(event);
-//    if ((event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) && !keyEvent->isAutoRepeat()) return true;
-    inputState.wheelDirections = {{false, false, false, false}};
-    wheelDelta = {};
-    if (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) inputState.keys.insert(static_cast<Qt::Key>(keyEvent->key()));
-    else if (event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) inputState.keys.remove(static_cast<Qt::Key>(keyEvent->key()));
-    else if (event->type() == QEvent::MouseButtonPress) inputState.mouseButtons.insert(mouseEvent->button());
-    else if (event->type() == QEvent::MouseButtonRelease) inputState.mouseButtons.remove(mouseEvent->button());
-    else if (event->type() == QEvent::Wheel) {
-        inputState.wheelDirections = {{wheelEvent->angleDelta().x() < 0, wheelEvent->angleDelta().x() > 0, wheelEvent->angleDelta().y() < 0, wheelEvent->angleDelta().y() > 0}};
-        static const qreal stepSize = 8 * 15;
-        wheelDelta = wheelEvent->angleDelta() / stepSize;
-    }
-    if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) mousePos = mouseEvent->localPos();
-
     if ((event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) ||
             event->type() == QEvent::MouseButtonRelease ||
             (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) ||
             event->type() == QEvent::MouseButtonPress ||
             event->type() == QEvent::Wheel ||
             event->type() == QEvent::MouseMove)  {
-        // Handle input event
+        // Keep track of press keys/buttons & mouse pos
+        const QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(event);
+        const QWheelEvent *const wheelEvent = static_cast<QWheelEvent *>(event);
+        inputState.wheelDirections = {{false, false, false, false}};
+        wheelDelta = {};
+        if (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) inputState.keys.insert(static_cast<Qt::Key>(keyEvent->key()));
+        else if (event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) inputState.keys.remove(static_cast<Qt::Key>(keyEvent->key()));
+        else if (event->type() == QEvent::MouseButtonPress) inputState.mouseButtons.insert(mouseEvent->button());
+        else if (event->type() == QEvent::MouseButtonRelease) inputState.mouseButtons.remove(mouseEvent->button());
+        else if (event->type() == QEvent::Wheel) {
+            inputState.wheelDirections = {{wheelEvent->angleDelta().x() < 0, wheelEvent->angleDelta().x() > 0, wheelEvent->angleDelta().y() < 0, wheelEvent->angleDelta().y() > 0}};
+            static const qreal stepSize = 8 * 15;
+            wheelDelta = wheelEvent->angleDelta() / stepSize;
+        }
+        if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
+            mousePos = mouseEvent->localPos();
+        }
+
         bool consume = false;
+
         // Remove non-matching tools
         QMutableVectorIterator<std::pair<InputState, Tool *>> iterator(toolStack);
         while (iterator.hasNext()) {
@@ -97,6 +106,7 @@ bool Editor::event(QEvent *const event)
                 consume = true;
             }
         }
+
         // Add matching tools
         for (auto trigger : toolSet.keys()) {
             if (trigger.test(inputState)) {
@@ -114,23 +124,28 @@ bool Editor::event(QEvent *const event)
                 consume = true;
             }
         }
+
         // Handle mouse wheel
-        if (!toolStack.isEmpty() && !wheelDelta.isNull()) {
-            Tool *const tool = toolStack.top().second;
-            tool->wheel(mouseToViewport(mousePos), wheelDelta);
+        if (event->type() == QEvent::Wheel) {
+            if (!toolStack.isEmpty()) {
+                Tool *const tool = toolStack.top().second;
+                tool->wheel(mouseToViewport(mousePos), wheelDelta);
+            }
             consume = true;
         }
-        if (event->type() == QEvent::MouseMove) {
-            // Update current tool
+        // Update current tool
+        else if (event->type() == QEvent::MouseMove) {
             if (!toolStack.isEmpty()) {
                 Tool *const tool = toolStack.top().second;
                 tool->update(mouseToViewport(mousePos));
-                consume = true;
             }
+            consume = true;
         }
-        if (consume) return true;
+
+        return consume;
     }
-    else if (event->type() == QEvent::Enter) {
+
+    if (event->type() == QEvent::Enter) {
         mouseOver = true;
         return true;
     }
@@ -138,8 +153,10 @@ bool Editor::event(QEvent *const event)
         mouseOver = false;
         return true;
     }
-    else if (event->type() == QEvent::WindowDeactivate) {
+    else if (event->type() == QEvent::FocusOut ||
+        event->type() == QEvent::WindowDeactivate) {
         inputState = {};
+        toolStack = {};
         releaseMouse();
         mouseOver = false;
         return true;
@@ -232,8 +249,8 @@ void Editor::render()
                 glDisable(GL_DEPTH_TEST);
                 glDisable(GL_BLEND);
 
-                const QPointF point = mouseToWorld(mapFromGlobal(QCursor::pos()));
-//                const QPointF point = viewportToWorld(mousePos);
+//                const QPointF point = mouseToWorld(mapFromGlobal(QCursor::pos()));
+                const QPointF point = mouseToWorld(mousePos);
                 const QPointF snappedPoint = pixelSnap(point);
                 drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
                 bufferNodeContext->strokeBuffer->bindFramebuffer();
@@ -244,7 +261,7 @@ void Editor::render()
 
     // Draw scene
     widgetBuffer->bindFramebuffer();
-    scene.render(widgetBuffer, false, /*&palette*/nullptr, cameraTransform * viewportTransform, &m_editingContext.states());
+    scene.render(widgetBuffer, false, nullptr, cameraTransform * viewportTransform, &m_editingContext.states());
 
     // Undraw on-canvas brush preview
     for (auto index : m_editingContext.selectionModel().selectedRows()) {

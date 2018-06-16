@@ -62,6 +62,7 @@ public:
     Editor(const Editor &other);
     virtual ~Editor() override;
 
+    virtual bool eventFilter(QObject *const watched, QEvent *const event) override;
     virtual bool event(QEvent *const event) override;
 
     void updateWindowTitle();
@@ -149,8 +150,6 @@ protected:
     QMap<InputState, Tool *> toolSet;
     QStack<std::pair<InputState, Tool *>> toolStack;
 };
-
-//uint qHash(const std::tuple<bool, bool, bool, bool> &key, uint seed = 0);
 
 } // namespace GfxPaint
 
