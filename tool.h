@@ -25,31 +25,6 @@ protected:
     bool active;
 };
 
-struct ToolTrigger {
-    enum class Type {
-        MouseButton,
-        MouseWheel,
-        Key,
-    };
-
-    Type type;
-    int which;
-
-    bool operator<(const ToolTrigger &rhs) const {
-        return (static_cast<int>(type) < static_cast<int>(rhs.type)) || (which < rhs.which);
-    }
-};
-
-inline QDebug operator<<(QDebug debug, const ToolTrigger &trigger)
-{
-    QDebugStateSaver saver(debug);
-    debug.nospace() << '(' << static_cast<int>(trigger.type) << ", " << trigger.which << ')';
-
-    return debug;
-}
-
-typedef QMap<Qt::KeyboardModifiers, QMap<ToolTrigger, Tool *>> ToolSet;
-
 class StrokeTool : public Tool {
 public:
     StrokeTool(Editor &editor) :

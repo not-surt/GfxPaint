@@ -7,6 +7,8 @@
 #include <QOpenGLShaderProgram>
 #include <QItemSelectionModel>
 #include <cmath>
+#include <tuple>
+
 #include "buffer.h"
 #include "brush.h"
 #include "rendermanager.h"
@@ -31,9 +33,36 @@ class Editor : public RenderedWidget
     friend class EditorInputState;
 
 public:
+    struct InputState {
+        QSet<Qt::Key> keys;
+        QSet<Qt::MouseButton> mouseButtons;
+        std::array<bool, 4> wheelDirections;
+
+        bool operator==(const InputState &rhs) const {
+            return (keys == rhs.keys) && (mouseButtons == rhs.mouseButtons) && (wheelDirections == rhs.wheelDirections);
+        }
+        bool operator!=(const InputState &rhs) const {
+            return !operator==(rhs);
+        }
+        bool operator<(const InputState &rhs) const {
+            return std::make_tuple(keys.toList(), mouseButtons.toList(), wheelDirections) < std::make_tuple(rhs.keys.toList(), rhs.mouseButtons.toList(), rhs.wheelDirections);
+        }
+
+        bool test(const InputState &other) const {
+            return (keys == other.keys) && (mouseButtons == other.mouseButtons) &&
+                    ((wheelDirections == std::array<bool, 4>{{false, false, false, false}}) ||
+                    ((wheelDirections[0] && other.wheelDirections[0]) ||
+                     (wheelDirections[1] && other.wheelDirections[1]) ||
+                     (wheelDirections[2] && other.wheelDirections[2]) ||
+                     (wheelDirections[3] && other.wheelDirections[3])));
+        }
+    };
+
     explicit Editor(Scene &scene, QWidget *parent = nullptr);
     Editor(const Editor &other);
     virtual ~Editor() override;
+
+    virtual bool event(QEvent *const event) override;
 
     void updateWindowTitle();
     void setDocumentFilename(const QString &filename);
@@ -113,128 +142,15 @@ protected:
     QTransform cameraTransform;
     TransformMode m_transformMode;
 
-    QList<Tool *> tools;
-    QList<std::tuple<Tool *, Tool *>> toolSlots;
-
-    ToolSet toolSet;
-    Tool *activeTool;
+    InputState inputState;
+    QPointF mousePos;
     bool mouseOver;
-
-protected:
-    void toolAbort() {
-        releaseMouse();
-        activeTool = nullptr;
-    }
-    Tool *toolSetTool(const Qt::KeyboardModifiers modifiers, const ToolTrigger trigger) {
-        if (toolSet.contains(modifiers) && toolSet[modifiers].contains(trigger)) return toolSet[modifiers][trigger];
-        else return nullptr;
-    }
-
-    virtual void mousePressEvent(QMouseEvent *const event) override
-    {
-        Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::MouseButton, event->button()});
-        if (tool) {
-            qDebug() << "begin!";//////////////////////////////////////
-            activeTool = tool;
-            tool->begin(mouseToViewport(event->localPos()));
-            event->accept();
-        }
-    }
-    virtual void mouseReleaseEvent(QMouseEvent *const event) override
-    {
-        Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::MouseButton, event->button()});
-        if (tool) {
-            qDebug() << "end!";//////////////////////////////////////
-            tool->end(mouseToViewport(event->localPos()));
-            activeTool = nullptr;
-            event->accept();
-        }
-    }
-    virtual void mouseMoveEvent(QMouseEvent *const event) override
-    {
-//        Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::MouseButton, event->button()});
-//        if (tool) {
-//            qDebug() << "update!";//////////////////////////////////////
-//            tool->update(mouseToViewport(event->localPos()));
-//            event->accept();
-//        }
-        if (activeTool) {
-            qDebug() << "update!";//////////////////////////////////////
-            activeTool->update(mouseToViewport(event->localPos()));
-            event->accept();
-        }
-    }
-    virtual void wheelEvent(QWheelEvent *const event) override
-    {
-        Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::MouseWheel, 0});
-        if (tool) {
-            qDebug() << "wheel!";//////////////////////////////////////
-            static const qreal stepSize = 15.0 * 8.0;
-            tool->wheel(mouseToViewport(event->posF()), {event->angleDelta().x() / stepSize, event->angleDelta().y() / stepSize});
-            event->accept();
-        }
-    }
-    virtual void keyPressEvent(QKeyEvent *const event) override
-    {
-        static const QSet<Qt::Key> modifiers = {Qt::Key_Shift, Qt::Key_Control, Qt::Key_Meta, Qt::Key_Alt, Qt::Key_AltGr};
-        if (modifiers.contains(static_cast<Qt::Key>(event->key()))) {
-
-        }
-        if (!event->isAutoRepeat()) {
-            Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::Key, event->key()});
-            if (tool) {
-                qDebug() << "begin!";//////////////////////////////////////
-                activeTool = tool;
-                grabMouse();
-                tool->begin(mouseToViewport(mapFromGlobal(QCursor::pos())));
-                event->accept();
-            }
-        }
-    }
-    virtual void keyReleaseEvent(QKeyEvent *const event) override
-    {
-        static const QSet<Qt::Key> modifiers = {Qt::Key_Shift, Qt::Key_Control, Qt::Key_Meta, Qt::Key_Alt, Qt::Key_AltGr};
-        if (modifiers.contains(static_cast<Qt::Key>(event->key()))) {
-
-        }
-        if (!event->isAutoRepeat()) {
-            Tool *const tool = toolSetTool(event->modifiers(), {ToolTrigger::Type::Key, event->key()});
-            if (tool) {
-                qDebug() << "end!";//////////////////////////////////////
-                tool->end(mouseToViewport(mapFromGlobal(QCursor::pos())));
-                releaseMouse();
-                activeTool = nullptr;
-                event->accept();
-            }
-        }
-    }
-
-    // QObject interface
-public:
-    virtual bool event(QEvent *const event) override
-    {
-        /*if (event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease) {
-
-        }
-        else if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
-
-        }
-        else if (event->type() == QEvent::Wheel) {
-
-        }
-        else */if (event->type() == QEvent::Enter) {
-            mouseOver = true;
-        }
-        else if (event->type() == QEvent::Leave) {
-            mouseOver = false;
-        }
-        else if (event->type() == QEvent::WindowDeactivate) {
-            toolAbort();
-            mouseOver = false;
-        }
-        else return RenderedWidget::event(event);
-    }
+    QPointF wheelDelta;
+    QMap<InputState, Tool *> toolSet;
+    QStack<std::pair<InputState, Tool *>> toolStack;
 };
+
+//uint qHash(const std::tuple<bool, bool, bool, bool> &key, uint seed = 0);
 
 } // namespace GfxPaint
 
