@@ -15,15 +15,17 @@ public:
     struct BufferNodeContext {
         DabProgram *const dabProgram;
         ColourPickProgram *const colourPickProgram;
+        DabProgram *const dabStrokeBufferProgram;
         Buffer *const workBuffer;
         Buffer *const strokeBuffer;
 
-        BufferNodeContext(DabProgram *const dabProgram, ColourPickProgram *const colourPickProgram, Buffer *const workBuffer, Buffer *const strokeBuffer) :
-            dabProgram(dabProgram), colourPickProgram(colourPickProgram), workBuffer(workBuffer), strokeBuffer(strokeBuffer)
+        BufferNodeContext(DabProgram *const dabProgram, ColourPickProgram *const colourPickProgram, DabProgram *const dabStrokeBufferProgram, Buffer *const workBuffer, Buffer *const strokeBuffer) :
+            dabProgram(dabProgram), colourPickProgram(colourPickProgram), dabStrokeBufferProgram(dabStrokeBufferProgram), workBuffer(workBuffer), strokeBuffer(strokeBuffer)
         {}
         ~BufferNodeContext() {
             delete dabProgram;
             delete colourPickProgram;
+            delete dabStrokeBufferProgram;
             delete workBuffer;
             delete strokeBuffer;
         }

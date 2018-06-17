@@ -90,8 +90,8 @@ struct Stroke {
     Space space;
     int metric;
     bool continuous;
-    QPointF absoluteSpacing;
-    QPointF proportionalSpacing;
+    QSizeF absoluteSpacing;
+    QSizeF proportionalSpacing;
     int dabCount;
 };
 

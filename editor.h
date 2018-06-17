@@ -104,7 +104,7 @@ public:
         const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.height());
         return snap2d({offsetX, offsetY}, {1.0, 1.0}, target);
     }
-    qreal strokeSegmentDabs(const QPointF start, const QPointF end, const qreal spacing, const qreal offset, QList<QPointF> &output);
+    qreal strokeSegmentDabs(const QPointF startPos, const qreal startPressure, const qreal startRotation, const QPointF endPos, const qreal endPressure, const qreal endRotation, const QSizeF spacing, const qreal offset, QList<StrokeTool::Point> &output);
     void drawDab(const Dab &dab, const Colour &colour, BufferNode &node, const QPointF worldPos);
     void drawSegment(const Dab &dab, const Stroke &stroke, const Colour &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset);
 
@@ -144,9 +144,12 @@ protected:
     TransformMode m_transformMode;
 
     InputState inputState;
-    QPointF mousePos;
-    bool mouseOver;
+    QPointF cursorPos;
+    bool cursorOver;
     QPointF wheelDelta;
+    qreal pressure;
+    qreal rotation;
+
     QMap<InputState, Tool *> toolSet;
     QStack<std::pair<InputState, Tool *>> toolStack;
 };

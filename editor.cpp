@@ -2,6 +2,7 @@
 
 #include <QMouseEvent>
 #include <QtMath>
+#include <cmath>
 #include "application.h"
 #include "utils.h"
 
@@ -13,9 +14,8 @@ Editor::Editor(Scene &scene, QWidget *parent) :
     strokeTool(*this), pickTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
     m_editingContext(scene),
     cameraTransform(), m_transformMode(),
-    inputState{}, mousePos(), mouseOver{false}, wheelDelta{},
+    inputState{}, cursorPos(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{},
     toolSet{
-//        {{{}, {}, {{false, false, true, true}}}, &strokeTool},
         {{{}, {Qt::LeftButton}, {}}, &strokeTool},
         {{{}, {Qt::MiddleButton}, {}}, &panTool},
         {{{Qt::Key_Space}, {}, {}}, &panTool},
@@ -39,7 +39,7 @@ Editor::Editor(const Editor &other) :
     strokeTool(other.strokeTool), pickTool(other.pickTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform), m_transformMode(other.m_transformMode),
-    inputState{}, mousePos(), mouseOver{false}, wheelDelta{},
+    inputState{}, cursorPos(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{},
     toolSet(other.toolSet), toolStack{}
 {
     setMouseTracking(true);
@@ -68,27 +68,44 @@ bool Editor::event(QEvent *const event)
     // Handle input event
     const QKeyEvent *const keyEvent = static_cast<QKeyEvent *>(event);
     if ((event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) ||
-            event->type() == QEvent::MouseButtonRelease ||
             (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) ||
+            event->type() == QEvent::MouseButtonRelease ||
             event->type() == QEvent::MouseButtonPress ||
+            event->type() == QEvent::MouseMove ||
             event->type() == QEvent::Wheel ||
-            event->type() == QEvent::MouseMove)  {
+            event->type() == QEvent::TabletPress ||
+            event->type() == QEvent::TabletRelease ||
+            event->type() == QEvent::TabletMove)  {
         // Keep track of press keys/buttons & mouse pos
         const QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(event);
         const QWheelEvent *const wheelEvent = static_cast<QWheelEvent *>(event);
+        const QTabletEvent *const tabletEvent = static_cast<QTabletEvent *>(event);
         inputState.wheelDirections = {{false, false, false, false}};
         wheelDelta = {};
+        pressure = 0.0;
+        rotation = 0.0;
         if (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) inputState.keys.insert(static_cast<Qt::Key>(keyEvent->key()));
         else if (event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) inputState.keys.remove(static_cast<Qt::Key>(keyEvent->key()));
         else if (event->type() == QEvent::MouseButtonPress) inputState.mouseButtons.insert(mouseEvent->button());
         else if (event->type() == QEvent::MouseButtonRelease) inputState.mouseButtons.remove(mouseEvent->button());
+        else if (event->type() == QEvent::TabletPress) inputState.mouseButtons.insert(tabletEvent->button());
+        else if (event->type() == QEvent::TabletRelease) inputState.mouseButtons.remove(tabletEvent->button());
         else if (event->type() == QEvent::Wheel) {
             inputState.wheelDirections = {{wheelEvent->angleDelta().x() < 0, wheelEvent->angleDelta().x() > 0, wheelEvent->angleDelta().y() < 0, wheelEvent->angleDelta().y() > 0}};
             static const qreal stepSize = 8 * 15;
             wheelDelta = wheelEvent->angleDelta() / stepSize;
         }
         if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
-            mousePos = mouseEvent->localPos();
+            cursorPos = mouseEvent->localPos();
+            pressure = 1.0;
+        }
+        if (event->type() == QEvent::TabletPress || event->type() == QEvent::TabletRelease || event->type() == QEvent::TabletMove) {
+            cursorPos = tabletEvent->posF();
+            pressure = tabletEvent->pressure();
+//            rotation = tabletEvent->rotation();
+            const qreal tiltX = sin(qDegreesToRadians(static_cast<qreal>(tabletEvent->xTilt())));
+            const qreal tiltY = sin(qDegreesToRadians(static_cast<qreal>(tabletEvent->yTilt())));
+            rotation = std::atan2(tiltY, tiltX);
         }
 
         bool consume = false;
@@ -100,7 +117,7 @@ bool Editor::event(QEvent *const event)
             const InputState &trigger = iterator.value().first;
             Tool *const tool = iterator.value().second;
             if (!trigger.test(inputState)) {
-                tool->end(mouseToViewport(mousePos));
+                tool->end(mouseToViewport(cursorPos), pressure, rotation);
                 iterator.remove();
                 releaseMouse();
                 consume = true;
@@ -112,13 +129,13 @@ bool Editor::event(QEvent *const event)
             if (trigger.test(inputState)) {
                 if (!toolStack.isEmpty()) {
                     Tool *const oldTool = toolStack.top().second;
-                    oldTool->end(mouseToViewport(mousePos));
+                    oldTool->end(mouseToViewport(cursorPos), pressure, rotation);
                 }
                 Tool *const tool = toolSet[trigger];
                 auto pair = std::make_pair(trigger, tool);
                 if (!toolStack.contains(pair)) {
                     toolStack.push(pair);
-                    tool->begin(mouseToViewport(mousePos));
+                    tool->begin(mouseToViewport(cursorPos), pressure, rotation);
                 }
                 grabMouse();
                 consume = true;
@@ -129,15 +146,17 @@ bool Editor::event(QEvent *const event)
         if (event->type() == QEvent::Wheel) {
             if (!toolStack.isEmpty()) {
                 Tool *const tool = toolStack.top().second;
-                tool->wheel(mouseToViewport(mousePos), wheelDelta);
+                tool->wheel(mouseToViewport(cursorPos), wheelDelta);
             }
             consume = true;
         }
         // Update current tool
-        else if (event->type() == QEvent::MouseMove) {
+        else if (event->type() == QEvent::MouseMove ||
+                 event->type() == QEvent::TabletMove) {
             if (!toolStack.isEmpty()) {
                 Tool *const tool = toolStack.top().second;
-                tool->update(mouseToViewport(mousePos));
+                tool->update(mouseToViewport(cursorPos), pressure, rotation);
+                qDebug() << pressure << rotation;/////////////////////
             }
             consume = true;
         }
@@ -146,11 +165,11 @@ bool Editor::event(QEvent *const event)
     }
 
     if (event->type() == QEvent::Enter) {
-        mouseOver = true;
+        cursorOver = true;
         return true;
     }
     else if (event->type() == QEvent::Leave) {
-        mouseOver = false;
+        cursorOver = false;
         return true;
     }
     else if (event->type() == QEvent::FocusOut ||
@@ -158,7 +177,7 @@ bool Editor::event(QEvent *const event)
         inputState = {};
         toolStack = {};
         releaseMouse();
-        mouseOver = false;
+        cursorOver = false;
         return true;
     }
 
@@ -243,14 +262,14 @@ void Editor::render()
         if (bufferNode && bufferNodeContext->workBuffer) {
             bufferNodeContext->workBuffer->copy(bufferNode->buffer);
             // Draw on-canvas brush preview
-            if (mouseOver) {
+            if (cursorOver) {
                 ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
                 bufferNode->buffer.bindFramebuffer();
                 glDisable(GL_DEPTH_TEST);
                 glDisable(GL_BLEND);
 
-//                const QPointF point = mouseToWorld(mapFromGlobal(QCursor::pos()));
-                const QPointF point = mouseToWorld(mousePos);
+//                const QPointF point = mouseToWorld(mapFromGlobal(QCursor::pos())); // lower latency?
+                const QPointF point = mouseToWorld(cursorPos);
                 const QPointF snappedPoint = pixelSnap(point);
                 drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
                 bufferNodeContext->strokeBuffer->bindFramebuffer();
@@ -269,30 +288,36 @@ void Editor::render()
         const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode && bufferNodeContext->workBuffer) {
-            if (mouseOver) {
+            if (cursorOver) {
                 bufferNode->buffer.copy(*bufferNodeContext->workBuffer);
             }
         }
     }
 }
 
-qreal Editor::strokeSegmentDabs(const QPointF start, const QPointF end, const  qreal spacing, const qreal offset, QList<QPointF> &output) {
-    const QSizeF _spacing(qMax(spacing, 1.0), qMax(spacing, 1.0));
+qreal Editor::strokeSegmentDabs(const QPointF startPos, const qreal startPressure, const qreal startRotation, const QPointF endPos, const qreal endPressure, const qreal endRotation, const QSizeF spacing, const qreal offset, QList<StrokeTool::Point> &output) {
+    auto ellipsePolar = [](const qreal a, const qreal b, const qreal theta){
+        return (a * b) / std::sqrt(std::pow(a, 2.0) * std::pow(sin(theta), 2.0) + std::pow(b, 2.0) * std::pow(cos(theta), 2.0));
+    };
+    const qreal a = spacing.width() / 2.0;
+    const qreal b = spacing.height() / 2.0;
+    const qreal theta = std::atan2(endPos.y() - startPos.y(), endPos.x() - startPos.x());
+    const qreal increment = ellipsePolar(a, b, theta + ((2.0 * M_PI) / 360.0) * -startRotation) * 2.0;
 
-    qreal pos = offset;
+    qreal pos = offset * increment;
     if (pos == 0.0) {
-        output.append(start);
-        pos += _spacing.width();
+        output.append({startPos, startPressure, startRotation});
+        pos += increment;
     }
-    const QPointF delta(end.x() - start.x(), end.y() - start.y());
-    const qreal length = hypot(delta.x(), delta.y());
+    const QPointF delta(endPos.x() - startPos.x(), endPos.y() - startPos.y());
+    const qreal length = std::hypot(delta.x(), delta.y());
     const QPointF step(delta.x() / length, delta.y() / length);
     while (pos < length) {
-        output.append(QPointF(start.x() + pos * step.x(), start.y() + pos * step.y()));
-        pos += _spacing.width();
+        output.append({QPointF(startPos.x() + pos * step.x(), startPos.y() + pos * step.y()), startPressure, startRotation});
+        pos += increment;
     }
 
-    return pos - length;
+    return (pos - length) / increment;
 }
 
 void Editor::drawDab(const Dab &dab, const Colour &colour, BufferNode &node, const QPointF worldPos)

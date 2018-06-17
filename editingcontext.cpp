@@ -41,11 +41,13 @@ void EditingContext::updatePrograms()
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
             Traversal::State &state = m_states[node];
+            const Buffer::Format strokeBufferFormat(Buffer::Format::ComponentType::Float, 4, 4);
             m_bufferNodeContexts.insert(bufferNode, new BufferNodeContext(
                 new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_brush.dab.blendMode, m_brush.dab.composeMode),
                 new ColourPickProgram(bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format()),
+                new DabProgram(m_brush.dab.type, m_brush.dab.metric, strokeBufferFormat, false, Buffer::Format(), m_brush.dab.blendMode, m_brush.dab.composeMode),
                 new Buffer(bufferNode->buffer),
-                new Buffer(bufferNode->buffer.size(), Buffer::Format(Buffer::Format::ComponentType::Float, 4, 4))
+                new Buffer(bufferNode->buffer.size(), strokeBufferFormat)
             ));
         }
     }
