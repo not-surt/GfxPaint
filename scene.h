@@ -10,7 +10,7 @@
 #include <QMimeData>
 #include <QOpenGLFramebufferObject>
 #include <QStack>
-#include <QTransform>
+#include <QMatrix4x4>
 #include <QJsonObject>
 //#include <png.h>
 
@@ -26,14 +26,14 @@ public:
         Buffer *buffer = nullptr;
         bool indexed = false;
         const Buffer *palette = nullptr;
-        QTransform transform = QTransform();
+        QMatrix4x4 transform = QMatrix4x4();
     };
 
     struct State {
         ~State();
         RenderTarget renderTarget;
-        QTransform transform;
-        QTransform parentTransform;
+        QMatrix4x4 transform;
+        QMatrix4x4 parentTransform;
         Buffer *palette = nullptr;
         //Buffer palette;
         bool rendering;
@@ -42,7 +42,7 @@ public:
     QMap<Node *, Traversal::State> *saveStates;
 
     QStack<RenderTarget> renderTargetStack;
-    QStack<QTransform> transformStack;
+    QStack<QMatrix4x4> transformStack;
     QStack<const Buffer *> paletteStack;
     bool rendering;
 
@@ -107,8 +107,8 @@ public:
     }    
     static void beforeChildren(Node *const node, Traversal &traversal);
     static void afterChildren(Node *const node, Traversal &traversal);
-    void renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const QTransform &viewTransform, const QTransform &parentTransform, QMap<Node *, Traversal::State> *const saveStates = nullptr);
-    void render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const QTransform &viewTransform, QMap<Node *, Traversal::State> *const saveStates = nullptr);
+    void renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const QMatrix4x4 &viewTransform, const QMatrix4x4 &parentTransform, QMap<Node *, Traversal::State> *const saveStates = nullptr);
+    void render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const QMatrix4x4 &viewTransform, QMap<Node *, Traversal::State> *const saveStates = nullptr);
 
     Node root;
 

@@ -568,7 +568,7 @@ void MainWindow::activateEditor(Editor *const editor)
     if (activeEditor) {
         ui->sessionEditorWidget->selectionModel()->select(qApp->documentManager.documentModelIndex(&activeEditor->scene), QItemSelectionModel::ClearAndSelect);
 
-        activeEditorConnections << QObject::connect(ui->dabEditorWidget, &DabEditorWidget::dabChanged, this, [this](const Dab &dab){
+        activeEditorConnections << QObject::connect(ui->dabEditorWidget, &DabEditorWidget::dabChanged, this, [this](const Brush::Dab &dab){
             Brush brush = activeEditor->editingContext().brush();
             brush.dab = dab;
             activeEditor->setBrush(brush);
@@ -576,8 +576,7 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(activeEditor, &Editor::brushChanged, this, [this](const Brush &brush){
             ui->dabEditorWidget->setDab(brush.dab);
         });
-//        ui->dabEditorWidget->setDab(activeEditor->editingContext().brush().dab);
-        activeEditorConnections << QObject::connect(ui->strokeEditorWidget, &StrokeEditorWidget::strokeChanged, this, [this](const Stroke &stroke){
+        activeEditorConnections << QObject::connect(ui->strokeEditorWidget, &StrokeEditorWidget::strokeChanged, this, [this](const Brush::Stroke &stroke){
             Brush brush = activeEditor->editingContext().brush();
             brush.stroke = stroke;
             activeEditor->setBrush(brush);
@@ -586,7 +585,6 @@ void MainWindow::activateEditor(Editor *const editor)
             ui->strokeEditorWidget->setStroke(brush.stroke);
         });
         activeEditorConnections << QObject::connect(activeEditor, &Editor::brushChanged, ui->brushViewWidget, &BrushViewWidget::setBrush);
-//        ui->strokeEditorWidget->setStroke(activeEditor->editingContext().brush().stroke);
 
         activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::setColour);
         activeEditorConnections << QObject::connect(ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::colourChanged, activeEditor, &Editor::setColour);

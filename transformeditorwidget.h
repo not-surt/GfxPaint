@@ -18,17 +18,17 @@ class TransformEditorWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit TransformEditorWidget(QWidget *parent = 0);
+    explicit TransformEditorWidget(QWidget *parent = nullptr);
     ~TransformEditorWidget();
 
-    const QTransform &transform() const;
-    void setTransform(const QTransform &transform);
+    const QMatrix4x4 &transform() const;
+    void setTransform(const QMatrix4x4 &transform);
 
     TransformMode transformMode() const;
     void setTransformMode(const TransformMode transformMode);
 
 signals:
-    void transformChanged(const QTransform &transform);
+    void transformChanged(const QMatrix4x4 &transform);
     void transformModeChanged(const TransformMode transformMode);
 
 private:

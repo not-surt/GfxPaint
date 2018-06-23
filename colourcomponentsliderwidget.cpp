@@ -107,9 +107,9 @@ void ColourComponentSliderWidget::render()
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
     program->render(m_colour, colourSpace, component, RenderManager::unitToClipTransform, widgetBuffer, m_palette);
-    QTransform markerTransform;
-    markerTransform.translate(m_pos * 2.0 - 1.0, 0.0);
-    markerTransform.scale((qreal)height() / (qreal)width(), 1.0);
+    QMatrix4x4 markerTransform;
+    markerTransform.translate(m_pos * 2.0f - 1.0f, 0.0f);
+    markerTransform.scale((float)height() / (float)width(), 1.0f);
     markerProgram->render(markerModel, {}, markerTransform, widgetBuffer, nullptr);
 }
 

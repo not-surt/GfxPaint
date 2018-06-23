@@ -16,25 +16,25 @@ class DabEditorWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit DabEditorWidget(QWidget *parent = 0);
+    explicit DabEditorWidget(QWidget *parent = nullptr);
     ~DabEditorWidget();
 
 public slots:
-    void setDab(const Dab &dab);
+    void setDab(const Brush::Dab &dab);
 
 protected slots:
     void updateDab();
     void updateRatio(const QString &string);
 
 signals:
-    void dabChanged(const Dab &dab);
+    void dabChanged(const Brush::Dab &dab);
 
 private:
     void updateWidgets();
 
     Ui::DabEditorWidget *ui;
 
-    Dab dab;
+    Brush::Dab dab;
 };
 
 } // namespace GfxPaint

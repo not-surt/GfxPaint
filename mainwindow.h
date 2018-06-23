@@ -26,7 +26,7 @@ class MainWindow : public QMainWindow
 
 public:
     explicit MainWindow(QWidget *const parent = nullptr, const Qt::WindowFlags flags = Qt::WindowFlags());
-    virtual ~MainWindow();
+    virtual ~MainWindow() override;
 
     virtual bool eventFilter(QObject *const watched, QEvent *const event) override;
 

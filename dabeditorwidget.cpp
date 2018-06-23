@@ -50,7 +50,7 @@ DabEditorWidget::~DabEditorWidget()
     delete ui;
 }
 
-void DabEditorWidget::setDab(const Dab &dab)
+void DabEditorWidget::setDab(const Brush::Dab &dab)
 {
     if (this->dab != dab) {
         this->dab = dab;
@@ -72,8 +72,8 @@ void DabEditorWidget::updateWidgets()
     ui->spaceComboBox->setCurrentIndex(static_cast<int>(dab.space));
     ui->typeComboBox->setCurrentIndex(static_cast<int>(dab.type));
     ui->metricComboBox->setCurrentIndex(dab.metric);
-    ui->widthSpinBox->setValue(dab.size.width());
-    ui->heightSpinBox->setValue(dab.size.height());
+    ui->widthSpinBox->setValue(dab.size.x());
+    ui->heightSpinBox->setValue(dab.size.y());
     ui->fixedRatioCheckBox->setChecked(dab.fixedRatio);
     ui->angleSpinBox->setValue(dab.angle);
     ui->originXSpinBox->setValue(dab.origin.x());
@@ -91,13 +91,13 @@ void DabEditorWidget::updateWidgets()
 void DabEditorWidget::updateDab()
 {
     dab.space = static_cast<Space>(ui->spaceComboBox->currentIndex());
-    dab.type = static_cast<Dab::Type>(ui->typeComboBox->currentIndex());
+    dab.type = static_cast<Brush::Dab::Type>(ui->typeComboBox->currentIndex());
     dab.metric = ui->metricComboBox->currentIndex();
 
     if (ui->fixedRatioCheckBox->isChecked()) {
         if (QObject::sender() == ui->widthSpinBox) {
             ui->heightSpinBox->blockSignals(true);
-            ui->heightSpinBox->setValue(ui->widthSpinBox->value() * (1.0 / dab.ratio));
+            ui->heightSpinBox->setValue(ui->widthSpinBox->value() * (1.0f / dab.ratio));
             ui->heightSpinBox->blockSignals(false);
         }
         else if (QObject::sender() == ui->heightSpinBox) {
@@ -107,16 +107,16 @@ void DabEditorWidget::updateDab()
         }
     }
     else {
-        dab.ratio = ui->widthSpinBox->value() / ui->heightSpinBox->value();
+        dab.ratio = static_cast<float>(ui->widthSpinBox->value() / ui->heightSpinBox->value());
         ui->ratioLineEdit->blockSignals(true);
         ui->ratioLineEdit->setText(QString::number(dab.ratio, 'f', 3));
         ui->ratioLineEdit->blockSignals(false);
     }
-    dab.size = {ui->widthSpinBox->value(), ui->heightSpinBox->value()};
+    dab.size = {static_cast<float>(ui->widthSpinBox->value()), static_cast<float>(ui->heightSpinBox->value())};
     dab.fixedRatio = ui->fixedRatioCheckBox->isChecked();
 
     dab.angle = ui->angleSpinBox->value();
-    dab.origin = {ui->originXSpinBox->value(), ui->originYSpinBox->value()};
+    dab.origin = {static_cast<float>(ui->originXSpinBox->value()), static_cast<float>(ui->originYSpinBox->value())};
     dab.pixelSnapX = static_cast<PixelSnap>(ui->pixelSnapXComboBox->currentIndex());
     dab.pixelSnapY = static_cast<PixelSnap>(ui->pixelSnapYComboBox->currentIndex());
 
@@ -137,7 +137,7 @@ void DabEditorWidget::updateRatio(const QString &string)
         dab.ratio = ratio;
         if (ui->widthSpinBox->value() >= ui->heightSpinBox->value()) {
             ui->heightSpinBox->blockSignals(true);
-            ui->heightSpinBox->setValue(ui->widthSpinBox->value() * (1.0 / dab.ratio));
+            ui->heightSpinBox->setValue(ui->widthSpinBox->value() * (1.0f / dab.ratio));
             ui->heightSpinBox->blockSignals(false);
         }
         else {

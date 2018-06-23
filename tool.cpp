@@ -4,16 +4,15 @@
 
 namespace GfxPaint {
 
-void StrokeTool::begin(const QPointF pos, const qreal pressure, const qreal rotation) {
-    strokePoints.clear();
+void StrokeTool::begin(const QVector2D viewportPos, const Point &point) {
+    strokePoints = {};
     strokeOffset = 0.0;
-    strokePoints.append({editor.viewportToWorld(pos), pressure, rotation});
+    strokePoints.add(point);
 }
 
-void StrokeTool::update(const QPointF pos, const qreal pressure, const qreal rotation) {
-    const Point &prevWorldPoint = strokePoints.last();
-    const Point worldPoint = {editor.viewportToWorld(pos), pressure, rotation};
-    strokePoints.append(worldPoint);
+void StrokeTool::update(const QVector2D viewportPos, const Point &point) {
+    const Stroke::Point &prevWorldPoint = strokePoints.points.last();
+    const Stroke::Point worldPoint = strokePoints.add(point);
     for (auto index : editor.editingContext().selectionModel().selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
         const Traversal::State &state = editor.editingContext().states().value(node);
@@ -23,15 +22,15 @@ void StrokeTool::update(const QPointF pos, const qreal pressure, const qreal rot
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
             const Brush &brush = editor.editingContext().brush();
-            QList<Point> points;
-            const QSizeF spacing(qMax(brush.stroke.absoluteSpacing.width() + brush.stroke.proportionalSpacing.width() * brush.dab.size.width(), 1.0),
-                                 qMax(brush.stroke.absoluteSpacing.height() + brush.stroke.proportionalSpacing.height() * brush.dab.size.height(), 1.0));
-            strokeOffset = editor.strokeSegmentDabs(prevWorldPoint.pos, prevWorldPoint.pressure, prevWorldPoint.rotation, worldPoint.pos, worldPoint.pressure, worldPoint.rotation, spacing, strokeOffset, points);
-            for (auto point : points) {
-                const QPointF snappedPoint = editor.pixelSnap(point.pos);
-                Dab dab(brush.dab);
-                dab.size *= pressure;
-                dab.angle += rotation;
+            const QVector2D spacing{std::max(brush.stroke.absoluteSpacing.x() + brush.stroke.proportionalSpacing.x() * brush.dab.size.x(), 1.0f),
+                                 std::max(brush.stroke.absoluteSpacing.y() + brush.stroke.proportionalSpacing.y() * brush.dab.size.y(), 1.0f)};
+            Stroke points;
+            strokeOffset = editor.strokeSegmentDabs(prevWorldPoint, worldPoint, spacing, strokeOffset, points);
+            for (auto point : points.points) {
+                const QVector2D snappedPoint = editor.pixelSnap(point.pos);
+                Brush::Dab dab(brush.dab);
+                dab.size *= point.pressure;
+                dab.angle += point.quaternion.toEulerAngles().z();
                 editor.drawDab(dab, editor.editingContext().colour(), *bufferNode, snappedPoint);
             }
 
@@ -45,8 +44,8 @@ void StrokeTool::update(const QPointF pos, const qreal pressure, const qreal rot
     }
 }
 
-void StrokeTool::end(const QPointF pos, const qreal pressure, const qreal rotation) {
-    if (strokePoints.count() == 1) update(pos, pressure, rotation);
+void StrokeTool::end(const QVector2D viewportPos, const Point &point) {
+    if (strokePoints.points.count() == 1) update(viewportPos, point);
 
     // Clear stroke buffer
     for (auto index : editor.editingContext().selectionModel().selectedRows()) {
@@ -60,61 +59,74 @@ void StrokeTool::end(const QPointF pos, const qreal pressure, const qreal rotati
     }
 }
 
-void PickTool::begin(const QPointF pos, const qreal pressure, const qreal rotation)
+void StrokeTool::preview(const QVector2D viewportPos, const Point &point)
 {
-    update(pos, pressure, rotation);
+    auto savePoints = strokePoints;
+    auto saveOffset = strokeOffset;
+
+    begin(viewportPos, point);
+    end(viewportPos, point);
+
+    strokePoints = savePoints;
+    strokeOffset = saveOffset;
 }
 
-void PickTool::update(const QPointF pos, const qreal pressure, const qreal rotation)
+void PickTool::begin(const QVector2D viewportPos, const Point &point)
 {
-    const QPointF worldPoint = editor.viewportToWorld(pos);
+    update(viewportPos, point);
+}
+
+void PickTool::update(const QVector2D viewportPos, const Point &point)
+{
     for (auto index : editor.editingContext().selectionModel().selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
         const Traversal::State &state = editor.editingContext().states().value(node);
         EditingContext::BufferNodeContext *const bufferNodeContext = editor.editingContext().bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
-            const QPointF bufferPoint = state.transform.inverted().map(worldPoint);
+            const QVector2D bufferPoint = QVector2D(state.transform.inverted().map(point.pos.toPointF()));
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             editor.setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, bufferPoint));
         }
     }
 }
 
-void PickTool::end(const QPointF pos, const qreal pressure, const qreal rotation)
+void PickTool::end(const QVector2D viewportPos, const Point &point)
 {
 }
 
-void PanTool::begin(const QPointF pos, const qreal pressure, const qreal rotation)
+void PanTool::begin(const QVector2D viewportPos, const Point &point)
 {
-    oldPos = pos;
+    oldViewportPos = viewportPos;
 }
 
-void PanTool::update(const QPointF pos, const qreal pressure, const qreal rotation)
+void PanTool::update(const QVector2D viewportPos, const Point &point)
 {
-    const QPointF oldWorldPoint = editor.viewportToWorld(oldPos);
-    const QPointF worldPoint = editor.viewportToWorld(pos);
     if (editor.editingContext().selectionModel().selectedRows().isEmpty()) {
-        const QPointF translation = worldPoint - oldWorldPoint;
-        const QTransform translationTransform = QTransform().translate(translation.x(), translation.y());
+        const QVector2D translation = editor.viewportToWorld(viewportPos) - editor.viewportToWorld(oldViewportPos);
+        QMatrix4x4 workMatrix;
+        workMatrix.translate(translation);
         if (editor.transformMode() == TransformMode::View) {
-            editor.setTransform(translationTransform * editor.transform());
+            editor.setTransform(editor.transform() * workMatrix);
         }
     }
     else {
         for (auto index : editor.editingContext().selectionModel().selectedRows()) {
             Node *node = static_cast<Node *>(index.internalPointer());
             const Traversal::State &state = editor.editingContext().states().value(node);
-            const QPointF translation = worldPoint - oldWorldPoint;
-            const QTransform translationTransform = QTransform().translate(translation.x(), translation.y());
+            const QVector2D translation = editor.viewportToWorld(viewportPos) - editor.viewportToWorld(oldViewportPos);
+            QMatrix4x4 workMatrix;
+            workMatrix.translate(translation);
             if (editor.transformMode() == TransformMode::View) {
-                editor.setTransform(translationTransform * editor.transform());
+                editor.setTransform(editor.transform() * workMatrix);
             }
             else if (editor.transformMode() == TransformMode::Object) {
                 SpatialNode *const spatialNode = dynamic_cast<SpatialNode *>(node);
                 if (spatialNode) {
-                    const QPointF translation = state.parentTransform.inverted().map(worldPoint) - state.parentTransform.inverted().map(oldPos);
-                    spatialNode->setTransform(spatialNode->transform() * QTransform().translate(translation.x(), translation.y()));
+                    const QVector2D translation = QVector2D(state.parentTransform.inverted().map(editor.viewportToWorld(viewportPos).toPointF())) - QVector2D(state.parentTransform.inverted().map(editor.viewportToWorld(oldViewportPos).toPointF()));
+                    QMatrix4x4 workMatrix;
+                    workMatrix.translate(translation);
+                    spatialNode->setTransform(spatialNode->transform() * workMatrix);
                 }
             }
             else if (editor.transformMode() == TransformMode::Brush) {
@@ -122,63 +134,63 @@ void PanTool::update(const QPointF pos, const qreal pressure, const qreal rotati
             }
         }
     }
-    oldPos = pos;
+    oldViewportPos = viewportPos;
 }
 
-void PanTool::end(const QPointF pos, const qreal pressure, const qreal rotation)
+void PanTool::end(const QVector2D viewportPos, const Point &point)
 {
 }
 
-void RotoZoomTool::begin(const QPointF pos, const qreal pressure, const qreal rotation)
+void RotoZoomTool::begin(const QVector2D viewportPos, const Point &point)
 {
-    oldPos = pos;
+    oldViewportPos = viewportPos;
 }
 
-void RotoZoomTool::update(const QPointF pos, const qreal pressure, const qreal rotation)
+void RotoZoomTool::update(const QVector2D viewportPos, const Point &point)
 {
     if (editor.editingContext().selectionModel().selectedRows().isEmpty()) {
         if (editor.transformMode() == TransformMode::View) {
-            editor.setTransform(editor.transform() * transformPointToPoint(QPointF(0., 0.), oldPos, pos));
+            editor.setTransform(transformPointToPoint(QVector2D(0., 0.), oldViewportPos, viewportPos) * editor.transform());
         }
     }
     for (auto index : editor.editingContext().selectionModel().selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
         const Traversal::State &state = editor.editingContext().states().value(node);
         if (editor.transformMode() == TransformMode::View) {
-            editor.setTransform(editor.transform() * transformPointToPoint(QPointF(0., 0.), oldPos, pos));
+            editor.setTransform(transformPointToPoint(QVector2D(0., 0.), oldViewportPos, viewportPos) * editor.transform());
         }
         else if (editor.transformMode() == TransformMode::Object) {
             SpatialNode *const spatialNode = dynamic_cast<SpatialNode *>(node);
             if (spatialNode) {
-                const QTransform transformSpace = (state.parentTransform * editor.transform()).inverted();
-                spatialNode->setTransform(spatialNode->transform() * transformPointToPoint(transformSpace.map(QPointF(0., 0.)), transformSpace.map(oldPos), transformSpace.map(pos)));
+                const QMatrix4x4 transformSpace = (state.parentTransform * editor.transform()).inverted();
+                spatialNode->setTransform(transformPointToPoint(QVector2D(transformSpace.map(QPointF(0., 0.))), QVector2D(transformSpace.map(oldViewportPos.toPointF())), QVector2D(transformSpace.map(viewportPos.toPointF()))) * spatialNode->transform());
             }
         }
         else if (editor.transformMode() == TransformMode::Brush) {
 
         }
     }
-    oldPos = pos;
+    oldViewportPos = viewportPos;
 }
 
-void RotoZoomTool::end(const QPointF pos, const qreal pressure, const qreal rotation)
+void RotoZoomTool::end(const QVector2D viewportPos, const Point &point)
 {
 
 }
 
-void ZoomTool::wheel(const QPointF pos, const QPointF delta)
+void ZoomTool::wheel(const QVector2D viewportPos, const QVector2D delta)
 {
-    const qreal scaling = pow(2, delta.y());
-    QTransform transform = editor.transform();
-    rotateScaleAtOrigin(transform, 0.0, scaling, pos);
+    const float scaling = std::pow(2.0f, delta.y());
+    QMatrix4x4 transform = editor.transform();
+    rotateScaleAtOrigin(transform, 0.0, scaling, viewportPos);
     editor.setTransform(transform);
 }
 
-void RotateTool::wheel(const QPointF pos, const QPointF delta)
+void RotateTool::wheel(const QVector2D viewportPos, const QVector2D delta)
 {
-    const qreal rotation = -15.0 * delta.y();
-    QTransform transform = editor.transform();
-    rotateScaleAtOrigin(transform, rotation, 1.0, pos);
+    const float rotation = -15.0f * delta.y();
+    QMatrix4x4 transform = editor.transform();
+    rotateScaleAtOrigin(transform, rotation, 1.0f, viewportPos);
     editor.setTransform(transform);
 }
 

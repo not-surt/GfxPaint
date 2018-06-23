@@ -17,8 +17,8 @@ RenderedWidget::RenderedWidget(QWidget *const parent) :
     patternProgram(nullptr), widgetProgram(nullptr),
     repaintTimer(), timer()
 {
-    const float framesPerSecond = 60.0;
-    repaintTimer.start(1000 / framesPerSecond, this);
+    const float framesPerSecond = 60.0f;
+    repaintTimer.start(1000.0f / framesPerSecond, this);
     timer.start();
 }
 
@@ -51,13 +51,16 @@ void RenderedWidget::resizeGL(int w, int h)
 {
     QOpenGLWidget::resizeGL(w, h);
 
-    const QTransform originTransform(
-        1.0, 0.0, 0.0,
-        0.0, 1.0, 0.0,
-        std::floor(w / 2.0), std::floor(h / 2.0), 1.0
-    );
+    const float data[] = {
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, 1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        std::floor(w / 2.0f), std::floor(h / 2.0f), 0.0f, 1.0f
+    };
+    QMatrix4x4 originTransform;
+    memcpy(originTransform.data(), data, sizeof(data));
     mouseTransform = originTransform.inverted();
-    viewportTransform = originTransform * GfxPaint::viewportTransform({w, h});
+    viewportTransform = QMatrix4x4(GfxPaint::viewportTransform({w, h})) * originTransform;
 
     {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
@@ -95,15 +98,14 @@ void RenderedWidget::paintGL()
     // Draw checkers
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-    const qreal time = timer.elapsed() / 1000.0;
-    const qreal degreesPerSecond = 45.0;
-    QTransform backgroundTransform;
-    backgroundTransform.scale(16.0, 16.0);
-    backgroundTransform.rotate(time * degreesPerSecond);
-    backgroundTransform.translate(0.0, 1.0);
-    backgroundTransform.rotate(-time * degreesPerSecond);
-    //backgroundTransform.translate(time, time);
-    patternProgram->render(backgroundTransform * viewportTransform * RenderManager::flipTransform);
+    const float time = timer.elapsed() / 1000.0f;
+    const float degreesPerSecond = 45.0f;
+    QMatrix4x4 backgroundTransformM;
+    backgroundTransformM.scale(16.0f, 16.0f);
+    backgroundTransformM.rotate(time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
+    backgroundTransformM.translate(0.0f, 1.0f);
+    backgroundTransformM.rotate(-time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
+    patternProgram->render(RenderManager::flipTransform * viewportTransform * backgroundTransformM);
 
     // Draw buffer
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);

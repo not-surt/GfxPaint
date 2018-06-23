@@ -25,7 +25,7 @@ StrokeEditorWidget::~StrokeEditorWidget()
     delete ui;
 }
 
-void StrokeEditorWidget::setStroke(const Stroke &stroke)
+void StrokeEditorWidget::setStroke(const Brush::Stroke &stroke)
 {
     if (this->stroke != stroke) {
         this->stroke = stroke;
@@ -46,10 +46,10 @@ void StrokeEditorWidget::updateWidgets()
     ui->spaceComboBox->setCurrentIndex(static_cast<int>(stroke.space));
     ui->metricComboBox->setCurrentIndex(stroke.metric);
     ui->continuousCheckBox->setChecked(stroke.continuous);
-    ui->absoluteSpacingWidthSpinBox->setValue(stroke.absoluteSpacing.width());
-    ui->absoluteSpacingHeightSpinBox->setValue(stroke.absoluteSpacing.height());
-    ui->proportionalSpacingWidthSpinBox->setValue(stroke.proportionalSpacing.width());
-    ui->proportionalSpacingHeightSpinBox->setValue(stroke.proportionalSpacing.height());
+    ui->absoluteSpacingWidthSpinBox->setValue(stroke.absoluteSpacing.x());
+    ui->absoluteSpacingHeightSpinBox->setValue(stroke.absoluteSpacing.y());
+    ui->proportionalSpacingWidthSpinBox->setValue(stroke.proportionalSpacing.x());
+    ui->proportionalSpacingHeightSpinBox->setValue(stroke.proportionalSpacing.y());
     ui->dabCountSpinBox->setValue(stroke.dabCount);
     for (auto widget : widgets) widget->blockSignals(false);
     updateStroke();
@@ -60,8 +60,8 @@ void StrokeEditorWidget::updateStroke()
     stroke.space = static_cast<Space>(ui->spaceComboBox->currentIndex());
     stroke.metric = ui->spaceComboBox->currentIndex();
     stroke.continuous = ui->continuousCheckBox->isChecked();
-    stroke.absoluteSpacing = {ui->absoluteSpacingWidthSpinBox->value(), ui->absoluteSpacingHeightSpinBox->value()};
-    stroke.proportionalSpacing = {ui->proportionalSpacingWidthSpinBox->value(), ui->proportionalSpacingHeightSpinBox->value()};
+    stroke.absoluteSpacing = {static_cast<float>(ui->absoluteSpacingWidthSpinBox->value()), static_cast<float>(ui->absoluteSpacingHeightSpinBox->value())};
+    stroke.proportionalSpacing = {static_cast<float>(ui->proportionalSpacingWidthSpinBox->value()), static_cast<float>(ui->proportionalSpacingHeightSpinBox->value())};
     stroke.dabCount = ui->dabCountSpinBox->value();
 
     emit strokeChanged(stroke);

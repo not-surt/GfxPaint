@@ -4,18 +4,18 @@
 
 namespace GfxPaint {
 
-Dab::Dab() :
-    space(Space::Object), type(Type::Distance), metric(0),
-    size(16.0, 16.0), fixedRatio(false), ratio(1.0),
-    angle(0.0),
-    origin(0.0, 0.0), pixelSnapX(PixelSnap::Auto), pixelSnapY(PixelSnap::Auto),
-    hardness(0.0), opacity(1.0),
-    blendMode(0), composeMode(RenderManager::composeModeDefault),
+Brush::Dab::Dab() :
+    space{Space::Object}, type{Type::Distance}, metric{0},
+    size{16.0f, 16.0f}, fixedRatio{false}, ratio{1.0f},
+    angle{0.0f},
+    origin{0.0f, 0.0f}, pixelSnapX{PixelSnap::Auto}, pixelSnapY{PixelSnap::Auto},
+    hardness{0.0f}, opacity{1.0f},
+    blendMode{0}, composeMode{RenderManager::composeModeDefault},
     buffer()
 {
 }
 
-Dab::Dab(const Dab &other) :
+Brush::Dab::Dab(const Dab &other) :
     space(other.space), type(other.type), metric(other.metric),
     size(other.size), fixedRatio(other.fixedRatio), ratio(other.ratio),
     angle(other.angle),
@@ -26,24 +26,24 @@ Dab::Dab(const Dab &other) :
 {
 }
 
-QTransform Dab::transform() const
+QMatrix4x4 Brush::Dab::transform() const
 {
-    QTransform transform;
-    transform.rotate(angle);
-    transform.translate(-origin.x(), -origin.y());
-    transform.scale(size.width() / 2.0, size.height() / 2.0);
-    return transform;
+    QMatrix4x4 matrix;
+    matrix.rotate(angle, {0.0f, 0.0f, 1.0f});
+    matrix.translate(-origin.x(), -origin.y());
+    matrix.scale(size.x() / 2.0f, size.y() / 2.0f);
+    return matrix;
 }
 
-Stroke::Stroke() :
-    space(Space::Object), metric(0),
+Brush::Stroke::Stroke() :
+    space{Space::Object}, metric{0},
     continuous(false),
-    absoluteSpacing(0.0, 0.0), proportionalSpacing(0.25, 0.25),
-    dabCount(0)
+    absoluteSpacing{0.0f, 0.0f}, proportionalSpacing{0.25f, 0.25f},
+    dabCount{0}
 {
 }
 
-Stroke::Stroke(const Stroke &other) :
+Brush::Stroke::Stroke(const Stroke &other) :
     space(other.space), metric(other.metric),
     continuous(other.continuous),
     absoluteSpacing(other.absoluteSpacing), proportionalSpacing(other.proportionalSpacing),

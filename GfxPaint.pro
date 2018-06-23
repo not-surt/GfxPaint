@@ -4,9 +4,7 @@
 #
 #-------------------------------------------------
 
-QT       += core gui opengl openglextensions
-
-greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT       += core gui widgets opengl openglextensions gamepad
 
 TARGET = GfxPaint
 TEMPLATE = app
@@ -60,7 +58,8 @@ SOURCES +=\
     model.cpp \
     colourcomponentsliderwidget.cpp \
     nodeeditorwidget.cpp \
-    tool.cpp
+    tool.cpp \
+    stroke.cpp
 
 HEADERS  += \
     application.h \
@@ -96,7 +95,8 @@ HEADERS  += \
     colourcomponentsliderwidget.h \
     nodeeditorwidget.h \
     tool.h \
-    type.h
+    type.h \
+    stroke.h
 
 FORMS    += \
     mainwindow.ui \

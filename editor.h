@@ -58,6 +58,7 @@ public:
         }
     };
 
+    explicit Editor();
     explicit Editor(Scene &scene, QWidget *parent = nullptr);
     Editor(const Editor &other);
     virtual ~Editor() override;
@@ -80,33 +81,41 @@ public:
     void removeSelectedNodes();
     void duplicateSelectedNodes();
 
-    QPointF mouseToViewport(const QPointF &point) {
-        return mouseTransform.map(point);
+    QVector2D mouseToViewport(const QVector2D &point) {
+        return QVector2D(mouseTransform.map(point.toPointF()));
     }
-    QPointF viewportToWorld(const QPointF &point) {
-        return cameraTransform.inverted().map(point);
+    QVector2D viewportToWorld(const QVector2D &point) {
+        return QVector2D(cameraTransform.inverted().map(point.toPointF()));
     }
-    QPointF mouseToWorld(const QPointF &point) {
+    QVector2D mouseToWorld(const QVector2D &point) {
         return viewportToWorld(mouseToViewport(point));
+    }
+    QVector2D viewportToMouse(const QVector2D &point) {
+        return QVector2D(mouseTransform.inverted().map(point.toPointF()));
+    }
+    QVector2D worldToViewport(const QVector2D &point) {
+        return QVector2D(cameraTransform.map(point.toPointF()));
+    }
+    QVector2D worldToMouse(const QVector2D &point) {
+        return viewportToMouse(worldToViewport(point));
     }
     float pixelSnapOffset(const PixelSnap pixelSnap, const float target, const float size) {
         switch (pixelSnap) {
         case PixelSnap::Centre: return 0.5f;
         case PixelSnap::Edge: return 0.0f;
-        case PixelSnap::Both: return fabs(target - floor(target) - 0.5f) < 0.25f ? 0.5f : 1.0f;
-        case PixelSnap::Auto: return lround(size) % 2 == 0 ? 0.0f : 0.5f;
+        case PixelSnap::Both: return std::fabs(target - std::floor(target) - 0.5f) < 0.25f ? 0.5f : 1.0f;
+        case PixelSnap::Auto: return std::lround(size) % 2 == 0 ? 0.0f : 0.5f;
         default: return target;
         }
     }
-    QPointF pixelSnap(const QPointF target) {
-        const Dab &dab = m_editingContext.brush().dab;
-        const float offsetX = pixelSnapOffset(dab.pixelSnapX, target.x(), dab.size.width());
-        const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.height());
-        return snap2d({offsetX, offsetY}, {1.0, 1.0}, target);
+    QVector2D pixelSnap(const QVector2D target) {
+        const Brush::Dab &dab = m_editingContext.brush().dab;
+        const float offsetX = pixelSnapOffset(dab.pixelSnapX, target.x(), dab.size.x());
+        const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.y());
+        return snap({offsetX, offsetY}, {1.0f, 1.0f}, target);
     }
-    qreal strokeSegmentDabs(const QPointF startPos, const qreal startPressure, const qreal startRotation, const QPointF endPos, const qreal endPressure, const qreal endRotation, const QSizeF spacing, const qreal offset, QList<StrokeTool::Point> &output);
-    void drawDab(const Dab &dab, const Colour &colour, BufferNode &node, const QPointF worldPos);
-    void drawSegment(const Dab &dab, const Stroke &stroke, const Colour &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset);
+    float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const QVector2D spacing, const float offset, Stroke &output);
+    void drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const QVector2D worldPos);
 
     Scene &scene;
     SceneModel &model;
@@ -119,13 +128,13 @@ public:
     RotateTool rotateTool;
 
     TransformMode transformMode() const { return m_transformMode; }
-    QTransform transform() const { return cameraTransform; }
+    QMatrix4x4 transform() const { return cameraTransform; }
 
 public slots:
     void setBrush(const Brush &brush);
     void setColour(const Colour &colour);
     void setTransformMode(const TransformMode m_transformMode);
-    void setTransform(const QTransform &transform);
+    void setTransform(const QMatrix4x4 &transform);
     void updateContext();
 
 signals:
@@ -133,22 +142,26 @@ signals:
     void colourChanged(const Colour &colour);
     void paletteChanged(Buffer *const palette);
     void transformModeChanged(const TransformMode m_transformMode);
-    void transformChanged(const QTransform &transform);
+    void transformChanged(const QMatrix4x4 &transform);
 
 protected:
+    void init();
     void render() override;
 
     EditingContext m_editingContext;
 
-    QTransform cameraTransform;
+    QMatrix4x4 cameraTransform;
     TransformMode m_transformMode;
 
     InputState inputState;
-    QPointF cursorPos;
+    QVector2D cursorPos;
+    QVector2D cursorDelta;
     bool cursorOver;
-    QPointF wheelDelta;
-    qreal pressure;
-    qreal rotation;
+    QVector2D wheelDelta;
+    float pressure;
+    float rotation;
+    QVector2D tilt;
+    QQuaternion quaternion;
 
     QMap<InputState, Tool *> toolSet;
     QStack<std::pair<InputState, Tool *>> toolStack;

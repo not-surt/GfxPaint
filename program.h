@@ -245,7 +245,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed), static_cast<int>(srcPaletteFormat.componentType), srcPaletteFormat.componentSize, srcPaletteFormat.componentCount});
     }
 
-    void render(Buffer *const src, const Buffer *const srcPalette, const Colour &transparent, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(Buffer *const src, const Buffer *const srcPalette, const Colour &transparent, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     struct BufferUniformData {
@@ -285,11 +285,11 @@ public:
         updateKey(typeid(this), {});
     }
 
-    void render(Model *const model, const Colour &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(Model *const model, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     struct UniformData {
-        mat3 matrix;
+        mat4 matrix;
     };
 
     virtual QOpenGLShaderProgram *createProgram() const override;
@@ -299,7 +299,7 @@ protected:
 
 class DabProgram : public RenderProgram {
 public:
-    DabProgram(const Dab::Type type, const int metric, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+    DabProgram(const Brush::Dab::Type type, const int metric, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
         RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
         type(type), metric(metric),
         uniformData{}
@@ -314,11 +314,11 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void render(const Dab &dab, const Colour &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const Brush::Dab &dab, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     struct UniformData {
-        mat3 matrix;
+        mat4 matrix;
         Colour colour;
         GLfloat hardness;
         GLfloat alpha;
@@ -326,7 +326,7 @@ protected:
 
     virtual QOpenGLShaderProgram *createProgram() const override;
 
-    const Dab::Type type;
+    const Brush::Dab::Type type;
     const int metric;
 
     UniformData uniformData;
@@ -352,7 +352,7 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void render(const Colour &colour, const ColourSpace colourSpace, const int component, const QTransform &transform, Buffer *const dest, const Buffer *const quantisePalette);
+    void render(const Colour &colour, const ColourSpace colourSpace, const int component, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const quantisePalette);
 
 protected:
     struct UniformData {
@@ -392,7 +392,7 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void render(const Colour &colour, const ColourSpace colourSpace, const int componentX, const int componentY, const QTransform &transform, Buffer *const dest);
+    void render(const Colour &colour, const ColourSpace colourSpace, const int componentX, const int componentY, const QMatrix4x4 &transform, Buffer *const dest);
 
 protected:
     struct UniformData {
@@ -420,7 +420,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(pattern), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode});
     }
 
-    void render(const QTransform &transform);
+    void render(const QMatrix4x4 &transform);
 
 protected:
     virtual QOpenGLShaderProgram *createProgram() const override;
@@ -511,7 +511,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount, indexed, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
 
-    Colour pick(const Buffer *const src, const Buffer *const srcPalette, const QPointF pos);
+    Colour pick(const Buffer *const src, const Buffer *const srcPalette, const QVector2D pos);
 
 protected:
     virtual QOpenGLShaderProgram *createProgram() const override;

@@ -52,9 +52,9 @@ public:
 
     QOpenGLVertexArrayObject vao;
 
-    static const QTransform unitToClipTransform;
-    static const QTransform clipToUnitTransform;
-    static const QTransform flipTransform;
+    static const QMatrix4x4 unitToClipTransform;
+    static const QMatrix4x4 clipToUnitTransform;
+    static const QMatrix4x4 flipTransform;
 
     struct DistanceMetricInfo {
         QString label;
@@ -80,7 +80,7 @@ public:
     static QString modelVertexMainShaderPart();
     static QString vertexMainShaderPart();
     static QString patternShaderPart(const QString &name, const Pattern pattern);
-    static QString dabShaderPart(const QString &name, const Dab::Type type, const int metric);
+    static QString dabShaderPart(const QString &name, const Brush::Dab::Type type, const int metric);
     static QString paletteShaderPart(const QString &name, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString bufferShaderPart(const QString &name, const GLint uniformBlockBinding, const GLint bufferImageBinding, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString modelFragmentShaderPart(const QString &name);

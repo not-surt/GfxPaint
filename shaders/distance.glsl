@@ -1,5 +1,6 @@
 float distanceEuclidean(const vec2 pos) {
-    return sqrt(pow(pos.x, 2) + pow(pos.y, 2));
+//    return sqrt(pow(pos.x, 2) + pow(pos.y, 2));
+    return length(pos);
 }
 
 float distanceManhattan(const vec2 pos) {

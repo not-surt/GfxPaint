@@ -48,7 +48,8 @@ void RenderedWidgetProgram::render(Buffer *const src)
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    program.setUniformValue("matrix", qApp->renderManager.unitToClipTransform * qApp->renderManager.flipTransform);
+//    program.setUniformValue("matrix", qApp->renderManager.unitToClipTransform * qApp->renderManager.flipTransform);
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, (qApp->renderManager.flipTransform * qApp->renderManager.unitToClipTransform).data());
 
     glUniform2i(program.uniformLocation("srcRectPos"), 0, 0);
     glUniform2i(program.uniformLocation("srcRectSize"), src->width(), src->height());
@@ -81,18 +82,18 @@ QOpenGLShaderProgram *BufferProgram::createProgram() const
     return program;
 }
 
-void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, const Colour &transparent, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette)
+void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, const Colour &transparent, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    program.setUniformValue("matrix", transform);
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
 
     glUniform2i(program.uniformLocation("srcRectPos"), 0, 0);
     glUniform2i(program.uniformLocation("srcRectSize"), src->width(), src->height());
 
     BufferUniformData uniformData;
-    uniformData.matrix = qTransformToMat4(transform);
+    memcpy(&uniformData.matrix, transform.data(), sizeof(uniformData.matrix));
     uniformData.transparent = transparent;
 
     const GLuint blockIndex = glGetUniformBlockIndex(program.programId(), "srcUniformData");
@@ -132,13 +133,13 @@ QOpenGLShaderProgram *ModelProgram::createProgram() const
     return program;
 }
 
-void ModelProgram::render(Model *const model, const Colour &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette) {
+void ModelProgram::render(Model *const model, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette) {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    program.setUniformValue("matrix", transform);
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
 
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, 0, dest, destIndexed, 1, 1, destPalette);
 
@@ -151,7 +152,7 @@ QOpenGLShaderProgram *DabProgram::createProgram() const
 
     QString vertSrc;
     vertSrc += RenderManager::headerShaderPart();
-    vertSrc += RenderManager::attributelessShaderPart(type == Dab::Type::Pixel ? AttributelessModel::SingleVertex : AttributelessModel::ClipQuad);
+    vertSrc += RenderManager::attributelessShaderPart(type == Brush::Dab::Type::Pixel ? AttributelessModel::SingleVertex : AttributelessModel::ClipQuad);
     vertSrc += RenderManager::vertexMainShaderPart();
     program->addShaderFromSourceCode(QOpenGLShader::Vertex, vertSrc);
 
@@ -166,14 +167,16 @@ QOpenGLShaderProgram *DabProgram::createProgram() const
     return program;
 }
 
-void DabProgram::render(const Dab &dab, const Colour &colour, const QTransform &transform, Buffer *const dest, const Buffer *const destPalette)
+void DabProgram::render(const Brush::Dab &dab, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    uniformData.matrix = qTransformToMat3(dab.transform() * transform);
+    QMatrix4x4 matrix = transform * dab.transform();
+
+    memcpy(&uniformData.matrix, matrix.data(), sizeof(uniformData.matrix));
     uniformData.colour = colour;
     uniformData.hardness = static_cast<GLfloat>(dab.hardness);
     uniformData.alpha = static_cast<GLfloat>(dab.opacity);
@@ -181,7 +184,7 @@ void DabProgram::render(const Dab &dab, const Colour &colour, const QTransform &
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(uniformData), &uniformData, GL_DYNAMIC_DRAW);
 
-    program.setUniformValue("matrix", dab.transform() * transform);
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, matrix.data());
 
     glUniform4fv(program.uniformLocation("srcColour"), 1, colour.rgba.data());
     glUniform1f(program.uniformLocation("srcHardness"), static_cast<GLfloat>(dab.hardness));
@@ -189,7 +192,7 @@ void DabProgram::render(const Dab &dab, const Colour &colour, const QTransform &
 
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, 0, dest, destIndexed, 1, 1, destPalette);
 
-    if (dab.type == Dab::Type::Pixel) {
+    if (dab.type == Brush::Dab::Type::Pixel) {
         glDrawArrays(GL_POINTS, 4, 1);
     }
     else {
@@ -220,7 +223,7 @@ QOpenGLShaderProgram *ColourSliderProgram::createProgram() const
     return program;
 }
 
-void ColourSliderProgram::render(const Colour &colour, const ColourSpace colourSpace, const int component, const QTransform &transform, Buffer *const dest, const Buffer *const quantisePalette)
+void ColourSliderProgram::render(const Colour &colour, const ColourSpace colourSpace, const int component, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const quantisePalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
@@ -231,7 +234,7 @@ void ColourSliderProgram::render(const Colour &colour, const ColourSpace colourS
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(uniformData), &uniformData, GL_DYNAMIC_DRAW);
 
-    program.setUniformValue("matrix", transform);
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
 
     qApp->renderManager.bindBufferShaderPart(program, "dest", 0, 0, dest);
     if (quantise && quantisePalette) {
@@ -247,7 +250,7 @@ QOpenGLShaderProgram *ColourPlaneProgram::createProgram() const
 {
 }
 
-void ColourPlaneProgram::render(const Colour &colour, const ColourSpace colourSpace, const int componentX, const int componentY, const QTransform &transform, Buffer *const dest)
+void ColourPlaneProgram::render(const Colour &colour, const ColourSpace colourSpace, const int componentX, const int componentY, const QMatrix4x4 &transform, Buffer *const dest)
 {
 }
 
@@ -269,11 +272,11 @@ QOpenGLShaderProgram *PatternProgram::createProgram() const
     return program;
 }
 
-void PatternProgram::render(const QTransform &transform)
+void PatternProgram::render(const QMatrix4x4 &transform)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
-    program.setUniformValue("matrix", (transform).inverted());
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.inverted().data());
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
@@ -402,7 +405,7 @@ void main() {
     return program;
 }
 
-Colour ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcPalette, const QPointF pos)
+Colour ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcPalette, const QVector2D pos)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();

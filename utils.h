@@ -9,7 +9,7 @@
 #include <QMouseEventTransition>
 #include <QKeyEvent>
 #include <QStateMachine>
-#include <QTransform>
+#include <cmath>
 #include "opengl.h"
 #include "buffer.h"
 #include "type.h"
@@ -53,17 +53,29 @@ QString fileToString(const QString &path);
 
 void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements);
 
-QTransform viewportTransform(const QSize size);
-
-mat3 qTransformToMat3(const QTransform &transform);
-QTransform qTransformFromMat3(const mat3 &matrix);
-mat4 qTransformToMat4(const QTransform &transform);
-QTransform qTransformFromMat4(const mat4 &matrix);
+QMatrix4x4 viewportTransform(const QSize size);
 
 vec4 qColorToVec4(const QColor &qColor);
 QColor qColorFromVec4(const vec4 &colour);
 
 Buffer bufferFromImageFile(const QString &filename, Buffer *const palette = nullptr, Colour *const transparent = nullptr);
+
+template<typename T>
+//constexpr T pi = T(T(4) * T(std::atan(T(1))));
+const T pi = T(std::acos(T(-1)));
+
+template<typename T>
+const T tau = T(2) * pi<T>;
+
+template <typename T, typename S>
+T lerp(const T a, const T b, const S t) {
+    return a + (b - a) * t;
+}
+
+template <typename T, typename S>
+T lerpAngular(const T a, const T b, const S t) {
+    return (std::fmod(std::fmod(b - a, 2 * pi<T>) + 3 * pi<T>, 2 * pi<T>) - pi<T>) * t;
+}
 
 template <typename T>
 T clamp(const T min, const T max, const T value) {
@@ -72,10 +84,10 @@ T clamp(const T min, const T max, const T value) {
 
 float step(const float value, const float size);
 float snap(const float offset, const float size, const float target, const bool relative = false, const float relativeTo = 0.0);
-QPointF snap2d(const QPointF offset, const QSizeF size, const QPointF target, const bool relative = false, const QPointF relativeTo = QPointF());
+QVector2D snap(const QVector2D offset, const QVector2D size, const QVector2D target, const bool relative = false, const QVector2D relativeTo = {});
 
-void rotateScaleAtOrigin(QTransform &transform, const qreal rotation, const qreal scaling, const QPointF origin);
-QTransform transformPointToPoint(const QPointF origin, const QPointF from, const QPointF to);
+void rotateScaleAtOrigin(QMatrix4x4 &transform, const float rotation, const float scaling, const QVector2D origin);
+QMatrix4x4 transformPointToPoint(const QVector2D origin, const QVector2D from, const QVector2D to);
 
 } // namespace GfxPaint
 

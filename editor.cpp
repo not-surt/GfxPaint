@@ -2,11 +2,31 @@
 
 #include <QMouseEvent>
 #include <QtMath>
+#include <QGamepadManager>
 #include <cmath>
 #include "application.h"
 #include "utils.h"
 
 namespace GfxPaint {
+
+void Editor::init()
+{
+    setMouseTracking(true);
+    setFocusPolicy(Qt::WheelFocus);
+
+    QObject::connect(&m_editingContext.selectionModel(), &QItemSelectionModel::selectionChanged, this, &Editor::updateContext);
+
+    qDebug() << QGamepadManager::instance()->isGamepadConnected(0);
+    QObject::connect(QGamepadManager::instance(), &QGamepadManager::gamepadAxisEvent, this, [](){
+
+    });
+    QObject::connect(QGamepadManager::instance(), &QGamepadManager::gamepadButtonPressEvent, this, [](){
+
+    });
+    QObject::connect(QGamepadManager::instance(), &QGamepadManager::gamepadButtonReleaseEvent, this, [](){
+
+    });
+}
 
 Editor::Editor(Scene &scene, QWidget *parent) :
     RenderedWidget(parent),
@@ -14,7 +34,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
     strokeTool(*this), pickTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
     m_editingContext(scene),
     cameraTransform(), m_transformMode(),
-    inputState{}, cursorPos(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{},
+    inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
     toolSet{
         {{{}, {Qt::LeftButton}, {}}, &strokeTool},
         {{{}, {Qt::MiddleButton}, {}}, &panTool},
@@ -27,10 +47,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
     },
     toolStack()
 {
-    setMouseTracking(true);
-    setFocusPolicy(Qt::WheelFocus);
-
-    QObject::connect(&m_editingContext.selectionModel(), &QItemSelectionModel::selectionChanged, this, &Editor::updateContext);
+    init();
 }
 
 Editor::Editor(const Editor &other) :
@@ -39,13 +56,10 @@ Editor::Editor(const Editor &other) :
     strokeTool(other.strokeTool), pickTool(other.pickTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform), m_transformMode(other.m_transformMode),
-    inputState{}, cursorPos(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{},
+    inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
     toolSet(other.toolSet), toolStack{}
 {
-    setMouseTracking(true);
-    setFocusPolicy(Qt::WheelFocus);
-
-    QObject::connect(&m_editingContext.selectionModel(), &QItemSelectionModel::selectionChanged, this, &Editor::updateContext);
+    init();
 }
 
 Editor::~Editor()
@@ -59,6 +73,14 @@ bool Editor::eventFilter(QObject *const watched, QEvent *const event)
         QKeyEvent *eventCopy = new QKeyEvent(keyEvent->type(), keyEvent->key(), keyEvent->modifiers(), keyEvent->text(), keyEvent->isAutoRepeat(), keyEvent->count());
         QApplication::postEvent(this, eventCopy);
     }
+    else if (event->type() == QEvent::Wheel)  {
+        const QWheelEvent *const wheelEvent = static_cast<QWheelEvent *>(event);
+        qDebug() << "Window Wheel" << wheelEvent->angleDelta();//////////////////
+//        QWheelEvent *eventCopy = new QWheelEvent(wheelEvent->pos(), wheelEvent->globalPos(), wheelEvent->pixelDelta(), wheelEvent->angleDelta(), wheelEvent->delta(), wheelEvent->orientation(), wheelEvent->buttons(), wheelEvent->modifiers(), wheelEvent->phase(), wheelEvent->source());
+//        QApplication::postEvent(this, eventCopy);
+//        return true;
+    }
+    else return RenderedWidget::eventFilter(watched, event);
 
     return false;
 }
@@ -81,9 +103,12 @@ bool Editor::event(QEvent *const event)
         const QWheelEvent *const wheelEvent = static_cast<QWheelEvent *>(event);
         const QTabletEvent *const tabletEvent = static_cast<QTabletEvent *>(event);
         inputState.wheelDirections = {{false, false, false, false}};
-        wheelDelta = {};
-        pressure = 0.0;
-        rotation = 0.0;
+        cursorDelta = {0.0f, 0.0f};
+        wheelDelta = {0.0f, 0.0f};
+        pressure = 1.0f;
+        rotation = 0.0f;
+        tilt = {0.0f, 0.0f};
+        quaternion = QQuaternion(0.0f, 0.0f, 0.0f, 1.0f);
         if (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) inputState.keys.insert(static_cast<Qt::Key>(keyEvent->key()));
         else if (event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) inputState.keys.remove(static_cast<Qt::Key>(keyEvent->key()));
         else if (event->type() == QEvent::MouseButtonPress) inputState.mouseButtons.insert(mouseEvent->button());
@@ -92,21 +117,28 @@ bool Editor::event(QEvent *const event)
         else if (event->type() == QEvent::TabletRelease) inputState.mouseButtons.remove(tabletEvent->button());
         else if (event->type() == QEvent::Wheel) {
             inputState.wheelDirections = {{wheelEvent->angleDelta().x() < 0, wheelEvent->angleDelta().x() > 0, wheelEvent->angleDelta().y() < 0, wheelEvent->angleDelta().y() > 0}};
-            static const qreal stepSize = 8 * 15;
-            wheelDelta = wheelEvent->angleDelta() / stepSize;
+            static const float stepSize = 8 * 15;
+            wheelDelta = QVector2D(wheelEvent->angleDelta()) / stepSize;
+        }
+        if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
+            cursorDelta = QVector2D(mouseEvent->localPos()) - cursorPos;
+        }
+        if (event->type() == QEvent::TabletRelease || event->type() == QEvent::TabletMove) {
+            cursorDelta = QVector2D(tabletEvent->posF()) - cursorPos;
         }
         if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
-            cursorPos = mouseEvent->localPos();
-            pressure = 1.0;
+            cursorPos = QVector2D(mouseEvent->localPos());
+            pressure = 1.0f;
         }
         if (event->type() == QEvent::TabletPress || event->type() == QEvent::TabletRelease || event->type() == QEvent::TabletMove) {
-            cursorPos = tabletEvent->posF();
-            pressure = tabletEvent->pressure();
-//            rotation = tabletEvent->rotation();
-            const qreal tiltX = sin(qDegreesToRadians(static_cast<qreal>(tabletEvent->xTilt())));
-            const qreal tiltY = sin(qDegreesToRadians(static_cast<qreal>(tabletEvent->yTilt())));
-            rotation = std::atan2(tiltY, tiltX);
+            cursorPos = QVector2D(tabletEvent->posF());
+            pressure = static_cast<float>(tabletEvent->pressure());
+            rotation = static_cast<float>(tabletEvent->rotation());
+            tilt = {qDegreesToRadians(static_cast<float>(tabletEvent->xTilt())), qDegreesToRadians(static_cast<float>(tabletEvent->yTilt()))};
+            rotation = qRadiansToDegrees(std::atan2(std::sin(tilt.y()), std::sin(tilt.x())) + (tau<float> / 4.0f));
+            quaternion = QQuaternion::fromEulerAngles(tilt.y(), tilt.x(), rotation);
         }
+        Point point{QVector2D(mouseToWorld(cursorPos)), static_cast<float>(pressure), quaternion};
 
         bool consume = false;
 
@@ -117,7 +149,7 @@ bool Editor::event(QEvent *const event)
             const InputState &trigger = iterator.value().first;
             Tool *const tool = iterator.value().second;
             if (!trigger.test(inputState)) {
-                tool->end(mouseToViewport(cursorPos), pressure, rotation);
+                tool->end(mouseToViewport(cursorPos), point);
                 iterator.remove();
                 releaseMouse();
                 consume = true;
@@ -129,13 +161,13 @@ bool Editor::event(QEvent *const event)
             if (trigger.test(inputState)) {
                 if (!toolStack.isEmpty()) {
                     Tool *const oldTool = toolStack.top().second;
-                    oldTool->end(mouseToViewport(cursorPos), pressure, rotation);
+                    oldTool->end(mouseToViewport(cursorPos), point);
                 }
                 Tool *const tool = toolSet[trigger];
                 auto pair = std::make_pair(trigger, tool);
                 if (!toolStack.contains(pair)) {
                     toolStack.push(pair);
-                    tool->begin(mouseToViewport(cursorPos), pressure, rotation);
+                    tool->begin(mouseToViewport(cursorPos), point);
                 }
                 grabMouse();
                 consume = true;
@@ -155,8 +187,7 @@ bool Editor::event(QEvent *const event)
                  event->type() == QEvent::TabletMove) {
             if (!toolStack.isEmpty()) {
                 Tool *const tool = toolStack.top().second;
-                tool->update(mouseToViewport(cursorPos), pressure, rotation);
-                qDebug() << pressure << rotation;/////////////////////
+                tool->update(mouseToViewport(cursorPos), point);
             }
             consume = true;
         }
@@ -268,19 +299,20 @@ void Editor::render()
                 glDisable(GL_DEPTH_TEST);
                 glDisable(GL_BLEND);
 
-//                const QPointF point = mouseToWorld(mapFromGlobal(QCursor::pos())); // lower latency?
-                const QPointF point = mouseToWorld(cursorPos);
-                const QPointF snappedPoint = pixelSnap(point);
-                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
-                bufferNodeContext->strokeBuffer->bindFramebuffer();
-                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
+                const QVector2D point = QVector2D(mouseToWorld(cursorPos));
+                const QVector2D snappedPoint = pixelSnap(point);
+//                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
+                Tool *const tool = &strokeTool;
+                tool->preview(mouseToViewport(cursorPos), {mouseToWorld(cursorPos), 1.0, quaternion});
+//                bufferNodeContext->strokeBuffer->bindFramebuffer();
+//                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
             }
         }
     }    
 
     // Draw scene
     widgetBuffer->bindFramebuffer();
-    scene.render(widgetBuffer, false, nullptr, cameraTransform * viewportTransform, &m_editingContext.states());
+    scene.render(widgetBuffer, false, nullptr, viewportTransform * cameraTransform, &m_editingContext.states());
 
     // Undraw on-canvas brush preview
     for (auto index : m_editingContext.selectionModel().selectedRows()) {
@@ -295,42 +327,42 @@ void Editor::render()
     }
 }
 
-qreal Editor::strokeSegmentDabs(const QPointF startPos, const qreal startPressure, const qreal startRotation, const QPointF endPos, const qreal endPressure, const qreal endRotation, const QSizeF spacing, const qreal offset, QList<StrokeTool::Point> &output) {
-    auto ellipsePolar = [](const qreal a, const qreal b, const qreal theta){
-        return (a * b) / std::sqrt(std::pow(a, 2.0) * std::pow(sin(theta), 2.0) + std::pow(b, 2.0) * std::pow(cos(theta), 2.0));
+float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const QVector2D spacing, const float offset, Stroke &output) {
+    auto ellipsePolar = [](const float a, const float b, const float theta){
+        return (a * b) / std::sqrt(std::pow(a, 2.0f) * std::pow(std::sin(theta), 2.0f) + std::pow(b, 2.0f) * std::pow(std::cos(theta), 2.0f));
     };
-    const qreal a = spacing.width() / 2.0;
-    const qreal b = spacing.height() / 2.0;
-    const qreal theta = std::atan2(endPos.y() - startPos.y(), endPos.x() - startPos.x());
-    const qreal increment = ellipsePolar(a, b, theta + ((2.0 * M_PI) / 360.0) * -startRotation) * 2.0;
+    const float a = spacing.x() / 2.0f;
+    const float b = spacing.y() / 2.0f;
+    const float theta = std::atan2(end.pos.y() - start.pos.y(), end.pos.x() - start.pos.x());
+    const float increment = ellipsePolar(a, b, theta + ((2.0f * pi<float>) / 360.0f) * -start.quaternion.scalar()) * 2.0f;
 
-    qreal pos = offset * increment;
-    if (pos == 0.0) {
-        output.append({startPos, startPressure, startRotation});
+    float pos = offset * increment;
+    if (pos == 0.0f) {
+        output.add(start.pos, start.pressure, start.quaternion);
         pos += increment;
     }
-    const QPointF delta(endPos.x() - startPos.x(), endPos.y() - startPos.y());
-    const qreal length = std::hypot(delta.x(), delta.y());
-    const QPointF step(delta.x() / length, delta.y() / length);
+    const QVector2D delta(end.pos.x() - start.pos.x(), end.pos.y() - start.pos.y());
+    const float length = std::hypot(delta.x(), delta.y());
+    const QVector2D step(delta.x() / length, delta.y() / length);
     while (pos < length) {
-        output.append({QPointF(startPos.x() + pos * step.x(), startPos.y() + pos * step.y()), startPressure, startRotation});
+        output.add(Stroke::interpolate(start, end, pos / length));
         pos += increment;
     }
 
     return (pos - length) / increment;
 }
 
-void Editor::drawDab(const Dab &dab, const Colour &colour, BufferNode &node, const QPointF worldPos)
+void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const QVector2D worldPos)
 {
     Q_ASSERT( m_editingContext.bufferNodeContext(&node));
 
     const Traversal::State &state = m_editingContext.states().value(&node);
 
-    const QTransform &transform = state.transform;
-    QTransform spaceTransform;
+    const QMatrix4x4 &transform = QMatrix4x4(state.transform);
+    QMatrix4x4 spaceTransform;
     switch (dab.space) {
     case Space::Object: {
-        spaceTransform = QTransform();
+        spaceTransform = QMatrix4x4();
     } break;
     case Space::ObjectAspectCorrected: {
         spaceTransform = node.pixelAspectRatioTransform().inverted();
@@ -339,20 +371,20 @@ void Editor::drawDab(const Dab &dab, const Colour &colour, BufferNode &node, con
         spaceTransform = transform.inverted();
     } break;
     case Space::View: {
-        spaceTransform = (transform * cameraTransform).inverted();
+        spaceTransform = (cameraTransform * transform).inverted();
     } break;
     }
-    const QPointF spaceOffset = spaceTransform.map(QPointF(0.0, 0.0));
-    spaceTransform = spaceTransform * QTransform().translate(-spaceOffset.x(), -spaceOffset.y());
-    const QPointF objectSpacePos = transform.inverted().map(worldPos);
+    const QVector2D spaceOffset = QVector2D(spaceTransform.map(QVector3D(QVector2D(0.0f, 0.0f))));
+    QMatrix4x4 spaceOffsetTransform;
+    spaceOffsetTransform.translate(-spaceOffset);
+    spaceTransform = spaceOffsetTransform * spaceTransform;
+    const QVector2D objectSpacePos = QVector2D(transform.inverted().map(worldPos.toPointF()));
+    QMatrix4x4 objectSpaceTransform;
+    objectSpaceTransform.translate(objectSpacePos);
 
     const Buffer *const palette = m_editingContext.states()[&node].palette;
     EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(&node);
-    bufferNodeContext->dabProgram->render(dab, colour, spaceTransform * QTransform().translate(objectSpacePos.x(), objectSpacePos.y()) * GfxPaint::viewportTransform(node.buffer.size()), &node.buffer, palette);
-}
-
-void Editor::drawSegment(const Dab &dab, const Stroke &stroke, const Colour &colour, BufferNode &node, const QPointF start, const QPointF end, const qreal offset)
-{
+    bufferNodeContext->dabProgram->render(dab, colour, GfxPaint::viewportTransform(node.buffer.size()) * objectSpaceTransform * spaceTransform, &node.buffer, palette);
 }
 
 void Editor::setTransformMode(const TransformMode transformMode)
@@ -363,7 +395,7 @@ void Editor::setTransformMode(const TransformMode transformMode)
     }
 }
 
-void Editor::setTransform(const QTransform &transform)
+void Editor::setTransform(const QMatrix4x4 &transform)
 {
     if (this->cameraTransform != transform) {
         this->cameraTransform = transform;
@@ -380,7 +412,7 @@ void Editor::updateContext()
         m_editingContext.states().insert(node, Traversal::State());
     }
     // Update node states (non render)
-    scene.render(nullptr, false, nullptr, QTransform(), &m_editingContext.states());
+    scene.render(nullptr, false, nullptr, QMatrix4x4(), &m_editingContext.states());
 
     Buffer *palette = nullptr;
     for (auto index : m_editingContext.selectionModel().selectedRows()) {

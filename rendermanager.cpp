@@ -1,22 +1,37 @@
 #include "rendermanager.h"
 
 #include <QFileInfo>
+#include <cstring>
 #include "utils.h"
 #include "application.h"
 
 namespace GfxPaint {
 
-const QTransform RenderManager::unitToClipTransform{
-        2.0, 0.0, 0.0,
-        0.0, 2.0, 0.0,
-        -1.0, -1.0, 1.0};
+const QMatrix4x4 RenderManager::unitToClipTransform = ([](){
+        static const float data[] = {
+            2.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 2.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            -1.0f, -1.0f, 0.0f, 1.0f,
+        };
+        QMatrix4x4 matrix;
+        std::memcpy(matrix.data(), data, sizeof(data));
+        return matrix;
+    })();
 
-const QTransform RenderManager::clipToUnitTransform(RenderManager::unitToClipTransform.inverted());
+const QMatrix4x4 RenderManager::clipToUnitTransform(RenderManager::unitToClipTransform.inverted());
 
-const QTransform RenderManager::flipTransform{
-        1.0, 0.0, 0.0,
-        0.0, -1.0, 0.0,
-        0.0, 0.0, 1.0};
+const QMatrix4x4 RenderManager::flipTransform = ([](){
+    static const float data[] = {
+        1.0f, 0.0f, 0.0f, 0.0f,
+        0.0f, -1.0f, 0.0f, 0.0f,
+        0.0f, 0.0f, 1.0f, 0.0f,
+        0.0f, 0.0f, 0.0f, 1.0f,
+    };
+    QMatrix4x4 matrix;
+    std::memcpy(matrix.data(), data, sizeof(data));
+    return matrix;
+    })();
 
 const QMap<ColourSpaceConversion, QString> RenderManager::colourSpaceConversionShaderFunctionNames = {
     {{ColourSpace::RGB, ColourSpace::sRGB}, "rgb_to_srgb"},
@@ -223,7 +238,7 @@ QString RenderManager::modelVertexMainShaderPart()
     QString src;
     src +=
 R"(
-uniform mat3 matrix;
+uniform mat4 matrix;
 
 in layout(location = 0) vec2 vertexPos;
 in layout(location = 1) vec4 vertexColour;
@@ -234,7 +249,7 @@ out layout(location = 1) vec4 colour;
 void main(void) {
     pos = vec2(0.0, 0.0);
     colour = vertexColour;
-    gl_Position = vec4(matrix * vec3(vertexPos, 1.0), 1.0);
+    gl_Position = matrix * vec4(vertexPos, 0.0, 1.0);
 }
 )";
     return src;
@@ -245,7 +260,7 @@ QString RenderManager::vertexMainShaderPart()
     QString src;
     src +=
 R"(
-uniform mat3 matrix;
+uniform mat4 matrix;
 
 uniform ivec2 srcRectPos = ivec2(0.0, 0.0);
 uniform ivec2 srcRectSize = ivec2(1.0, 1.0);
@@ -255,7 +270,7 @@ out layout(location = 0) vec2 pos;
 void main(void) {
     const vec2 vertexPos = vertices[gl_VertexID];
     pos = vec2(srcRectPos) + vertexPos * vec2(srcRectSize);
-    gl_Position = vec4(matrix * vec3(vertexPos, 1.0), 1.0);
+    gl_Position = matrix * vec4(vertexPos, 0.0, 1.0);
 }
 )";
     return src;
@@ -380,24 +395,24 @@ Colour $NAME(const vec2 pos) {
     return src;
 }
 
-QString RenderManager::dabShaderPart(const QString &name, const Dab::Type type, const int metric)
+QString RenderManager::dabShaderPart(const QString &name, const Brush::Dab::Type type, const int metric)
 {
-    const QMap<Dab::Type, QString> types = {
-        { Dab::Type::Pixel,
+    const QMap<Brush::Dab::Type, QString> types = {
+        { Brush::Dab::Type::Pixel,
 R"(
 float $NAMEBrush(const vec2 pos) {
     return 0.0;
 }
 )"
         },
-        { Dab::Type::Distance,
+        { Brush::Dab::Type::Distance,
 R"(
 float $NAMEBrush(const vec2 pos) {
     return $METRIC(pos);
 }
 )"
         },
-        { Dab::Type::Buffer,
+        { Brush::Dab::Type::Buffer,
 R"(
 float $NAMEBrush(const vec2 pos) {
     return 0.0;
@@ -406,14 +421,14 @@ float $NAMEBrush(const vec2 pos) {
         },
     };
     QString src;
-    if (type == Dab::Type::Distance) {
+    if (type == Brush::Dab::Type::Distance) {
         src += fileToString(":/shaders/distance.glsl");
     }
     src += types[type];
     src +=
 R"(
 layout(std140, binding = 0) uniform Data {
-    mat3 matrix;
+    mat4 matrix;
     Colour colour;
     float hardness;
     float opacity;

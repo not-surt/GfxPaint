@@ -376,12 +376,23 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
+    <widget class="QMenu" name="menu_Context_Scope">
+     <property name="title">
+      <string>&amp;Context Scope</string>
+     </property>
+     <addaction name="actionContextScopeEditor"/>
+     <addaction name="actionContextScopeDocument"/>
+     <addaction name="actionContextScopeWindow"/>
+     <addaction name="actionContextScopeApplication"/>
+    </widget>
     <addaction name="actionUndo"/>
     <addaction name="actionRedo"/>
     <addaction name="separator"/>
     <addaction name="actionClear"/>
     <addaction name="separator"/>
     <addaction name="actionSnapToGrid"/>
+    <addaction name="separator"/>
+    <addaction name="menu_Context_Scope"/>
    </widget>
    <widget class="QMenu" name="menuApplication">
     <property name="title">
@@ -1375,6 +1386,26 @@
    </property>
    <property name="text">
     <string>Close File with &amp;Last Editor</string>
+   </property>
+  </action>
+  <action name="actionContextScopeEditor">
+   <property name="text">
+    <string>Context &amp;Editor Scope</string>
+   </property>
+  </action>
+  <action name="actionContextScopeDocument">
+   <property name="text">
+    <string>Context &amp;Document Scope</string>
+   </property>
+  </action>
+  <action name="actionContextScopeWindow">
+   <property name="text">
+    <string>Context &amp;Window Scope</string>
+   </property>
+  </action>
+  <action name="actionContextScopeApplication">
+   <property name="text">
+    <string>Context &amp;Application Scope</string>
    </property>
   </action>
  </widget>

@@ -3,7 +3,7 @@
 
 #include <QAbstractTableModel>
 
-#include <QTransform>
+#include <QMatrix4x4>
 
 namespace GfxPaint {
 
@@ -12,8 +12,6 @@ class TransformModel : public QAbstractTableModel
     Q_OBJECT
 
 public:
-    typedef qreal (QTransform::*Getter)() const;
-
     explicit TransformModel(QObject *parent = nullptr);
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
@@ -21,19 +19,18 @@ public:
     QVariant data(const QModelIndex &index, int role = Qt::DisplayRole) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     Qt::ItemFlags flags(const QModelIndex& index) const override;
+    virtual QVariant headerData(const int section, const Qt::Orientation orientation, const int role) const override;
 
-    const QTransform &transform() const;
+    const QMatrix4x4 &transform() const;
 
 signals:
-    void transformChanged(const QTransform &transform);
+    void transformChanged(const QMatrix4x4 &transform);
 
 public slots:
-    void setTransform(const QTransform &transform);
+    void setTransform(const QMatrix4x4 &transform);
 
 protected:
-    static const Getter getters[3][3];
-
-    QTransform m_transform;
+    QMatrix4x4 m_transform;
 };
 
 } // namespace GfxPaint

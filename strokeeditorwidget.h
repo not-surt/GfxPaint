@@ -20,20 +20,20 @@ public:
     ~StrokeEditorWidget();
 
 public slots:
-    void setStroke(const Stroke &stroke);
+    void setStroke(const Brush::Stroke &stroke);
 
 protected slots:
     void updateStroke();
 
 signals:
-    void strokeChanged(const Stroke &stroke);
+    void strokeChanged(const Brush::Stroke &stroke);
 
 private:
     void updateWidgets();
 
     Ui::StrokeEditorWidget *ui;
 
-    Stroke stroke;
+    Brush::Stroke stroke;
 };
 
 } // namespace GfxPaint

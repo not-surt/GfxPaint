@@ -33,7 +33,7 @@ void SpatialNode::beforeChildren(Traversal &traversal)
 {
     Node::beforeChildren(traversal);
 
-    traversal.transformStack.push(combinedTransform() * traversal.transformStack.top());
+    traversal.transformStack.push(traversal.transformStack.top() * combinedTransform());
 }
 
 void SpatialNode::afterChildren(Traversal &traversal)
@@ -43,17 +43,17 @@ void SpatialNode::afterChildren(Traversal &traversal)
     traversal.transformStack.pop();
 }
 
-QTransform SpatialNode::transform() const
+QMatrix4x4 SpatialNode::transform() const
 {
     return m_transform;
 }
 
-void SpatialNode::setTransform(const QTransform &transform)
+void SpatialNode::setTransform(const QMatrix4x4 &transform)
 {
     m_transform = transform;
 }
 
-QTransform SpatialNode::combinedTransform() const
+QMatrix4x4 SpatialNode::combinedTransform() const
 {
     return transform();
 }
@@ -118,13 +118,9 @@ BufferNode *BufferNode::clone() const
     return new BufferNode(*this);
 }
 
-QTransform BufferNode::combinedTransform() const
+QMatrix4x4 BufferNode::combinedTransform() const
 {
-    QTransform transform = pixelAspectRatioTransform() * this->transform();
-//    const QPointF translation = transform.map(QPointF(0.0, 0.0));
-//    transform = transform * QTransform().translate(-translation.x(), -translation.y());
-//    transform = transform * QTransform().translate(translation.x() * scrollScale.width(), translation.y() * scrollScale.height());
-    return transform;
+    return this->transform() * pixelAspectRatioTransform();
 }
 
 void BufferNode::beforeChildren(Traversal &traversal)
@@ -143,7 +139,7 @@ void BufferNode::render(Traversal &traversal)
 {
     if (!traversal.renderTargetStack.isEmpty()) {
         const Traversal::RenderTarget &renderTarget = traversal.renderTargetStack.top();
-        QTransform transform = traversal.transformStack.top();
+        QMatrix4x4 transform = traversal.transformStack.top();
         const Buffer *palette = nullptr;
         Buffer::Format paletteFormat;
         if (!traversal.paletteStack.isEmpty()) {
@@ -153,7 +149,9 @@ void BufferNode::render(Traversal &traversal)
         // TODO: don't create new program for every render
         BufferProgram program(buffer.format(), indexed, paletteFormat, renderTarget.buffer->format(), renderTarget.indexed, renderTarget.palette ? renderTarget.palette->format() : Buffer::Format(), 0, 3);
         renderTarget.buffer->bindFramebuffer();
-        program.render(&buffer, palette, transparent, QTransform().scale(buffer.width(), buffer.height()) * transform * renderTarget.transform, renderTarget.buffer, renderTarget.palette);
+        QMatrix4x4 workMatrix;
+        workMatrix.scale(buffer.width(), buffer.height());
+        program.render(&buffer, palette, transparent, renderTarget.transform * transform * workMatrix, renderTarget.buffer, renderTarget.palette);
     }
 }
 
