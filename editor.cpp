@@ -327,26 +327,30 @@ void Editor::render()
     }
 }
 
-float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const QVector2D spacing, const float offset, Stroke &output) {
+float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const QVector2D dabSize, const QVector2D absoluteSpacing, const QVector2D proportionalSpacing, const float offset, Stroke &output) {
     auto ellipsePolar = [](const float a, const float b, const float theta){
         return (a * b) / std::sqrt(std::pow(a, 2.0f) * std::pow(std::sin(theta), 2.0f) + std::pow(b, 2.0f) * std::pow(std::cos(theta), 2.0f));
     };
+
+    const QVector2D spacing{absoluteSpacing + proportionalSpacing * dabSize};
+
     const float a = spacing.x() / 2.0f;
     const float b = spacing.y() / 2.0f;
     const float theta = std::atan2(end.pos.y() - start.pos.y(), end.pos.x() - start.pos.x());
-    const float increment = ellipsePolar(a, b, theta + ((2.0f * pi<float>) / 360.0f) * -start.quaternion.scalar()) * 2.0f;
+    float increment = ellipsePolar(a, b, theta + ((2.0f * pi<float>) / 360.0f) * -start.quaternion.scalar()) * 2.0f;
 
+    const float incrementScale = 1.0;
     float pos = offset * increment;
     if (pos == 0.0f) {
-        output.add(start.pos, start.pressure, start.quaternion);
+        output.add(start);
         pos += increment;
     }
-    const QVector2D delta(end.pos.x() - start.pos.x(), end.pos.y() - start.pos.y());
-    const float length = std::hypot(delta.x(), delta.y());
-    const QVector2D step(delta.x() / length, delta.y() / length);
+    const QVector2D delta = end.pos - start.pos;
+    const float length = delta.length();
     while (pos < length) {
         output.add(Stroke::interpolate(start, end, pos / length));
-        pos += increment;
+        pos += std::max(increment, 1.0f);
+        increment *= incrementScale;
     }
 
     return (pos - length) / increment;

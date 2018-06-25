@@ -22,10 +22,8 @@ void StrokeTool::update(const QVector2D viewportPos, const Point &point) {
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
             const Brush &brush = editor.editingContext().brush();
-            const QVector2D spacing{std::max(brush.stroke.absoluteSpacing.x() + brush.stroke.proportionalSpacing.x() * brush.dab.size.x(), 1.0f),
-                                 std::max(brush.stroke.absoluteSpacing.y() + brush.stroke.proportionalSpacing.y() * brush.dab.size.y(), 1.0f)};
             Stroke points;
-            strokeOffset = editor.strokeSegmentDabs(prevWorldPoint, worldPoint, spacing, strokeOffset, points);
+            strokeOffset = editor.strokeSegmentDabs(prevWorldPoint, worldPoint, brush.dab.size, brush.stroke.absoluteSpacing, brush.stroke.proportionalSpacing, strokeOffset, points);
             for (auto point : points.points) {
                 const QVector2D snappedPoint = editor.pixelSnap(point.pos);
                 Brush::Dab dab(brush.dab);

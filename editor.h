@@ -114,7 +114,7 @@ public:
         const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.y());
         return snap({offsetX, offsetY}, {1.0f, 1.0f}, target);
     }
-    float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const QVector2D spacing, const float offset, Stroke &output);
+    float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const QVector2D brushSize, const QVector2D absoluteSpacing, const QVector2D proportionalSpacing, const float offset, Stroke &output);
     void drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const QVector2D worldPos);
 
     Scene &scene;

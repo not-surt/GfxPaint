@@ -2,7 +2,7 @@
 #define UINT_MAX 0xffffffff
 
 #define Index uint
-#define INDEX_INVALID 0xffffffff
+#define INDEX_INVALID UINT_MAX
 #define RGBA vec4
 #define RGBA_INVALID RGBA(INF)
 

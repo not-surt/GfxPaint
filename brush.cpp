@@ -6,7 +6,7 @@ namespace GfxPaint {
 
 Brush::Dab::Dab() :
     space{Space::Object}, type{Type::Distance}, metric{0},
-    size{16.0f, 16.0f}, fixedRatio{false}, ratio{1.0f},
+    size{16.0f, 16.0f}, fixedRatio{true}, ratio{1.0f},
     angle{0.0f},
     origin{0.0f, 0.0f}, pixelSnapX{PixelSnap::Auto}, pixelSnapY{PixelSnap::Auto},
     hardness{0.0f}, opacity{1.0f},

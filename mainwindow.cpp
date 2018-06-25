@@ -410,7 +410,6 @@ bool MainWindow::openDocument(const QString &filename, const bool createEditor)
         qApp->updateRecentFiles(filename);
         if (createEditor) {
             Editor *const editor = new Editor(*document);
-            editor->setDocumentFilename(filename);
             addEditor(editor);
         }
         return true;
@@ -502,6 +501,7 @@ void MainWindow::addEditor(Editor *const editor)
     subWindow->setAttribute(Qt::WA_DeleteOnClose);
     subWindow->installEventFilter(this);
     editorSubWindows.insert(editor, subWindow);
+    editor->setDocumentFilename(editor->scene.filename());
     subWindow->setWidget(editor);
     ui->mdiArea->addSubWindow(subWindow);
     subWindow->show();

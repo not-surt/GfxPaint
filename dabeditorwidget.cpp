@@ -65,6 +65,7 @@ void DabEditorWidget::updateWidgets()
         ui->widthSpinBox, ui->heightSpinBox, ui->fixedRatioCheckBox, ui->ratioLineEdit,
         ui->angleSpinBox,
         ui->originXSpinBox, ui->originYSpinBox,
+        ui->pixelSnapXComboBox, ui->pixelSnapYComboBox,
         ui->hardnessSpinBox, ui->opacitySpinBox,
         ui->blendModeComboBox, ui->composeModeComboBox,
     };
