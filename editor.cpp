@@ -2,7 +2,7 @@
 
 #include <QMouseEvent>
 #include <QtMath>
-#include <QGamepadManager>
+//#include <QGamepadManager>
 #include <cmath>
 #include "application.h"
 #include "utils.h"
@@ -16,16 +16,16 @@ void Editor::init()
 
     QObject::connect(&m_editingContext.selectionModel(), &QItemSelectionModel::selectionChanged, this, &Editor::updateContext);
 
-    qDebug() << QGamepadManager::instance()->isGamepadConnected(0);
-    QObject::connect(QGamepadManager::instance(), &QGamepadManager::gamepadAxisEvent, this, [](){
+//    qDebug() << QGamepadManager::instance()->isGamepadConnected(0);
+//    QObject::connect(QGamepadManager::instance(), &QGamepadManager::gamepadAxisEvent, this, [](){
 
-    });
-    QObject::connect(QGamepadManager::instance(), &QGamepadManager::gamepadButtonPressEvent, this, [](){
+//    });
+//    QObject::connect(QGamepadManager::instance(), &QGamepadManager::gamepadButtonPressEvent, this, [](){
 
-    });
-    QObject::connect(QGamepadManager::instance(), &QGamepadManager::gamepadButtonReleaseEvent, this, [](){
+//    });
+//    QObject::connect(QGamepadManager::instance(), &QGamepadManager::gamepadButtonReleaseEvent, this, [](){
 
-    });
+//    });
 }
 
 Editor::Editor(Scene &scene, QWidget *parent) :

@@ -4,7 +4,8 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets opengl openglextensions gamepad
+QT       += core gui widgets opengl openglextensions
+#QT       += gamepad
 
 TARGET = GfxPaint
 TEMPLATE = app
