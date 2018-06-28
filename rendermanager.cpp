@@ -336,31 +336,36 @@ layout(std140, binding = $UNIFORM_BLOCK_BINDING) uniform $NAMEUniformData {
 } $NAMEData;
 
 Colour $NAME(const vec2 pos) {
-    uint index = INDEX_INVALID;
-    //Colour transparent = Colour(vec4(1.0, 1.0, 1.0, 1.0), 0);
+    Colour colour = COLOUR_INVALID;
     Colour transparent = $NAMEData.transparent;
 )";
     if (indexed && paletteFormat.isValid()) src +=
 R"(
-//    index = texelFetch($NAMETexture, ivec2(floor(pos))).x;
-    index = imageLoad($NAMEImage, ivec2(floor(pos))).x;
-    const vec4 rgba = (index == transparent.index ? vec4(0.0) : $NAMEPalette(index));
+//    colour.index = texelFetch($NAMETexture, ivec2(floor(pos))).x;
+    colour.index = imageLoad($NAMEImage, ivec2(floor(pos))).x;
+    colour.rgba = (colour.index == transparent.index ? vec4(0.0) : $NAMEPalette(colour.index));
 )";
     else if (indexed && !paletteFormat.isValid()) src +=
 R"(
 //    const float grey = toUnit(texelFetch($NAMETexture, ivec2(floor(pos))).x, $SCALAR_VALUE_TYPE($FORMAT_SCALE));
     const float grey = toUnit(imageLoad($NAMEImage, ivec2(floor(pos))).x, $SCALAR_VALUE_TYPE($FORMAT_SCALE));
-    const vec4 rgba = (index == transparent.index ? vec4(0.0) : vec4(vec3(grey), 1.0));
+    colour.rgba = (index == transparent.index ? vec4(0.0) : vec4(vec3(grey), 1.0));
 )";
     else src +=
 R"(
 //    const vec4 texelRgba = toUnit(texelFetch($NAMETexture, ivec2(floor(pos))), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
     const vec4 texelRgba = toUnit(imageLoad($NAMEImage, ivec2(floor(pos))), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
-    const vec4 rgba = (texelRgba == transparent.rgba ? vec4(0.0) : texelRgba);
+//    colour.rgba = (texelRgba == transparent.rgba ? vec4(0.0) : texelRgba);
+    if (transparent.rgba != RGBA_INVALID) {
+        colour.rgba = (texelRgba == transparent.rgba ? vec4(0.0) : texelRgba);
+    }
+    else {
+        colour.rgba =  texelRgba;
+    }
 )";
     src +=
 R"(
-    return Colour(rgba, index);
+    return colour;
 }
 )";
     stringMultiReplace(src, {
@@ -456,7 +461,7 @@ QString RenderManager::colourSliderShaderPart(const QString &name, const ColourS
     QString src;
     src += fileToString(":/shaders/ColorSpaces.inc.glsl");
     if (quantise) {
-        src += fileToString(":/shaders/quantise.glsl");
+        src += fileToString(":/shaders/palette.glsl");
         src += paletteShaderPart("quantise", quantisePaletteTextureLocation, quantisePaletteFormat);
     }
     src +=
@@ -509,7 +514,7 @@ QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const
     QString src;
     src += fileToString(":/shaders/compositing.glsl");
     src += fileToString(":/shaders/blending.glsl");
-    if (indexed && paletteFormat.isValid()) src += fileToString(":/shaders/quantise.glsl");
+    if (indexed && paletteFormat.isValid()) src += fileToString(":/shaders/palette.glsl");
     src +=
 R"(
 in layout(location = 0) vec2 pos;

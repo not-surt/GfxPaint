@@ -5,6 +5,7 @@
 #define INDEX_INVALID UINT_MAX
 #define RGBA vec4
 #define RGBA_INVALID RGBA(INF)
+#define COLOUR_INVALID Colour(RGBA_INVALID, INDEX_INVALID)
 
 struct SubImage {
     ivec2 pos;

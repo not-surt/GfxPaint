@@ -2,6 +2,8 @@
 #define TYPES_H
 
 #include <QImage>
+#include <array>
+#include <algorithm>
 
 //#include <glm/glm.hpp>
 
@@ -30,7 +32,7 @@ typedef std::array<vec4, 4> mat4;
 typedef vec4 Rgba;
 typedef GLuint Index;
 
-#define RGBA_INVALID vec4{std::numeric_limits<GLfloat>::infinity()}
+#define RGBA_INVALID Rgba{std::numeric_limits<GLfloat>::infinity()}
 #define INDEX_INVALID std::numeric_limits<GLuint>::max()
 
 struct Colour {
@@ -40,12 +42,13 @@ struct Colour {
     inline bool operator==(const Colour &rhs) const {
         return std::equal(std::begin(rgba), std::end(rgba), std::begin(rhs.rgba))
                 && index == rhs.index;
-//        return rgba == rhs.rgba && index == rhs.index;
     }
     inline bool operator!=(const Colour &rhs) const {
         return !operator==(rhs);
     }
 };
+
+static const Colour COLOUR_INVALID = Colour{RGBA_INVALID, INDEX_INVALID};
 
 enum class AttributelessModel {
     SingleVertex,
