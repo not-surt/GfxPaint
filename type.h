@@ -4,6 +4,7 @@
 #include <QImage>
 #include <array>
 #include <algorithm>
+#include <iterator>
 
 //#include <glm/glm.hpp>
 
