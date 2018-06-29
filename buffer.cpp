@@ -25,25 +25,25 @@ static const QList<QString> floatShaderValueTypes = {"float", "vec2", "vec3", "v
 static const QList<QString> uIntShaderValueTypes = {"uint", "uvec2", "uvec3", "uvec4"};
 static const QList<QString> sIntShaderValueTypes = {"int", "ivec2", "ivec3", "ivec4"};
 const QMap<BufferData::Format::ComponentType, BufferData::Format::ComponentInfo> BufferData::Format::components = {
-    {ComponentType::UNorm, {floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, {
+    {ComponentType::UNorm, BufferData::Format::ComponentInfo{floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, QMap<int, ComponentSizeInfo>{
          {1, {GL_UNSIGNED_BYTE, 1}},
          {2, {GL_UNSIGNED_SHORT, 1}},
      }}},
-    {ComponentType::SNorm, {floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, {
+    {ComponentType::SNorm, BufferData::Format::ComponentInfo{floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, QMap<int, ComponentSizeInfo>{
          {1, {GL_BYTE, 1}},
          {2, {GL_SHORT, 1}},
      }}},
-    {ComponentType::UInt, {uIntShaderSamplerType, uIntShaderImageType, intFormats, uIntShaderValueTypes, {
-         {1, {GL_UNSIGNED_BYTE, std::numeric_limits<GLubyte>::max()}},
-         {2, {GL_UNSIGNED_SHORT, std::numeric_limits<GLushort>::max()}},
-         {4, {GL_UNSIGNED_INT, std::numeric_limits<GLuint>::max()}},
+    {ComponentType::UInt, BufferData::Format::ComponentInfo{uIntShaderSamplerType, uIntShaderImageType, intFormats, uIntShaderValueTypes, QMap<int, ComponentSizeInfo>{
+         {1, {GL_UNSIGNED_BYTE, static_cast<GLuint>(std::numeric_limits<GLubyte>::max())}},
+         {2, {GL_UNSIGNED_SHORT, static_cast<GLuint>(std::numeric_limits<GLushort>::max())}},
+         {4, {GL_UNSIGNED_INT, static_cast<GLuint>(std::numeric_limits<GLuint>::max())}},
      }}},
-    {ComponentType::SInt, {sIntShaderSamplerType, sIntShaderImageType, intFormats, sIntShaderValueTypes, {
-         {1, {GL_BYTE, std::numeric_limits<GLbyte>::max()}},
-         {2, {GL_SHORT, std::numeric_limits<GLshort>::max()}},
-         {4, {GL_INT, std::numeric_limits<GLint>::max()}},
+    {ComponentType::SInt, BufferData::Format::ComponentInfo{sIntShaderSamplerType, sIntShaderImageType, intFormats, sIntShaderValueTypes, QMap<int, ComponentSizeInfo>{
+         {1, {GL_BYTE, static_cast<GLuint>(std::numeric_limits<GLbyte>::max())}},
+         {2, {GL_SHORT, static_cast<GLuint>(std::numeric_limits<GLshort>::max())}},
+         {4, {GL_INT, static_cast<GLuint>(std::numeric_limits<GLint>::max())}},
      }}},
-    {ComponentType::Float, {floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, {
+    {ComponentType::Float, BufferData::Format::ComponentInfo{floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, QMap<int, ComponentSizeInfo>{
          {2, {GL_HALF_FLOAT, 1}},
          {4, {GL_FLOAT, 1}},
      }}},

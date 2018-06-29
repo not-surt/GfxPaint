@@ -14,7 +14,7 @@ TransformEditorWidget::TransformEditorWidget(QWidget *parent) :
     ui->transformTableView->verticalHeader()->setSectionResizeMode(QHeaderView::Fixed);
     ui->transformTableView->setModel(&model);
 
-    QObject::connect(ui->modeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](const int transformMode){
+    QObject::connect(ui->modeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](const int transformMode){
         setTransformMode(static_cast<TransformMode>(transformMode));
     });
     QObject::connect(ui->identityButton, &QPushButton::clicked, this, [this](){

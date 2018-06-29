@@ -15,7 +15,7 @@ ColourSpaceSlidersWidget::ColourSpaceSlidersWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QObject::connect(ui->colourSpaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ColourSpaceSlidersWidget::updateWidgets);
+    QObject::connect(ui->colourSpaceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ColourSpaceSlidersWidget::updateWidgets);
     QObject::connect(ui->alphaCheckBox, &QCheckBox::toggled, this, &ColourSpaceSlidersWidget::updateWidgets);
     QObject::connect(ui->quantiseCheckBox, &QCheckBox::toggled, this, &ColourSpaceSlidersWidget::updateWidgets);
 

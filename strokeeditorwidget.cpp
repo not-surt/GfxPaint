@@ -10,14 +10,14 @@ StrokeEditorWidget::StrokeEditorWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &StrokeEditorWidget::updateStroke);
-    QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &StrokeEditorWidget::updateStroke);
+    QObject::connect(ui->spaceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &StrokeEditorWidget::updateStroke);
+    QObject::connect(ui->metricComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->continuousCheckBox, &QCheckBox::toggled, this, &StrokeEditorWidget::updateStroke);
-    QObject::connect(ui->absoluteSpacingWidthSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
-    QObject::connect(ui->absoluteSpacingHeightSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
-    QObject::connect(ui->proportionalSpacingWidthSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
-    QObject::connect(ui->proportionalSpacingHeightSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
-    QObject::connect(ui->dabCountSpinBox, qOverload<int>(&QSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
+    QObject::connect(ui->absoluteSpacingWidthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
+    QObject::connect(ui->absoluteSpacingHeightSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
+    QObject::connect(ui->proportionalSpacingWidthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
+    QObject::connect(ui->proportionalSpacingHeightSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
+    QObject::connect(ui->dabCountSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
 }
 
 StrokeEditorWidget::~StrokeEditorWidget()

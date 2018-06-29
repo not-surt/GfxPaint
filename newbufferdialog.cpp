@@ -14,7 +14,7 @@ NewBufferDialog::NewBufferDialog(QWidget *parent, Qt::WindowFlags flags) :
 {
     ui->setupUi(this);
 
-    QObject::connect(ui->componentTypeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](const int index){
+    QObject::connect(ui->componentTypeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this](const int index){
         const Buffer::Format::ComponentType componentType = static_cast<Buffer::Format::ComponentType>(index);
         ui->componentSizeComboBox->clear();
         for (int i = 1; i <= 4; ++i) {

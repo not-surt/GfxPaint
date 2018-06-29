@@ -248,6 +248,7 @@ void ColourSliderProgram::render(const Colour &colour, const ColourSpace colourS
 
 QOpenGLShaderProgram *ColourPlaneProgram::createProgram() const
 {
+    return nullptr;
 }
 
 void ColourPlaneProgram::render(const Colour &colour, const ColourSpace colourSpace, const int componentX, const int componentY, const QMatrix4x4 &transform, Buffer *const dest)
