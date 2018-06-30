@@ -38,7 +38,7 @@ Index quantiseLut(usampler3D lut, const vec4 rgba, const float alphaThreshold, c
 #define QUANTISE_BRUTE_FORCE(samplerType)\
 Index quantiseBruteForce(samplerType palette, const uint componentScale, const vec4 rgba, const Index transparentIndex) {\
     Index nearestIndex = INDEX_INVALID;\
-    float nearestDistance = INF;\
+    float nearestDistance = FLOAT_INF;\
     for (Index index = 0; index < paletteSize(palette); ++index) {\
         if (index != transparentIndex) {\
             const vec4 paletteColour = vec4(toUnit(paletteIndex(palette, index), componentScale));\

@@ -95,6 +95,7 @@ void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, co
     BufferUniformData uniformData;
     memcpy(&uniformData.matrix, transform.data(), sizeof(uniformData.matrix));
     uniformData.transparent = transparent;
+//    qDebug() << uniformData.transparent.index << uniformData.transparent.rgba[0] << uniformData.transparent.rgba[1] << uniformData.transparent.rgba[2] << uniformData.transparent.rgba[3];//////////////////////////
 
     const GLuint blockIndex = glGetUniformBlockIndex(program.programId(), "srcUniformData");
     const GLuint bindingPoint = 2;
@@ -406,15 +407,16 @@ void main() {
     return program;
 }
 
-Colour ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcPalette, const QVector2D pos)
+Colour ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcPalette, QVector2D pos)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    glUniform2f(2, static_cast<GLfloat>(pos.x()), static_cast<GLfloat>(pos.y()));
+    glUniform2fv(2, 1, &(pos[0]));
     qApp->renderManager.bindIndexedBufferShaderPart(program, "src", 0, 0, src, indexed, 1, 1, srcPalette);
 
     Colour storageData;
+    storageData = Colour{Rgba{1.0f, 1.0f, 1.0f, 1.0f}, 1};
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(storageData), nullptr, GL_STREAM_READ);
 
@@ -422,6 +424,8 @@ Colour ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcP
 
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
     glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), &storageData);
+
+//    qDebug() << pos << storageData.index << storageData.rgba[0] << storageData.rgba[1] << storageData.rgba[2] << storageData.rgba[3];/////////////////////////////////////////////////////////////////////////
 
     return storageData;
 }

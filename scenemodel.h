@@ -39,7 +39,7 @@ public:
 
     void moveIndices(const QModelIndexList &indices, int row, QModelIndex parent);
     void copyIndices(const QModelIndexList &indices, int row, QModelIndex parent);
-    void insertNodes(const QList<Node *> &nodes, int row, QModelIndex parent);
+    QModelIndexList insertNodes(const QList<Node *> &nodes, int row, QModelIndex parent);
     void eraseIndices(const QModelIndexList &indices);
     static Node *nodeFromIndex(const QModelIndex &index) { return index.isValid() ? static_cast<Node *>(index.internalPointer()) : nullptr; }
     QModelIndex indexFromNode(Node *const node) {

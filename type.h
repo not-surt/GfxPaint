@@ -6,13 +6,9 @@
 #include <algorithm>
 #include <iterator>
 
-//#include <glm/glm.hpp>
-
 #include "opengl.h"
 
 namespace GfxPaint {
-
-//using namespace glm;
 
 typedef std::array<GLint, 2> ivec2;
 typedef std::array<GLint, 3> ivec3;
@@ -33,11 +29,12 @@ typedef std::array<vec4, 4> mat4;
 typedef vec4 Rgba;
 typedef GLuint Index;
 
-#define RGBA_INVALID Rgba{std::numeric_limits<GLfloat>::infinity()}
+#define FLOAT_INF std::numeric_limits<GLfloat>::infinity()
+#define RGBA_INVALID Rgba{FLOAT_INF, FLOAT_INF, FLOAT_INF, FLOAT_INF}
 #define INDEX_INVALID std::numeric_limits<GLuint>::max()
 
 struct Colour {
-    vec4 rgba{RGBA_INVALID};
+    Rgba rgba{RGBA_INVALID};
     GLuint index{INDEX_INVALID};
 
     inline bool operator==(const Colour &rhs) const {

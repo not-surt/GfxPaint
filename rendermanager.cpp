@@ -323,6 +323,8 @@ vec4 $NAMEPalette(const uint index) {
 
 QString RenderManager::bufferShaderPart(const QString &name, const GLint uniformBlockBinding, const GLint bufferImageBinding, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat)
 {
+    Q_ASSERT(!indexed || paletteFormat.isValid());
+
     QString src;
     if (indexed && paletteFormat.isValid()) src += paletteShaderPart(name, paletteTextureLocation, paletteFormat);
     src +=
@@ -344,6 +346,7 @@ R"(
 //    colour.index = texelFetch($NAMETexture, ivec2(floor(pos))).x;
     colour.index = imageLoad($NAMEImage, ivec2(floor(pos))).x;
     colour.rgba = (colour.index == transparent.index ? vec4(0.0) : $NAMEPalette(colour.index));
+//    colour.rgba = $NAMEPalette(colour.index);
 )";
     else if (indexed && !paletteFormat.isValid()) src +=
 R"(
@@ -519,6 +522,9 @@ QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const
     src +=
 R"(
 in layout(location = 0) vec2 pos;
+
+uniform Colour srcTransparent = COLOUR_INVALID;
+//uniform Colour destTransparent = COLOUR_INVALID;
 
 out layout(location = 0) $VALUE_TYPE fragment;
 

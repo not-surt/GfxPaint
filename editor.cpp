@@ -254,7 +254,8 @@ void Editor::insertNodes(const QList<Node *> &nodes)
         model.insertNodes(nodes, scene.root.children.length(), model.rootIndex);
     }
     else {
-        model.insertNodes(nodes, rows.last().row() + 1, rows.last().parent());
+        QModelIndexList inserted = model.insertNodes(nodes, rows.last().row() + 1, rows.last().parent());
+//        if (!inserted.isEmpty()) m_editingContext.selectionModel().select(inserted.last(), QItemSelectionModel::ClearAndSelect);
     }
 }
 

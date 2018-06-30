@@ -197,18 +197,21 @@ void SceneModel::copyIndices(const QModelIndexList &indices, int row, QModelInde
     scene.setModified();
 }
 
-void SceneModel::insertNodes(const QList<Node *> &nodes, int row, QModelIndex parent)
+QModelIndexList SceneModel::insertNodes(const QList<Node *> &nodes, int row, QModelIndex parent)
 {
     Q_ASSERT(parent.isValid());
     Q_ASSERT(row >= 0 && row <= rowCount(parent));
 
+    QModelIndexList indices;
     Node *const destParentNode = nodeFromIndex(parent);
     beginInsertRows(parent, row, row + nodes.size() - 1);
     for (int i = 0; i < nodes.size(); ++i) {
         destParentNode->insertChild(row + i, nodes[i]);
+        indices << createIndex(row + i, 0, nodes[i]);
     }
     endInsertRows();
     scene.setModified();
+    return indices;
 }
 
 void SceneModel::eraseIndices(const QModelIndexList &indices)
