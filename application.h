@@ -10,6 +10,8 @@
 #include <QMenu>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
+#include <QActionGroup>
+#include <QElapsedTimer>
 
 #include "type.h"
 #include "documentmanager.h"
@@ -54,6 +56,7 @@ public:
     void writeSettings(QSettings &settings);
     bool reopenSessionAtStartup() const;
     bool saveSessionAtExit() const;
+    float time() const;
 
     static const QMap<QImage::Format, QImage::Format> qImageConversion;
     static const QMap<QImage::Format, Buffer::Format> qImageToBuffer;
@@ -97,6 +100,7 @@ protected:
     QActionGroup m_stylesheetActions;
     bool m_reopenSessionAtStartup;
     bool m_saveSessionAtExit;
+    QElapsedTimer timer;
 };
 
 #ifdef qApp

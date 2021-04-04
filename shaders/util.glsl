@@ -23,45 +23,35 @@ vec4 unpremultiply(const vec4 colour) {
     else return vec4(colour.rgb / colour.a, colour.a);
 }
 
-#define FROM_UNIT_FLOAT(unitType, valueType, scaleType)\
+#define FROM_UNIT(unitType, valueType, scaleType)\
 valueType fromUnit(const unitType value, const scaleType scale) {\
-    return clamp(value * scale, 0.0, scale);\
+    return clamp(valueType(value * unitType(scale)), valueType(0), valueType(scale));\
 }
-FROM_UNIT_FLOAT(float, float, float)
-FROM_UNIT_FLOAT(vec4, vec4, float)
+FROM_UNIT(float, float, float)
+FROM_UNIT(vec4, vec4, float)
+FROM_UNIT(float, int, int)
+FROM_UNIT(vec4, ivec4, int)
+FROM_UNIT(float, uint, uint)
+FROM_UNIT(vec4, uvec4, uint)
 
-#define TO_UNIT_FLOAT(unitType, valueType, scaleType)\
+#define TO_UNIT(unitType, valueType, scaleType)\
 unitType toUnit(const valueType value, const scaleType scale) {\
-    return clamp(value / scale, 0.0, 1.0);\
+    return clamp(unitType(value) / unitType(scale), unitType(0.0), unitType(1.0));\
 }
-TO_UNIT_FLOAT(float, float, float)
-TO_UNIT_FLOAT(vec4, vec4, float)
-
-#define FROM_UNIT_INT(unitType, valueType, scaleType)\
-valueType fromUnit(const unitType value, const scaleType scale) {\
-    return clamp(valueType(value * scale), 0, scale);\
-}
-FROM_UNIT_INT(float, int, int)
-FROM_UNIT_INT(vec4, ivec4, int)
-FROM_UNIT_INT(float, uint, uint)
-FROM_UNIT_INT(vec4, uvec4, uint)
-
-#define TO_UNIT_INT(unitType, valueType, scaleType)\
-unitType toUnit(const valueType value, const scaleType scale) {\
-    return clamp(unitType(value) / unitType(scale), 0.0, 1.0);\
-}
-TO_UNIT_INT(float, int, int)
-TO_UNIT_INT(vec4, ivec4, int)
-TO_UNIT_INT(float, uint, uint)
-TO_UNIT_INT(vec4, uvec4, uint)
+TO_UNIT(float, float, float)
+TO_UNIT(vec4, vec4, float)
+TO_UNIT(float, int, int)
+TO_UNIT(vec4, ivec4, int)
+TO_UNIT(float, uint, uint)
+TO_UNIT(vec4, uvec4, uint)
 
 #define PALETTE_SAMPLE(samplerType, valueType)\
 valueType paletteSample(samplerType palette, const Index index) {\
-    return texelFetch(palette, ivec2(index, 0));\
+    return valueType(texelFetch(palette, ivec2(index, 0), 0));\
 }
-PALETTE_SAMPLE(sampler2DRect, vec4)
-PALETTE_SAMPLE(usampler2DRect, uvec4)
-PALETTE_SAMPLE(isampler2DRect, ivec4)
+PALETTE_SAMPLE(sampler2D, vec4)
+PALETTE_SAMPLE(usampler2D, uvec4)
+PALETTE_SAMPLE(isampler2D, ivec4)
 
 float stairstep(const float value, const float size) {
     return round(value / size) * size;

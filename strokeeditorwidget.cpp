@@ -18,6 +18,8 @@ StrokeEditorWidget::StrokeEditorWidget(QWidget *parent) :
     QObject::connect(ui->proportionalSpacingWidthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->proportionalSpacingHeightSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->dabCountSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
+
+    updateWidgets();
 }
 
 StrokeEditorWidget::~StrokeEditorWidget()

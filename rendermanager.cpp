@@ -92,7 +92,7 @@ const QList<RenderManager::DistanceMetricInfo> RenderManager::distanceMetrics = 
     {"Octagonal", "distanceOctagonal"},
 };
 
-const QList<RenderManager::intInfo> RenderManager::blendModes = {
+const QList<RenderManager::BlendModeInfo> RenderManager::blendModes = {
     {"Normal", "blendNormal"},
     {"Multiply", "blendMultiply"},
     {"Screen", "blendScreen"},
@@ -134,14 +134,51 @@ RenderManager::RenderManager() :
     vao(),
     programManager()
 {
+    // Create offscreen render context
+    // OpenGL ES
+    QSurfaceFormat formatGLES;
+    formatGLES.setRenderableType(QSurfaceFormat::OpenGLES);
+    formatGLES.setVersion(std::get<0>(openGLESVersion), std::get<1>(openGLESVersion));
+#ifdef QT_DEBUG
+    formatGLES.setOption(QSurfaceFormat::DebugContext);
+#endif
+    // Desktop OpenGL
+    QSurfaceFormat formatGL;
+    formatGL.setRenderableType(QSurfaceFormat::OpenGL);
+    formatGL.setVersion(std::get<0>(openGLVersion), std::get<1>(openGLVersion));
+    formatGL.setProfile(QSurfaceFormat::CoreProfile);
+#ifdef QT_DEBUG
+    formatGL.setOption(QSurfaceFormat::DebugContext);
+#endif
+    // Try to create OpenGL ES context
+    surface.setFormat(formatGLES);
+    Q_ASSERT(QThread::currentThread() == QGuiApplication::instance()->thread());
     surface.create();
+    context.setFormat(surface.format());
     context.setShareContext(QOpenGLContext::globalShareContext());
-    context.create();
-
-    if (!context.isValid() || context.format().version() < QSurfaceFormat::defaultFormat().version()) {
-        qDebug() << "Invalid context";
-        exit(EXIT_FAILURE);
+//    const bool createContextSuccess = context.create();
+    const bool createContextSuccess = false;
+    // If OpenGL ES context creation not successfull try to fall back to comparable desktop OpenGL context
+    if (!createContextSuccess) {
+        surface.destroy();
+        surface.setFormat(formatGL);
+        Q_ASSERT(QThread::currentThread() == QGuiApplication::instance()->thread());
+        surface.create();
+        context.setFormat(surface.format());
+        const bool createContextSuccess = context.create();
+        Q_ASSERT(createContextSuccess);
     }
+    qDebug() << "Is OpenGL ES?" << context.isOpenGLES();//////////////////////////////
+    qDebug() << context.format();//////////////////////////////
+
+//    surface.create();
+//    context.setShareContext(QOpenGLContext::globalShareContext());
+//    context.create();
+
+//    if (!context.isValid() || context.format().version() < QSurfaceFormat::defaultFormat().version()) {
+//        qDebug() << "Invalid context";
+//        exit(EXIT_FAILURE);
+//    }
 
     ContextBinder contextBinder(&context, &surface);
 
@@ -170,16 +207,26 @@ RenderManager::~RenderManager()
     }
 }
 
+QSurfaceFormat RenderManager::defaultFormat()
+{
+    QSurfaceFormat format;
+    format.setVersion(std::get<0>(openGLVersion), std::get<1>(openGLVersion));
+    format.setProfile(QSurfaceFormat::CoreProfile);
+    format.setOption(QSurfaceFormat::DebugContext);
+    format.setRenderableType(QSurfaceFormat::OpenGL);
+    return format;
+}
+
+QString RenderManager::glslVersionString() const
+{
+    return QString() + "#version " + QString::number(surface.format().majorVersion()) + QString::number(surface.format().minorVersion()) + "0" + (surface.format().renderableType() == QSurfaceFormat::OpenGLES ? " es" : " core") + "\n" +
+            (surface.format().renderableType() == QSurfaceFormat::OpenGLES ? QString() + "precision highp float;\n" + "precision highp int;\n" + "precision highp sampler2D;\n" + "precision highp isampler2D;\n" + "precision highp usampler2D;\n" + "\n" : "");
+}
+
 QString RenderManager::headerShaderPart()
 {
     QString src;
-    src +=
-R"(
-#version $GLSL_VERSION core
-)";
-    stringMultiReplace(src, {
-        {"$GLSL_VERSION", OPENGL_GLSL_VERSION_STRING},
-    });
+    src += qApp->renderManager.glslVersionString();
     src += fileToString(":/shaders/header.glsl");
     src += fileToString(":/shaders/util.glsl");
     for (auto key : colourSpaceInfo.keys()) {
@@ -262,8 +309,8 @@ QString RenderManager::vertexMainShaderPart()
 R"(
 uniform mat4 matrix;
 
-uniform ivec2 srcRectPos = ivec2(0.0, 0.0);
-uniform ivec2 srcRectSize = ivec2(1.0, 1.0);
+uniform ivec2 srcRectPos;
+uniform ivec2 srcRectSize;
 
 out layout(location = 0) vec2 pos;
 
@@ -339,32 +386,32 @@ layout(std140, binding = $UNIFORM_BLOCK_BINDING) uniform $NAMEUniformData {
 
 Colour $NAME(const vec2 pos) {
     Colour colour = COLOUR_INVALID;
-    Colour transparent = $NAMEData.transparent;
+//    Colour transparent = $NAMEData.transparent;
 )";
     if (indexed && paletteFormat.isValid()) src +=
 R"(
-//    colour.index = texelFetch($NAMETexture, ivec2(floor(pos))).x;
+//    colour.index = texelFetch($NAMETexture, ivec2(floor(pos)), 0).x;
     colour.index = imageLoad($NAMEImage, ivec2(floor(pos))).x;
-    colour.rgba = (colour.index == transparent.index ? vec4(0.0) : $NAMEPalette(colour.index));
-//    colour.rgba = $NAMEPalette(colour.index);
+//    colour.rgba = (colour.index == transparent.index ? vec4(0.0) : $NAMEPalette(colour.index));
+    colour.rgba = $NAMEPalette(colour.index);
 )";
     else if (indexed && !paletteFormat.isValid()) src +=
 R"(
-//    const float grey = toUnit(texelFetch($NAMETexture, ivec2(floor(pos))).x, $SCALAR_VALUE_TYPE($FORMAT_SCALE));
+//    const float grey = toUnit(texelFetch($NAMETexture, ivec2(floor(pos)), 0).x, $SCALAR_VALUE_TYPE($FORMAT_SCALE));
     const float grey = toUnit(imageLoad($NAMEImage, ivec2(floor(pos))).x, $SCALAR_VALUE_TYPE($FORMAT_SCALE));
-    colour.rgba = (index == transparent.index ? vec4(0.0) : vec4(vec3(grey), 1.0));
+    colour.rgba = (colour.index == transparent.index ? vec4(0.0) : vec4(vec3(grey), 1.0));
 )";
     else src +=
 R"(
-//    const vec4 texelRgba = toUnit(texelFetch($NAMETexture, ivec2(floor(pos))), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
+//    const vec4 texelRgba = toUnit(texelFetch($NAMETexture, ivec2(floor(pos)), 0), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
     const vec4 texelRgba = toUnit(imageLoad($NAMEImage, ivec2(floor(pos))), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
 //    colour.rgba = (texelRgba == transparent.rgba ? vec4(0.0) : texelRgba);
-    if (transparent.rgba != RGBA_INVALID) {
-        colour.rgba = (texelRgba == transparent.rgba ? vec4(0.0) : texelRgba);
-    }
-    else {
+//    if (transparent.rgba != RGBA_INVALID) {
+//        colour.rgba = (texelRgba == transparent.rgba ? vec4(0.0) : texelRgba);
+//    }
+//    else {
         colour.rgba =  texelRgba;
-    }
+//    }
 )";
     src +=
 R"(
@@ -511,6 +558,30 @@ R"(
 QString RenderManager::colourPlaneShaderPart(const QString &name, const ColourSpace colourSpace, const int componentX, const int componentY, const bool quantise)
 {
     return QString();
+}
+
+QString RenderManager::colourPaletteShaderPart(const QString &name)
+{
+    QString src;
+    src +=
+R"(
+uniform ivec2 cells = ivec2(16, 16);
+uniform ivec2 swatchSize = ivec2(16, 16);
+
+Colour $NAME(const vec2 pos) {
+    const ivec2 cell = ivec2(floor(pos / cells));
+    const int index = cell.x + cell.y * cells.x;
+    if (cell.x >= 0 && cell.x < cells.x &&
+        cell.y >= 0 && cell.y < cells.y &&
+        index >= 0 && index < paletteSize($NAMEPalettePaletteTexture))
+        return Colour($NAMEPalettePalette(index), INDEX_INVALID);
+    else return Colour(vec4(0.0, 0.0, 0.0, 0.0), INDEX_INVALID);
+}
+)";
+    stringMultiReplace(src, {
+        {"$NAME", name},
+    });
+    return src;
 }
 
 QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat, const int blendMode, const int composeMode)

@@ -573,16 +573,16 @@ void MainWindow::activateEditor(Editor *const editor)
             brush.dab = dab;
             activeEditor->setBrush(brush);
         });
-        activeEditorConnections << QObject::connect(activeEditor, &Editor::brushChanged, this, [this](const Brush &brush){
-            ui->dabEditorWidget->setDab(brush.dab);
-        });
         activeEditorConnections << QObject::connect(ui->strokeEditorWidget, &StrokeEditorWidget::strokeChanged, this, [this](const Brush::Stroke &stroke){
             Brush brush = activeEditor->editingContext().brush();
             brush.stroke = stroke;
             activeEditor->setBrush(brush);
         });
         activeEditorConnections << QObject::connect(activeEditor, &Editor::brushChanged, this, [this](const Brush &brush){
+            activeEditor->editingContext().setBrush(brush);
+            ui->dabEditorWidget->setDab(brush.dab);
             ui->strokeEditorWidget->setStroke(brush.stroke);
+
         });
         activeEditorConnections << QObject::connect(activeEditor, &Editor::brushChanged, ui->brushViewWidget, &BrushViewWidget::setBrush);
 
@@ -590,7 +590,7 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::colourChanged, activeEditor, &Editor::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->brushViewWidget, &BrushViewWidget::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::setPalette);
-        ui->colourSpaceSlidersWidget->setColour(activeEditor->editingContext().colour());
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->paletteEditorWidget, &PaletteEditorWidget::setPalette);
 
         ui->sceneTreeWidget->setEnabled(true);
         ui->sceneTreeWidget->setEditor(editor);

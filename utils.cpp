@@ -13,7 +13,7 @@ QString buildFilterString(QList<QByteArray> formats, QString allLabel)
 {
     QStringList filters;
     QStringList allFilter;
-    for (auto format : formats) {
+    for (const auto &format : formats) {
         const QString filterString = "*." + format;
         filters.append(format.toUpper() + " files (" + filterString + ")");
         allFilter.append(filterString);
@@ -25,7 +25,7 @@ QString buildFilterString(QList<QByteArray> formats, QString allLabel)
 QWidget *centringWidget(QWidget *const widget)
 {
     QHBoxLayout *const centringLayout = new QHBoxLayout();
-    centringLayout->setMargin(0);
+    centringLayout->setContentsMargins(QMargins(0, 0, 0, 0));
     centringLayout->addWidget(widget);
     QWidget *const centringWidget = new QWidget();
     centringWidget->setLayout(centringLayout);
@@ -169,7 +169,7 @@ void rotateScaleAtOrigin(QMatrix4x4 &transform, const float rotation, const floa
     const QVector2D pointAfter = QVector2D((transform.inverted()).map(origin.toPointF()));
     const QVector2D offset = pointAfter - pointBefore;
     workMatrix = {};
-    workMatrix.translate(offset);
+    workMatrix.translate(QVector3D(offset));
     transform = transform * workMatrix;
 }
 
@@ -183,7 +183,7 @@ QMatrix4x4 transformPointToPoint(const QVector2D origin, const QVector2D from, c
     rotateScaleAtOrigin(transform, rotation, scaling, origin);
     return transform;
 }
-
+/*
 bool KeyEventTransition::eventTest(QEvent *event) {
     const QStateMachine::WrappedEvent *const wrappedEvent = static_cast<const QStateMachine::WrappedEvent *>(event);
     const QKeyEvent *const keyEvent = static_cast<const QKeyEvent *>(wrappedEvent->event());
@@ -212,5 +212,5 @@ bool ModifierKeyEventTransition::eventTest(QEvent *event) {
     }
     return false;
 }
-
+*/
 } // namespace GfxPaint

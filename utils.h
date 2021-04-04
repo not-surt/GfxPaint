@@ -5,10 +5,10 @@
 #include <QList>
 #include <QByteArray>
 #include <QWidget>
-#include <QKeyEventTransition>
-#include <QMouseEventTransition>
+//#include <QKeyEventTransition>
+//#include <QMouseEventTransition>
 #include <QKeyEvent>
-#include <QStateMachine>
+//#include <QStateMachine>
 #include <cmath>
 #include "opengl.h"
 #include "buffer.h"
@@ -19,7 +19,7 @@ namespace GfxPaint {
 QString buildFilterString(QList<QByteArray> imageFormats, QString allLabel = QString("supported"));
 
 QWidget *centringWidget(QWidget *const widget);
-
+/*
 // Builtin version doesn't discard key repeats
 class KeyEventTransition : public QKeyEventTransition {
 public:
@@ -48,7 +48,7 @@ public:
 protected:
     virtual bool eventTest(QEvent *event) override;
 };
-
+*/
 QString fileToString(const QString &path);
 
 void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements);

@@ -36,6 +36,7 @@ struct Brush
         Dab(const Dab &other);
 
     public:
+        Dab &operator=(const Dab &) = default;
         inline bool operator==(const Dab &rhs) const {
             return this->space == rhs.space &&
                     this->type == rhs.type &&
@@ -78,6 +79,7 @@ struct Brush
         Stroke();
         Stroke(const Stroke &other);
 
+        Stroke &operator=(const Stroke &) = default;
         inline bool operator==(const Stroke &rhs) const {
             return this->space == rhs.space &&
                     this->metric == rhs.metric &&
@@ -99,6 +101,7 @@ struct Brush
     Brush();
     Brush(const Brush &other);
 
+    Brush &operator=(const Brush &) = default;
     inline bool operator==(const Brush &rhs) const {
         return this->dab == rhs.dab &&
                 this->stroke == rhs.stroke;

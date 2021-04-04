@@ -104,7 +104,7 @@ void PanTool::update(const QVector2D viewportPos, const Point &point)
     if (editor.editingContext().selectionModel().selectedRows().isEmpty()) {
         const QVector2D translation = editor.viewportToWorld(viewportPos) - editor.viewportToWorld(oldViewportPos);
         QMatrix4x4 workMatrix;
-        workMatrix.translate(translation);
+        workMatrix.translate(QVector3D(translation));
         if (editor.transformMode() == TransformMode::View) {
             editor.setTransform(editor.transform() * workMatrix);
         }
@@ -115,7 +115,7 @@ void PanTool::update(const QVector2D viewportPos, const Point &point)
             const Traversal::State &state = editor.editingContext().states().value(node);
             const QVector2D translation = editor.viewportToWorld(viewportPos) - editor.viewportToWorld(oldViewportPos);
             QMatrix4x4 workMatrix;
-            workMatrix.translate(translation);
+            workMatrix.translate(QVector3D(translation));
             if (editor.transformMode() == TransformMode::View) {
                 editor.setTransform(editor.transform() * workMatrix);
             }
@@ -124,7 +124,7 @@ void PanTool::update(const QVector2D viewportPos, const Point &point)
                 if (spatialNode) {
                     const QVector2D translation = QVector2D(state.parentTransform.inverted().map(editor.viewportToWorld(viewportPos).toPointF())) - QVector2D(state.parentTransform.inverted().map(editor.viewportToWorld(oldViewportPos).toPointF()));
                     QMatrix4x4 workMatrix;
-                    workMatrix.translate(translation);
+                    workMatrix.translate(QVector3D(translation));
                     spatialNode->setTransform(spatialNode->transform() * workMatrix);
                 }
             }

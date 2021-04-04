@@ -8,6 +8,7 @@
 #include <QOpenGLVertexArrayObject>
 #include <QBasicTimer>
 #include <QElapsedTimer>
+
 #include "buffer.h"
 #include "rendermanager.h"
 

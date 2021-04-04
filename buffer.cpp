@@ -13,12 +13,12 @@ const QMap<BufferData::Format::ComponentType, QString> BufferData::Format::compo
     {BufferData::Format::ComponentType::Float, "Floating-point"},
 };
 
-static const QString floatShaderSamplerType = "sampler2DRect";
-static const QString uIntShaderSamplerType = "usampler2DRect";
-static const QString sIntShaderSamplerType = "isampler2DRect";
-static const QString floatShaderImageType = "image2DRect";
-static const QString uIntShaderImageType = "uimage2DRect";
-static const QString sIntShaderImageType = "iimage2DRect";
+static const QString floatShaderSamplerType = "sampler2D";
+static const QString uIntShaderSamplerType = "usampler2D";
+static const QString sIntShaderSamplerType = "isampler2D";
+static const QString floatShaderImageType = "image2D";
+static const QString uIntShaderImageType = "uimage2D";
+static const QString sIntShaderImageType = "iimage2D";
 static const QList<GLenum> intFormats = {GL_RED_INTEGER, GL_RG_INTEGER, GL_RGB_INTEGER, GL_RGBA_INTEGER};
 static const QList<GLenum> floatFormats = {GL_RED, GL_RG, GL_RGB, GL_RGBA};
 static const QList<QString> floatShaderValueTypes = {"float", "vec2", "vec3", "vec4"};
@@ -148,8 +148,8 @@ void BufferData::copy(const BufferData &other, const QRect &from, const QPoint &
 {
     Q_ASSERT(format == other.format);
 
-    glCopyImageSubData(other.texture, GL_TEXTURE_RECTANGLE, 0, from.x(), from.y(), 0,
-                       texture, GL_TEXTURE_RECTANGLE, 0, to.x(), to.y(), 0,
+    glCopyImageSubData(other.texture, GL_TEXTURE_2D, 0, from.x(), from.y(), 0,
+                       texture, GL_TEXTURE_2D, 0, to.x(), to.y(), 0,
                        from.width(), from.height(), 1);
 }
 
@@ -178,8 +178,8 @@ void BufferData::readPixel(const QPoint &pos, GLvoid *const pixel)
 
 void BufferData::writePixel(const QPoint &pos, const GLvoid *const pixel)
 {
-    glBindTexture(GL_TEXTURE_RECTANGLE, texture);
-    glTexSubImage2D(GL_TEXTURE_RECTANGLE, 0, pos.x(), pos.y(), 1, 1, format.format(), format.type(), pixel);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexSubImage2D(GL_TEXTURE_2D, 0, pos.x(), pos.y(), 1, 1, format.format(), format.type(), pixel);
 }
 
 GLuint BufferData::createTexture(const QSize size, const Format format, const GLvoid *const data)
@@ -189,12 +189,12 @@ GLuint BufferData::createTexture(const QSize size, const Format format, const GL
 
     GLuint texture;
     gl.glGenTextures(1, &texture);
-    TextureBinder textureBinder(GL_TEXTURE_RECTANGLE, texture);
-    gl.glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    gl.glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    gl.glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    gl.glTexParameteri(GL_TEXTURE_RECTANGLE, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    gl.glTexImage2D(GL_TEXTURE_RECTANGLE, 0, format.internalFormat(), size.width(), size.height(), 0, format.format(), format.type(), data);
+    TextureBinder textureBinder(GL_TEXTURE_2D, texture);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    gl.glTexImage2D(GL_TEXTURE_2D, 0, format.internalFormat(), size.width(), size.height(), 0, format.format(), format.type(), data);
     return texture;
 }
 
@@ -206,9 +206,11 @@ GLuint BufferData::createFramebuffer(const Format format, const GLuint texture)
     GLuint framebuffer;
     gl.glGenFramebuffers(1, &framebuffer);
     FramebufferBinder framebufferBinder(GL_FRAMEBUFFER, framebuffer);
-    gl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_RECTANGLE, texture, 0);
+    gl.glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
     gl.glReadBuffer(GL_COLOR_ATTACHMENT0);
-    gl.glDrawBuffer(GL_COLOR_ATTACHMENT0);
+    GLenum drawBuffer = GL_COLOR_ATTACHMENT0;
+    gl.glDrawBuffers(1, &drawBuffer);
+    Q_ASSERT(gl.glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE);
     return framebuffer;
 }
 
@@ -231,7 +233,7 @@ void Buffer::bindTextureUnit(const GLuint textureUnit) const
 {
     BufferData *const data = const_cast<BufferData *>(this->data.constData());
     data->glActiveTexture(GL_TEXTURE0 + textureUnit);
-    data->glBindTexture(GL_TEXTURE_RECTANGLE, data->texture);
+    data->glBindTexture(GL_TEXTURE_2D, data->texture);
 }
 
 void Buffer::bindImageUnit(const GLuint imageUnit)

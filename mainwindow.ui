@@ -500,6 +500,33 @@
    <addaction name="menuView"/>
    <addaction name="menuNode"/>
   </widget>
+  <widget class="QDockWidget" name="paletteEditorDockWidget">
+   <property name="windowTitle">
+    <string>Palette</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_7">
+    <layout class="QVBoxLayout" name="verticalLayout_10">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="GfxPaint::PaletteEditorWidget" name="paletteEditorWidget" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
   <action name="actionNewFile">
    <property name="text">
     <string>&amp;New File...</string>
@@ -1456,6 +1483,12 @@
    <class>GfXPaint::NodeEditorWidget</class>
    <extends>QWidget</extends>
    <header>nodeeditorwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GfxPaint::PaletteEditorWidget</class>
+   <extends>QWidget</extends>
+   <header>paletteeditorwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

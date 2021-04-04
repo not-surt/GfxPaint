@@ -45,7 +45,7 @@ public:
             return !operator==(rhs);
         }
         bool operator<(const InputState &rhs) const {
-            return std::make_tuple(keys.toList(), mouseButtons.toList(), wheelDirections) < std::make_tuple(rhs.keys.toList(), rhs.mouseButtons.toList(), rhs.wheelDirections);
+            return std::make_tuple(keys.values(), mouseButtons.values(), wheelDirections) < std::make_tuple(rhs.keys.values(), rhs.mouseButtons.values(), rhs.wheelDirections);
         }
 
         bool test(const InputState &other) const {

@@ -26,8 +26,8 @@ public:
         glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
         glBufferData(GL_ARRAY_BUFFER, vertexCount * vertexStride, vertices.data(), GL_STATIC_DRAW);
 
-        for (int i = 0, offset = 0; i < attributeSizes.size(); offset += attributeSizes[i], ++i) {
-            glVertexAttribPointer(i, attributeSizes[i], GL_FLOAT, false, vertexStride, ((GLfloat *)0) + offset);
+        for (GLsizei i = 0, offset = 0; i < attributeSizes.size(); offset += attributeSizes[i], ++i) {
+            glVertexAttribPointer(i, attributeSizes[i], GL_FLOAT, false, vertexStride, (GLfloat *)(offset * sizeof(GLfloat)));
             glEnableVertexAttribArray(i);
         }
 
@@ -36,7 +36,7 @@ public:
 
         glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirectBuffer);
         QVector<DrawElementsIndirectCommand> commands(elementCount);
-        for (int i = 0, start = 0; i < elementCount; start += elementSizes[i], ++i) {
+        for (GLushort i = 0, start = 0; i < elementCount; start += elementSizes[i], ++i) {
             DrawElementsIndirectCommand &command = commands[i];
             command.count = elementSizes[i];
             command.instanceCount = 1;
@@ -55,7 +55,10 @@ public:
 
     void render() {
         glBindVertexArray(vao);
-        glMultiDrawElementsIndirect(primitive, GL_UNSIGNED_SHORT, nullptr, elementCount, sizeof(DrawElementsIndirectCommand));
+//        glMultiDrawElementsIndirect(primitive, GL_UNSIGNED_SHORT, nullptr, elementCount, sizeof(DrawElementsIndirectCommand));
+        for (int i = 0; i < elementCount; ++i) {
+            glDrawElementsIndirect(primitive, GL_UNSIGNED_SHORT, (void *)(i * sizeof(DrawElementsIndirectCommand)));
+        }
     }
 
 protected:

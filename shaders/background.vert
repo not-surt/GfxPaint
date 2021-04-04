@@ -1,5 +1,3 @@
-#version 430 core
-
 uniform mat4 matrix;
 
 out layout(location = 0) vec2 pos;

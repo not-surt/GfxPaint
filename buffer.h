@@ -70,6 +70,10 @@ public:
             return components[this->componentType];
         }
         FormatInfo formatInfo() const {
+//            qDebug() << formats.values().size();
+//            for (int i = 0; i < formats.values().size(); ++i) {
+//                qDebug() << "format:" << formats.values()[i].shaderImageFormat;
+//            }
             Q_ASSERT(formats.contains(*this));
             return formats[*this];
         }

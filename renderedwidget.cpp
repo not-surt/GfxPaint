@@ -98,19 +98,22 @@ void RenderedWidget::paintGL()
     // Draw checkers
     glDisable(GL_DEPTH_TEST);
     glDisable(GL_BLEND);
-    const float time = timer.elapsed() / 1000.0f;
+//    const float time = timer.elapsed() / 1000.0f;
+    const float time = qApp->time();
     const float degreesPerSecond = 45.0f;
-    QMatrix4x4 backgroundTransformM;
-    backgroundTransformM.scale(16.0f, 16.0f);
-    backgroundTransformM.rotate(time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
-    backgroundTransformM.translate(0.0f, 1.0f);
-    backgroundTransformM.rotate(-time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
-    patternProgram->render(RenderManager::flipTransform * viewportTransform * backgroundTransformM);
+    QMatrix4x4 backgroundTransform;
+    backgroundTransform.scale(16.0f, 16.0f);
+    backgroundTransform.rotate(time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
+    backgroundTransform.translate(0.0f, 1.0f);
+    backgroundTransform.rotate(-time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
+    patternProgram->render(RenderManager::flipTransform * viewportTransform * backgroundTransform);
 
     // Draw buffer
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    widgetProgram->render(widgetBuffer);
+    QMatrix4x4 matrix;
+    matrix.scale(width(), height());
+    widgetProgram->render(widgetBuffer, viewportTransform);
 }
 
 void RenderedWidget::timerEvent(QTimerEvent *event)

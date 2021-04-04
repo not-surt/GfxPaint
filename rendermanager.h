@@ -20,6 +20,8 @@ namespace GfxPaint {
 class RenderManager : protected OpenGL
 {
 public:
+    static constexpr std::tuple<int, int> openGLVersion = {4, 3};
+    static constexpr std::tuple<int, int> openGLESVersion = {3, 2};
     struct ProgramConstructionState {
         GLint uniformBlockBinding = 0;
         GLint uniformLocation = 0;
@@ -42,9 +44,6 @@ public:
 
     static const QMap<ColourSpaceConversion, QString> colourSpaceConversionShaderFunctionNames;
 
-    explicit RenderManager();
-    virtual ~RenderManager();
-
     QOffscreenSurface surface;
     QOpenGLContext context;
 
@@ -61,11 +60,11 @@ public:
         QString functionName;
     };
     static const QList<DistanceMetricInfo> distanceMetrics;
-    struct intInfo {
+    struct BlendModeInfo {
         QString label;
         QString functionName;
     };
-    static const QList<intInfo> blendModes;
+    static const QList<BlendModeInfo> blendModes;
     struct ComposeModeInfo {
         QString label;
         QString functionName;
@@ -74,6 +73,13 @@ public:
     static const int composeModeDefault;
 
     ProgramManager programManager;
+
+    explicit RenderManager();
+    virtual ~RenderManager();
+
+    static QSurfaceFormat defaultFormat();
+
+    QString glslVersionString() const;
 
     static QString headerShaderPart();
     static QString attributelessShaderPart(const AttributelessModel model);
@@ -86,6 +92,7 @@ public:
     static QString modelFragmentShaderPart(const QString &name);
     static QString colourSliderShaderPart(const QString &name, const ColourSpace colourSpace, const int component, const bool quantise, const GLint quantisePaletteTextureLocation, const Buffer::Format quantisePaletteFormat);
     static QString colourPlaneShaderPart(const QString &name, const ColourSpace colourSpace, const int componentX, const int componentY, const bool quantise);
+    static QString colourPaletteShaderPart(const QString &name);
     static QString fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat, const int blendMode, const int composeMode);
     static QString widgetOutputShaderPart();
 

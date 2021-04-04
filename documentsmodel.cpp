@@ -119,6 +119,7 @@ QVariant DocumentsModel::data(const QModelIndex &index, int role) const
 {
     if (!index.parent().isValid()) {
         Scene *const document = m_documents[index.row()];
+        Q_ASSERT(document);
         switch (role) {
         case Qt::DisplayRole:
             return document->filename() + (document->modified() ? "*" : "") + " (" + QString::number(documentEditorCount(m_documents[index.row()])) + ")";

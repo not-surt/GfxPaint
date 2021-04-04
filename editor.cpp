@@ -143,21 +143,22 @@ bool Editor::event(QEvent *const event)
         bool consume = false;
 
         // Remove non-matching tools
-        QMutableVectorIterator<std::pair<InputState, Tool *>> iterator(toolStack);
-        while (iterator.hasNext()) {
-            iterator.next();
-            const InputState &trigger = iterator.value().first;
-            Tool *const tool = iterator.value().second;
+        auto i = std::begin(toolStack);
+        while (i != std::end(toolStack)) {
+            const InputState &trigger = i->first;
+            Tool *const tool = i->second;
             if (!trigger.test(inputState)) {
                 tool->end(mouseToViewport(cursorPos), point);
-                iterator.remove();
+                i = toolStack.erase(i);
                 releaseMouse();
                 consume = true;
             }
+            else
+                ++i;
         }
 
         // Add matching tools
-        for (auto trigger : toolSet.keys()) {
+        for (auto &trigger : toolSet.keys()) {
             if (trigger.test(inputState)) {
                 if (!toolStack.isEmpty()) {
                     Tool *const oldTool = toolStack.top().second;
@@ -242,8 +243,10 @@ QString Editor::label() const
 void Editor::activate()
 {
     emit brushChanged(m_editingContext.brush());
-    emit transformModeChanged(this->m_transformMode);
-    emit transformChanged(this->cameraTransform);
+    emit transformModeChanged(m_transformMode);
+    emit transformChanged(cameraTransform);
+    emit colourChanged(m_editingContext.colour());
+    emit paletteChanged(m_editingContext.palette());
     updateContext();
 }
 
@@ -381,11 +384,11 @@ void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &no
     }
     const QVector2D spaceOffset = QVector2D(spaceTransform.map(QVector3D(QVector2D(0.0f, 0.0f))));
     QMatrix4x4 spaceOffsetTransform;
-    spaceOffsetTransform.translate(-spaceOffset);
+    spaceOffsetTransform.translate(QVector3D(-spaceOffset));
     spaceTransform = spaceOffsetTransform * spaceTransform;
     const QVector2D objectSpacePos = QVector2D(transform.inverted().map(worldPos.toPointF()));
     QMatrix4x4 objectSpaceTransform;
-    objectSpaceTransform.translate(objectSpacePos);
+    objectSpaceTransform.translate(QVector3D(objectSpacePos));
 
     const Buffer *const palette = m_editingContext.states()[&node].palette;
     EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(&node);

@@ -1,5 +1,3 @@
-#version 430 core
-
 const float base = 7.0 / 16.0;
 const float offset = 1.0 / 16.0;
 const float light = base + offset;

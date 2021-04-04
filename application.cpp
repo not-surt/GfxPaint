@@ -1,5 +1,6 @@
 #include "application.h"
 
+#include <QtGlobal>
 #include <QOffscreenSurface>
 #include <QOpenGLContext>
 #include <QSettings>
@@ -60,8 +61,10 @@ Application::Application(int &argc, char **argv)
       sessionManager(), documentManager(),
       m_recentSessions(), m_recentFiles(),
       styles(), m_styleActions(this), palettes(), m_paletteActions(this), stylesheets(), m_stylesheetActions(this),
-      m_reopenSessionAtStartup(true), m_saveSessionAtExit(true)
+      m_reopenSessionAtStartup(true), m_saveSessionAtExit(true), timer()
 {
+    timer.start();
+
     // Application settings
     setOrganizationName("surt");
     setOrganizationDomain("surt");
@@ -72,20 +75,22 @@ Application::Application(int &argc, char **argv)
     setDesktopFileName(name + ".desktop");
     QSettings::setDefaultFormat(QSettings::IniFormat);
     setQuitOnLastWindowClosed(false);
-    setFallbackSessionManagementEnabled(false);
+//    setFallbackSessionManagementEnabled(false);
 
     QObject::connect(this, &QGuiApplication::commitDataRequest, this, &Application::commitData, Qt::DirectConnection);
     QObject::connect(this, &QGuiApplication::saveStateRequest, this, &Application::saveState, Qt::DirectConnection);
 
+    const QStringList styleFactoryKeys = QStyleFactory::keys();
     styles["Default"] = style();
-    for (auto key : QStyleFactory::keys()) {
+    for (const auto &key : styleFactoryKeys) {
         styles[key] = QStyleFactory::create(key);
     }
-    for (auto key : styles.keys()) {
+    const QList<QString> stylesKeys = styles.keys();
+    for (const auto &key : stylesKeys) {
         QAction *const action = new QAction(key);
         action->setCheckable(true);
         action->setData(key);
-        QObject::connect(action, &QAction::triggered, [this, key](){
+        QObject::connect(action, &QAction::triggered, this, [this, key](){
             style()->setParent(nullptr);
             setStyle(styles.value(key));
         });
@@ -101,11 +106,12 @@ Application::Application(int &argc, char **argv)
     palettes["Earth"] = QPalette(QColor(95, 79, 63), QColor(63, 47, 31));
     palettes["Moss"] = QPalette(QColor(63, 95, 79), QColor(31, 63, 47));
     palettes["Slate"] = QPalette(QColor(63, 79, 95), QColor(31, 47, 63));
-    for (auto key : palettes.keys()) {
+    const QList<QString> palettesKeys = palettes.keys();
+    for (const auto &key : palettesKeys) {
         QAction *const action = new QAction(key);
         action->setCheckable(true);
         action->setData(key);
-        QObject::connect(action, &QAction::triggered, [this, key](){
+        QObject::connect(action, &QAction::triggered, this, [this, key](){
             setPalette(palettes.value(key));
         });
         m_paletteActions.addAction(action);
@@ -113,21 +119,22 @@ Application::Application(int &argc, char **argv)
     m_paletteActions.setExclusive(true);
     setPalette(palettes["Default"]);
 
-    QList<std::pair<QString, QString>> stylesheetFilenames = {
+    const QVector<std::pair<QString, QString>> stylesheetFilenames = {
         {"QDarkStyle", ":/qdarkstyle/style.qss"},
         {"Dark Orange", ":/darkorange.qss"}
     };
-    for (auto pair : stylesheetFilenames) {
+    for (const auto &pair : stylesheetFilenames) {
         QFile file(pair.second);
         file.open(QFile::ReadOnly | QFile::Text);
         stylesheets[pair.first] = QTextStream(&file).readAll();
     }
     stylesheets["None"] = "";
-    for (auto key : stylesheets.keys()) {
+    const QList<QString> stylesheetsKeys = stylesheets.keys();
+    for (const auto &key : stylesheetsKeys) {
         QAction *const action = new QAction(key);
         action->setCheckable(true);
         action->setData(key);
-        QObject::connect(action, &QAction::triggered, [this, key](){
+        QObject::connect(action, &QAction::triggered, this, [this, key](){
             setStyleSheet(stylesheets.value(key));
         });
         m_stylesheetActions.addAction(action);
@@ -147,7 +154,7 @@ Application::~Application()
     setStyleSheet("");
     // Ugly hack as QApplication needs to delete a style but don't want it deleting from style map
     style()->setParent(nullptr);
-    setStyle(QStyleFactory::create(QStyleFactory::keys()[0]));
+    setStyle(QStyleFactory::create(QStyleFactory::keys().at(0)));
     qDeleteAll(styles);
 }
 
@@ -161,7 +168,7 @@ void Application::exit(const int returnCode)
 void Application::updateRecentSessions(const QStringList &filenames)
 {
     static const int maxRecentSessions = 16;
-    for (auto filename : filenames) {
+    for (const auto &filename : filenames) {
         m_recentSessions.removeAll(filename);
         m_recentSessions.prepend(filename);
     }
@@ -193,7 +200,7 @@ QString Application::saveImageFilters()
 void Application::updateRecentFiles(const QStringList &filenames)
 {
     static const int maxRecentFiles = 16;
-    for (auto filename : filenames) {
+    for (const auto &filename : filenames) {
         m_recentFiles.removeAll(filename);
         m_recentFiles.prepend(filename);
     }
@@ -232,6 +239,11 @@ bool Application::saveSessionAtExit() const
     return m_saveSessionAtExit;
 }
 
+float Application::time() const
+{
+    return timer.elapsed() / 1000.0f;
+}
+
 void Application::commitData(QSessionManager &manager)
 {
     // TODO
@@ -266,7 +278,7 @@ void Application::setReopenSessionAtStartup(const bool value)
 void Application::readSettings(QSettings &settings)
 {
     QAction *defaultStyleAction = nullptr;
-    for (auto action : m_styleActions.actions()) {
+    for (auto &action : m_styleActions.actions()) {
         if (settings.contains("style")) action->setChecked(action->data() == settings.value("style"));
         if (action->text() == "Default") defaultStyleAction = action;
     }
@@ -279,7 +291,7 @@ void Application::readSettings(QSettings &settings)
     }
 
     QAction *defaultPaletteAction = nullptr;
-    for (auto action : m_paletteActions.actions()) {
+    for (auto &action : m_paletteActions.actions()) {
         if (settings.contains("palette")) action->setChecked(action->data() == settings.value("palette"));
         if (action->text() == "Default") defaultPaletteAction = action;
     }
@@ -292,7 +304,7 @@ void Application::readSettings(QSettings &settings)
     }
 
     QAction *defaultStylesheetAction = nullptr;
-    for (auto action : m_stylesheetActions.actions()) {
+    for (auto &action : m_stylesheetActions.actions()) {
         if (settings.contains("stylesheet")) action->setChecked(action->data() == settings.value("stylesheet"));
         if (action->text() == "None") defaultStylesheetAction = action;
     }
@@ -361,9 +373,9 @@ void Application::writeSettings(QSettings &settings)
 
 int main(int argc, char *argv[])
 {
-    QSurfaceFormat::setDefaultFormat(GfxPaint::OpenGL::format());
+    QSurfaceFormat::setDefaultFormat(GfxPaint::RenderManager::defaultFormat());
     QGuiApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+//    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 
     GfxPaint::Application app(argc, argv);
 

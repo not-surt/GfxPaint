@@ -43,6 +43,8 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     for (auto composeMode : RenderManager::composeModes) {
         ui->composeModeComboBox->addItem(composeMode.label);
     }
+
+    updateWidgets();
 }
 
 DabEditorWidget::~DabEditorWidget()

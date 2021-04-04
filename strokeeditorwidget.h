@@ -16,7 +16,7 @@ class StrokeEditorWidget : public QWidget
     Q_OBJECT
 
 public:
-    explicit StrokeEditorWidget(QWidget *parent = 0);
+    explicit StrokeEditorWidget(QWidget *parent = nullptr);
     ~StrokeEditorWidget();
 
 public slots:
