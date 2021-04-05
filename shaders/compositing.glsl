@@ -1,12 +1,12 @@
 vec4 porterDuff(const vec4 s, const vec4 d, const vec4 b) {
-    const float areaSrc = s.a * (1.0 - d.a);
-    const float areaDest = d.a * (1.0 - s.a);
-    const float areaBoth = s.a * d.a;
-    const vec3 colour = areaSrc * s.rgb + areaDest * d.rgb + areaBoth * b.rgb;
-    const float as = normalize(s.a);
-    const float ad = normalize(d.a);
-    const float ab = normalize(b.a);
-    const float alpha = areaSrc * as + areaDest * ad + areaBoth * ab;
+    float areaSrc = s.a * (1.0 - d.a);
+    float areaDest = d.a * (1.0 - s.a);
+    float areaBoth = s.a * d.a;
+    vec3 colour = areaSrc * s.rgb + areaDest * d.rgb + areaBoth * b.rgb;
+    float as = normalize(s.a);
+    float ad = normalize(d.a);
+    float ab = normalize(b.a);
+    float alpha = areaSrc * as + areaDest * ad + areaBoth * ab;
     return vec4(colour, alpha);
 }
 

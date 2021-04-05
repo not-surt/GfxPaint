@@ -39,11 +39,11 @@ float blendColourBurnScalar(const float dest, const float src) {
 
 float blendHardLightScalar(const float dest, const float src) {
     return (src <= 0.5) ? blendMultiplyScalar(dest, 2.0 * src)
-        : blendScreenScalar(dest, 2.0 * src - 1);
+        : blendScreenScalar(dest, 2.0 * src - 1.0);
 }
 
 float blendSoftLightScalar(const float dest, const float src) {
-    const float d = (dest <= 0.25) ? ((16.0 * dest - 12.0) * dest + 4.0) * dest
+    float d = (dest <= 0.25) ? ((16.0 * dest - 12.0) * dest + 4.0) * dest
         : sqrt(dest);
     return (src <= 0.5) ? dest - (1.0 - 2.0 * src) * dest * (1.0 - dest)
         : dest + (2.0 * src - 1.0) * (d - dest);
@@ -128,16 +128,16 @@ float _clipColourUpper(const float l, const float x, const float component) {
 }
 
 vec3 clipColour(const vec3 colour) {
-    const float l = lum(colour);
-    const float n = min(min(colour.r, colour.g), colour.b);
-    const float x = max(max(colour.r, colour.g), colour.b);
-    return (n < 0)
+    float l = lum(colour);
+    float n = min(min(colour.r, colour.g), colour.b);
+    float x = max(max(colour.r, colour.g), colour.b);
+    return (n < 0.0)
         ? vec3(_clipColourLower(l, n, colour.r), _clipColourLower(l, n, colour.g), _clipColourLower(l, n, colour.b))
         : vec3(_clipColourUpper(l, x, colour.r), _clipColourUpper(l, x, colour.g), _clipColourUpper(l, x, colour.b));
 }
 
 vec3 setLum(const vec3 colour, const float l) {
-    const float d = l - lum(colour);
+    float d = l - lum(colour);
     return clipColour(colour + vec3(d));
 }
 
@@ -146,11 +146,11 @@ float sat(const vec3 colour) {
 }
 
 vec3 setSat(vec3 colour, const float s) {
-    const int componentMin = (colour[0] <= colour[1] && colour[0] <= colour[2]) ? 0
+    int componentMin = (colour[0] <= colour[1] && colour[0] <= colour[2]) ? 0
         : (colour[1] <= colour[0] && colour[1] <= colour[2]) ? 1 : 2;
-    const int componentMax = (colour[0] >= colour[1] && colour[0] >= colour[2]) ? 0
+    int componentMax = (colour[0] >= colour[1] && colour[0] >= colour[2]) ? 0
         : (colour[1] >= colour[0] && colour[1] >= colour[2]) ? 1 : 2;
-    const int componentMid = ((colour[1] <= colour[0] && colour[0] <= colour[2]) || (colour[2] <= colour[0] && colour[0] <= colour[1])) ? 0
+    int componentMid = ((colour[1] <= colour[0] && colour[0] <= colour[2]) || (colour[2] <= colour[0] && colour[0] <= colour[1])) ? 0
         : ((colour[0] <= colour[1] && colour[1] <= colour[2]) || (colour[2] <= colour[1] && colour[1] <= colour[0])) ? 1 : 2;
 
     if (colour[componentMax] > colour[componentMin]) {

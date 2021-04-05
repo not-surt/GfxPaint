@@ -46,6 +46,7 @@ public:
         }
         glBufferData(GL_DRAW_INDIRECT_BUFFER, elementCount * sizeof(DrawElementsIndirectCommand), commands.data(), GL_STATIC_DRAW);
     }
+
     virtual ~Model() override {
         glDeleteBuffers(1, &indirectBuffer);
         glDeleteBuffers(1, &elementBuffer);

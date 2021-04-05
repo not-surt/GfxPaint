@@ -6,15 +6,6 @@ PALETTE_INDEX(sampler2D, vec4)
 PALETTE_INDEX(usampler2D, uvec4)
 PALETTE_INDEX(isampler2D, ivec4)
 
-// Passing images to functions doesn't work?
-//#define PALETTE_IMAGE(imageType, valueType)\
-//valueType paletteImage(imageType palette, const Index index) {\
-//    return imageLoad(palette, ivec2(index, 0));\
-//}
-//PALETTE_IMAGE(image2DRect, vec4)
-//PALETTE_IMAGE(uimage2DRect, uvec4)
-//PALETTE_IMAGE(iimage2DRect, ivec4)
-
 #define PALETTE_SIZE(samplerType)\
 Index paletteSize(samplerType palette) {\
     return Index(textureSize(palette, 0).x);\
@@ -24,9 +15,9 @@ PALETTE_SIZE(usampler2D)
 PALETTE_SIZE(isampler2D)
 
 Index quantiseLut(usampler3D lut, const vec3 rgb) {
-    const ivec3 size = textureSize(lut, 0);
-    const ivec3 coord = clamp(ivec3(floor(clamp(rgb, vec3(0.0), vec3(1.0)) * size)), ivec3(0), size - 1);
-    const Index index = texelFetch(lut, coord, 0).x;
+    ivec3 size = textureSize(lut, 0);
+    ivec3 coord = clamp(ivec3(floor(clamp(rgb, vec3(0.0), vec3(1.0)) * vec3(size))), ivec3(0), size - 1);
+    Index index = texelFetch(lut, coord, 0).x;
     return index;
 }
 
@@ -39,10 +30,10 @@ Index quantiseLut(usampler3D lut, const vec4 rgba, const float alphaThreshold, c
 Index quantiseBruteForce(samplerType palette, const uint componentScale, const vec4 rgba, const Index transparentIndex) {\
     Index nearestIndex = INDEX_INVALID;\
     float nearestDistance = FLOAT_INF;\
-    for (Index index = 0; index < paletteSize(palette); ++index) {\
+    for (Index index = 0u; index < paletteSize(palette); ++index) {\
         if (index != transparentIndex) {\
-            const vec4 paletteColour = vec4(toUnit(paletteIndex(palette, index), float(componentScale)));\
-            const float colourDistance = distance(rgba, paletteColour);\
+            vec4 paletteColour = vec4(toUnit(vec4(paletteIndex(palette, index)), float(componentScale)));\
+            float colourDistance = distance(rgba, paletteColour);\
             if (colourDistance < nearestDistance) {\
                 nearestIndex = index;\
                 nearestDistance = colourDistance;\

@@ -115,7 +115,6 @@ void ColourSpaceSlidersWidget::updateWidgets()
         QObject::connect(colourSlider, &ColourComponentSliderWidget::posChanged, [this](const GLfloat pos){
             updateColourFromSliders();
             updateSliderColours();
-            qDebug() << m_colour.rgba[0] << m_colour.rgba[1] << m_colour.rgba[2] << m_colour.rgba[3];/////////////////////////////////
             emit colourChanged(m_colour);
         });
     }

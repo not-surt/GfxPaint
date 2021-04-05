@@ -84,7 +84,6 @@ void PickTool::update(const QVector2D viewportPos, const Point &point)
         if (bufferNode) {
             const QVector2D bufferPoint = QVector2D(state.transform.inverted().map(point.pos.toPointF()));
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-            qDebug() << bufferNode->transparent.index << bufferNode->transparent.rgba[0] << bufferNode->transparent.rgba[1] << bufferNode->transparent.rgba[2] << bufferNode->transparent.rgba[3];//////////////////////////////////////////////////////////
             editor.setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, bufferPoint));
         }
     }

@@ -117,14 +117,12 @@ Buffer bufferFromImageFile(const QString &filename, Buffer *const palette, Colou
                 break;
             }
         }
-        qDebug() << "isv?" << transparentColour.isValid();//////////////////////////////////
         if (transparentColour.isValid()) {
             for (QRgb *pixel = reinterpret_cast<QRgb *>(image.bits()); pixel < reinterpret_cast<const QRgb *>(image.constBits() + image.sizeInBytes()); pixel += sizeof(QRgb)) {
                 const int alpha = qAlpha(*pixel);
                 if (alpha < 255) *pixel = transparentColour.rgba();
             }
             image = image.convertToFormat(QImage::Format_RGB32, Qt::AutoColor | Qt::ThresholdDither | Qt::ThresholdAlphaDither | Qt::AvoidDither);
-            qDebug() << "CONVERTED!" << image.format();//////////////////////////////////
         }
     }
     if (transparent) *transparent = Colour{!transparentColour.isValid() ? RGBA_INVALID : qColorToVec4(transparentColour), transparentIndex == -1 ? INDEX_INVALID : transparentIndex};

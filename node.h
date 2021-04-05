@@ -3,7 +3,6 @@
 
 #include <QObject>
 #include <QList>
-#include <QDebug>
 #include <QOpenGLBuffer>
 #include <QOpenGLShaderProgram>
 #include <QOpenGLTexture>

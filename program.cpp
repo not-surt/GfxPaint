@@ -54,7 +54,7 @@ QString RenderedWidgetProgram::generateSource(QOpenGLShader::ShaderTypeBit stage
     }break;
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
-        src += RenderManager::bufferShaderPart("src", 0, 0, 0, srcFormat, srcIndexed, 1, srcPaletteFormat);
+        src += RenderManager::bufferShaderPart("src", 0, 0, srcFormat, srcIndexed, 1, srcPaletteFormat);
         src += RenderManager::widgetOutputShaderPart();
     }break;
     default: break;
@@ -73,7 +73,7 @@ void RenderedWidgetProgram::render(Buffer *const src, const QMatrix4x4 &transfor
     glUniform2i(program.uniformLocation("srcRectPos"), 0, 0);
     glUniform2i(program.uniformLocation("srcRectSize"), src->width(), src->height());
 
-    qApp->renderManager.bindBufferShaderPart(program, "src", 0, 0, src);
+    qApp->renderManager.bindBufferShaderPart(program, "src", 0, src);
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
@@ -92,8 +92,8 @@ QString BufferProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
     }break;
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
-        src += RenderManager::bufferShaderPart("src", 0, 0, 0, srcFormat, srcIndexed, 1, srcPaletteFormat);
-        src += RenderManager::bufferShaderPart("dest", 2, 2, 2, destFormat, destIndexed, 3, destPaletteFormat);
+        src += RenderManager::bufferShaderPart("src", 0, 0, srcFormat, srcIndexed, 1, srcPaletteFormat);
+        src += RenderManager::bufferShaderPart("dest", 2, 2, destFormat, destIndexed, 3, destPaletteFormat);
         src += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, 3, destPaletteFormat, blendMode, composeMode);
     }break;
     default: break;
@@ -121,10 +121,9 @@ void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, co
     glUniform4fv(program.uniformLocation("destTransparent.colour"), 1, destTransparent.rgba.data());
     glUniform1ui(program.uniformLocation("destTransparent.index"), destTransparent.index);
 
-    BufferUniformData uniformData;
+    UniformData uniformData;
     memcpy(&uniformData.matrix, matrix.data(), sizeof(uniformData.matrix));
     uniformData.transparent = srcTransparent;
-//    qDebug() << uniformData.transparent.index << uniformData.transparent.rgba[0] << uniformData.transparent.rgba[1] << uniformData.transparent.rgba[2] << uniformData.transparent.rgba[3];//////////////////////////
 
     const GLuint blockIndex = glGetUniformBlockIndex(program.programId(), "srcUniformData");
     const GLuint bindingPoint = 2;
@@ -132,10 +131,10 @@ void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, co
     glBindBufferBase(GL_UNIFORM_BUFFER, bindingPoint, uniformBuffer);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(uniformData), &uniformData, GL_DYNAMIC_DRAW);
 
-    qApp->renderManager.bindIndexedBufferShaderPart(program, "src", 0, 0, src, srcIndexed, 1, 1, srcPalette);
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "src", 0, src, srcIndexed, 1, srcPalette);
 
     if (dest) {
-        qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 2, 2, dest, destIndexed, 3, 3, destPalette);
+        qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 2, dest, destIndexed, 3, destPalette);
     }
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -155,7 +154,7 @@ QString ModelProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
         src += RenderManager::modelFragmentShaderPart("src");
-        src += RenderManager::bufferShaderPart("dest", 0, 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
+        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
         src += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
     }break;
     default: break;
@@ -175,7 +174,7 @@ void ModelProgram::render(Model *const model, const Colour &colour, const QMatri
     glUniform2i(program.uniformLocation("srcRectPos"), 0, 0);
     glUniform2i(program.uniformLocation("srcRectSize"), 1, 1);
 
-    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, 0, dest, destIndexed, 1, 1, destPalette);
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
 
     model->render();
 }
@@ -193,11 +192,12 @@ QString DabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
         src += RenderManager::dabShaderPart("src", type, metric);
-        src += RenderManager::bufferShaderPart("dest", 0, 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
+        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
         src += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
     }break;
     default: break;
     }
+
 
     return src;
 }
@@ -228,7 +228,7 @@ void DabProgram::render(const Brush::Dab &dab, const Colour &colour, const QMatr
     glUniform1f(program.uniformLocation("srcHardness"), static_cast<GLfloat>(dab.hardness));
     glUniform1f(program.uniformLocation("srcOpacity"), static_cast<GLfloat>(dab.opacity));
 
-    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, 0, dest, destIndexed, 1, 1, destPalette);
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
 
     if (dab.type == Brush::Dab::Type::Pixel) {
         glDrawArrays(GL_POINTS, 4, 1);
@@ -238,6 +238,37 @@ void DabProgram::render(const Brush::Dab &dab, const Colour &colour, const QMatr
     }
 
     //glTextureBarrier();
+}
+
+QString PatternProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+{
+    QString src;
+
+    switch(stage) {
+    case QOpenGLShader::Vertex: {
+        src += RenderManager::headerShaderPart();
+        src += fileToString(":/shaders/background.vert");
+    }break;
+    case QOpenGLShader::Fragment: {
+        src += RenderManager::headerShaderPart();
+        src += RenderManager::patternShaderPart("src", Pattern::Checkers);
+        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, false, 0, Buffer::Format());
+        //src += RenderManager::fragmentMainShaderPart(destFormat);
+        src += RenderManager::widgetOutputShaderPart();
+    }break;
+    default: break;
+    }
+
+    return src;
+}
+
+void PatternProgram::render(const QMatrix4x4 &transform)
+{
+    QOpenGLShaderProgram &program = this->program();
+    program.bind();
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.inverted().data());
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 QString ColourSliderProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
@@ -253,7 +284,7 @@ QString ColourSliderProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) 
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
         src += RenderManager::colourSliderShaderPart("src", colourSpace, component, quantise, 1, quantisePaletteFormat);
-        src += RenderManager::bufferShaderPart("dest", 0, 0, 0, destFormat, false, 0, Buffer::Format());
+        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, false, 0, Buffer::Format());
         src += RenderManager::fragmentMainShaderPart(destFormat, false, 0, Buffer::Format(), blendMode, RenderManager::composeModeDefault);
     }break;
     default: break;
@@ -278,9 +309,9 @@ void ColourSliderProgram::render(const Colour &colour, const ColourSpace colourS
     glUniform2i(program.uniformLocation("srcRectPos"), 0, 0);
     glUniform2i(program.uniformLocation("srcRectSize"), 1, 1);
 
-    qApp->renderManager.bindBufferShaderPart(program, "dest", 0, 0, dest);
+    qApp->renderManager.bindBufferShaderPart(program, "dest", 0, dest);
     if (quantise && quantisePalette) {
-        qApp->renderManager.bindBufferShaderPart(program, "quantisePalette", 1, 1, quantisePalette);
+        qApp->renderManager.bindBufferShaderPart(program, "quantisePalette", 1, quantisePalette);
     }
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
@@ -324,7 +355,7 @@ QString ColourPaletteProgram::generateSource(QOpenGLShader::ShaderTypeBit stage)
             src += RenderManager::paletteShaderPart("srcPalette", 0, paletteFormat);
         }
         src += RenderManager::colourPaletteShaderPart("src");
-        src += RenderManager::bufferShaderPart("dest", 1, 1, 1, destFormat, false, 0, Buffer::Format());
+        src += RenderManager::bufferShaderPart("dest", 1, 1, destFormat, false, 0, Buffer::Format());
         src += RenderManager::fragmentMainShaderPart(destFormat, false, 0, Buffer::Format(), blendMode, RenderManager::composeModeDefault);
     }break;
     default: break;
@@ -350,42 +381,11 @@ void ColourPaletteProgram::render(const Buffer *const palette, const QSize size,
         glUniform2i(program.uniformLocation("cells"), 16, 16);
         glUniform2i(program.uniformLocation("swatchSize"), swatchSize.width(), swatchSize.height());
 
-        qApp->renderManager.bindBufferShaderPart(program, "srcPalette", 0, 0, palette);
-        qApp->renderManager.bindBufferShaderPart(program, "dest", 1, 1, dest);
+        qApp->renderManager.bindBufferShaderPart(program, "srcPalette", 0, palette);
+        qApp->renderManager.bindBufferShaderPart(program, "dest", 1, dest);
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
-}
-
-QString PatternProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
-{
-    QString src;
-
-    switch(stage) {
-    case QOpenGLShader::Vertex: {
-        src += RenderManager::headerShaderPart();
-        src += fileToString(":/shaders/background.vert");
-    }break;
-    case QOpenGLShader::Fragment: {
-        src += RenderManager::headerShaderPart();
-        src += RenderManager::patternShaderPart("src", Pattern::Checkers);
-        src += RenderManager::bufferShaderPart("dest", 0, 0, 0, destFormat, false, 0, Buffer::Format());
-        //src += RenderManager::fragmentMainShaderPart(destFormat);
-        src += RenderManager::widgetOutputShaderPart();
-    }break;
-    default: break;
-    }
-
-    return src;
-}
-
-void PatternProgram::render(const QMatrix4x4 &transform)
-{
-    QOpenGLShaderProgram &program = this->program();
-    program.bind();
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.inverted().data());
-
-    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 QString ColourSliderPickProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
@@ -406,7 +406,6 @@ layout(std430, binding = 0) buffer storageData
 
 layout(local_size_x = 1, local_size_y = 1) in;
 void main() {
-    srcColour = colour;
     colour = src(vec2(pos, 0.0));
 }
 )";
@@ -428,10 +427,69 @@ Colour ColourSliderPickProgram::pick(const Colour &colour, const float pos, cons
 
     glUniform1f(2, static_cast<GLfloat>(pos));
     if (quantise && quantisePalette) {
-        qApp->renderManager.bindBufferShaderPart(program, "quantisePalette", 0, 0, quantisePalette);
+        qApp->renderManager.bindBufferShaderPart(program, "quantisePalette", 0, quantisePalette);
     }
 
     Colour storageData = colour;
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(storageData), &storageData, GL_STREAM_READ);
+
+    glDispatchCompute(1, 1, 1);
+
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+//    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), &storageData);
+    void *mapping = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), GL_MAP_READ_BIT);
+    memcpy(&storageData, mapping, sizeof(storageData));
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+    return storageData;
+}
+
+QString ColourPalettePickProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+{
+    QString src;
+
+    switch(stage) {
+    case QOpenGLShader::Compute: {
+        src += RenderManager::headerShaderPart();
+        src += RenderManager::bufferShaderPart("src", 0, 0, format, false, 0, Buffer::Format());
+        src +=
+R"(
+uniform layout(location = 1) vec2 pos;
+layout(std430, binding = 0) buffer storageData
+{
+    Colour colour;
+};
+layout(std140, binding = 1) uniform uniformData {
+    mat4 matrix;
+};
+
+layout (local_size_x = 1, local_size_y = 1) in;
+void main() {
+    colour = src(pos);
+}
+)";
+    }break;
+    default: break;
+    }
+
+    return src;
+}
+
+Colour ColourPalettePickProgram::pick(const Buffer *const src, QVector2D pos, const QMatrix4x4 &transform)
+{
+    QOpenGLShaderProgram &program = this->program();
+    program.bind();
+
+    UniformData uniformData;
+    memcpy(&uniformData.matrix, transform.data(), sizeof(mat4));
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(uniformData), &uniformData, GL_DYNAMIC_DRAW);
+
+    glUniform2fv(2, 1, &(pos[0]));
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "src", 0, src, false, 0, nullptr);
+
+    Colour storageData;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(storageData), &storageData, GL_STREAM_READ);
 
@@ -505,7 +563,7 @@ QString ColourPickProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) co
     switch(stage) {
     case QOpenGLShader::Compute: {
         src += RenderManager::headerShaderPart();
-        src += RenderManager::bufferShaderPart("src", 0, 0, 0, format, indexed, 1, paletteFormat);
+        src += RenderManager::bufferShaderPart("dest", 0, 0, format, indexed, 1, paletteFormat);
         src +=
 R"(
 uniform layout(location = 2) vec2 pos;
@@ -516,7 +574,7 @@ layout(std430, binding = 0) buffer storageData
 
 layout (local_size_x = 1, local_size_y = 1) in;
 void main() {
-    colour = src(pos);
+    colour = dest(pos);
 }
 )";
     }break;
@@ -526,13 +584,13 @@ void main() {
     return src;
 }
 
-Colour ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcPalette, QVector2D pos)
+Colour ColourPickProgram::pick(const Buffer *const dest, const Buffer *const destPalette, QVector2D pos)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
     glUniform2fv(2, 1, &(pos[0]));
-    qApp->renderManager.bindIndexedBufferShaderPart(program, "src", 0, 0, src, indexed, 1, 1, srcPalette);
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, indexed, 1, destPalette);
 
     Colour storageData;
     storageData = Colour{Rgba{1.0f, 1.0f, 1.0f, 1.0f}, 1};
@@ -546,8 +604,6 @@ Colour ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcP
     void *mapping = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), GL_MAP_READ_BIT);
     memcpy(&storageData, mapping, sizeof(storageData));
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
-//    qDebug() << pos << storageData.index << storageData.rgba[0] << storageData.rgba[1] << storageData.rgba[2] << storageData.rgba[3];/////////////////////////////////////////////////////////////////////////
 
     return storageData;
 }

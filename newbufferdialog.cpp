@@ -2,7 +2,6 @@
 #include "ui_newbufferdialog.h"
 
 #include <QSettings>
-#include <QDebug>
 #include "buffer.h"
 #include "rendermanager.h"
 

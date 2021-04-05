@@ -236,15 +236,10 @@ void Buffer::bindTextureUnit(const GLuint textureUnit) const
     data->glBindTexture(GL_TEXTURE_2D, data->texture);
 }
 
-void Buffer::bindImageUnit(const GLuint imageUnit)
-{
-    data->glBindImageTexture(imageUnit, data->texture, 0, GL_FALSE, 0, GL_READ_WRITE, static_cast<GLenum>(data->format.internalFormat()));
-}
-
 void Buffer::bindImageUnit(const GLuint imageUnit) const
 {
     BufferData *const data = const_cast<BufferData *>(this->data.constData());
-    data->glBindImageTexture(imageUnit, data->texture, 0, GL_FALSE, 0, GL_READ_ONLY, static_cast<GLenum>(data->format.internalFormat()));
+    data->glBindImageTexture(imageUnit, data->texture, 0, GL_FALSE, 0, GL_READ_WRITE, static_cast<GLenum>(data->format.internalFormat()));
 }
 
 void Buffer::bindFramebuffer(const QRect &rect, const GLenum target)

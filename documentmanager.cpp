@@ -1,6 +1,5 @@
 #include "documentmanager.h"
 
-#include <QDebug>
 #include <QFileInfo>
 #include <QWidget>
 #include <QSettings>

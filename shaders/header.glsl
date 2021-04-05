@@ -1,5 +1,5 @@
 #define FLOAT_INF (1.0 / 0.0)
-#define UINT_MAX 0xffffffff
+#define UINT_MAX 0xffffffffu
 
 #define Index uint
 const Index INDEX_INVALID = UINT_MAX;

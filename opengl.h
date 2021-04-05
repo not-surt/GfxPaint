@@ -2,28 +2,10 @@
 #define OPENGL_H
 
 #include <QOpenGLExtraFunctions>
-//#include <QOpenGLExtensions>
 #include <QOpenGLWidget>
 #include <QStringList>
 #include <QDebug>
 #include <QThread>
-
-//#define OPENGL_MAJOR_VERSION 4
-//#define OPENGL_MINOR_VERSION 3
-//#define OPENGL_FUNCTIONS_VERSION(major, minor) QOpenGLFunctions_ ## major ## _ ## minor ## _Core
-//#define OPENGL_FUNCTIONS_EXPAND_MACROS(major, minor) OPENGL_FUNCTIONS_VERSION(major, minor)
-////#define OPENGL_FUNCTIONS_BASE OPENGL_FUNCTIONS_EXPAND_MACROS(OPENGL_MAJOR_VERSION, OPENGL_MINOR_VERSION)
-//#define OPENGL_FUNCTIONS_BASE QOpenGLExtraFunctions
-//#define OPENGL_GLSL_VERSION(major, minor) major##minor##0
-//#define OPENGL_GLSL_VERSION_EXPAND_MACROS(major, minor) OPENGL_GLSL_VERSION(major, minor)
-//#define MAKE_STRING_EXPAND_MACROS(str) MAKE_STRING(str)
-//#define MAKE_STRING(str) #str
-//#define OPENGL_GLSL_VERSION_STRING MAKE_STRING_EXPAND_MACROS(OPENGL_GLSL_VERSION_EXPAND_MACROS(OPENGL_MAJOR_VERSION, OPENGL_MINOR_VERSION))
-//#define SYSTEM_INCLUDE(str) <str>
-//#include SYSTEM_INCLUDE(OPENGL_FUNCTIONS_BASE)
-
-//#define OPENGL_ES_MAJOR_VERSION 3
-//#define OPENGL_ES_MINOR_VERSION 2
 
 namespace GfxPaint {
 

@@ -262,7 +262,7 @@ public:
     void render(Buffer *const src, const Buffer *const srcPalette, const Colour &srcTransparent, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette, const Colour &destTransparent);
 
 protected:
-    struct BufferUniformData {
+    struct UniformData {
         mat4 matrix;
         Colour transparent;
     };
@@ -309,6 +309,25 @@ protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 
     UniformData uniformData;
+};
+
+class PatternProgram : public Program {
+public:
+    PatternProgram(const Pattern pattern, const Buffer::Format destFormat, const int blendMode) :
+        Program(),
+        pattern(pattern), destFormat(destFormat), blendMode(blendMode)
+    {
+        updateKey(typeid(this), {static_cast<int>(pattern), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode});
+    }
+
+    void render(const QMatrix4x4 &transform);
+
+protected:
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+
+    const Pattern pattern;
+    const Buffer::Format destFormat;
+    const int blendMode;
 };
 
 class DabProgram : public RenderProgram {
@@ -446,25 +465,6 @@ protected:
     const Buffer::Format paletteFormat;
 };
 
-class PatternProgram : public Program {
-public:
-    PatternProgram(const Pattern pattern, const Buffer::Format destFormat, const int blendMode) :
-        Program(),
-        pattern(pattern), destFormat(destFormat), blendMode(blendMode)
-    {
-        updateKey(typeid(this), {static_cast<int>(pattern), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode});
-    }
-
-    void render(const QMatrix4x4 &transform);
-
-protected:
-    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
-
-    const Pattern pattern;
-    const Buffer::Format destFormat;
-    const int blendMode;
-};
-
 class ToolProgram : public Program {
 public:
     ToolProgram() :
@@ -519,6 +519,39 @@ protected:
     UniformData uniformData;
 };
 
+class ColourPalettePickProgram : public ToolProgram {
+public:
+    ColourPalettePickProgram(const Buffer::Format format) :
+        ToolProgram(),
+        format(format)
+    {
+        updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount});
+
+        glGenBuffers(1, &uniformBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
+    }
+    virtual ~ColourPalettePickProgram() override {
+        glDeleteBuffers(1, &uniformBuffer);
+    }
+
+    Colour pick(const Buffer *const src, QVector2D pos, const QMatrix4x4 &transform);
+
+protected:
+    struct StorageData {
+        Colour colour;
+    };
+    struct UniformData {
+        mat4 matrix;
+    };
+
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+
+    const Buffer::Format format;
+
+    GLuint uniformBuffer;
+};
+
 class ColourConversionProgram : public ToolProgram {
 public:
     ColourConversionProgram(const ColourSpace from, const ColourSpace to) :
@@ -546,7 +579,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount, indexed, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
 
-    Colour pick(const Buffer *const src, const Buffer *const srcPalette, const QVector2D pos);
+    Colour pick(const Buffer *const dest, const Buffer *const destPalette, const QVector2D pos);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;

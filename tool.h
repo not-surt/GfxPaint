@@ -1,7 +1,6 @@
 #ifndef TOOL_H
 #define TOOL_H
 
-#include <QDebug>
 #include <QList>
 #include <QVector2D>
 

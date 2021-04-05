@@ -58,7 +58,7 @@ float stairstep(const float value, const float size) {
 }
 
 float snap(const float offset, const float size, const float target, const bool relative, const float relativeTo) {
-    const float shift = (relative ? relativeTo : offset);
+    float shift = (relative ? relativeTo : offset);
     return size != 0.0 ? stairstep(target - shift, size) + shift : target;
 }
 
@@ -84,7 +84,7 @@ float pixelSnapOffset(const int pixelSnap, const float target, const float size)
 }
 
 vec2 pixelSnap(const ivec2 pixelSnap, const vec2 target, const vec2 size) {
-    const float offsetX = pixelSnapOffset(pixelSnap.x, target.x, size.x);
-    const float offsetY = pixelSnapOffset(pixelSnap.y, target.y, size.y);
+    float offsetX = pixelSnapOffset(pixelSnap.x, target.x, size.x);
+    float offsetY = pixelSnapOffset(pixelSnap.y, target.y, size.y);
     return snap2d(vec2(offsetX, offsetY), vec2(1.0, 1.0), target, false, vec2(0.0, 0.0));
 }

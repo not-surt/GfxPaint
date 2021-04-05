@@ -70,10 +70,6 @@ public:
             return components[this->componentType];
         }
         FormatInfo formatInfo() const {
-//            qDebug() << formats.values().size();
-//            for (int i = 0; i < formats.values().size(); ++i) {
-//                qDebug() << "format:" << formats.values()[i].shaderImageFormat;
-//            }
             Q_ASSERT(formats.contains(*this));
             return formats[*this];
         }
@@ -158,7 +154,6 @@ public:
     void writePixel(const QPoint &pos, const GLvoid *const pixel) { this->data->writePixel(pos, pixel); }
 
     void bindTextureUnit(const GLuint textureUnit) const;
-    void bindImageUnit(const GLuint imageUnit);
     void bindImageUnit(const GLuint imageUnit) const;
     void bindFramebuffer(const QRect &rect, const GLenum target = GL_FRAMEBUFFER);
     void bindFramebuffer(const GLenum target = GL_FRAMEBUFFER);

@@ -1,6 +1,5 @@
 #include "documentsmodel.h"
 
-#include <QDebug>
 #include "scene.h"
 #include "scenemodel.h"
 #include "editor.h"
