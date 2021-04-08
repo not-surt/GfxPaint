@@ -585,7 +585,7 @@ Colour $NAME(const vec2 pos) {
     uint index = INDEX_INVALID;
     vec4 col = data.colour.rgba;
     col = vec4(rgb_to_$COLOURSPACE(col.rgb), col.a);
-    col = colourPlane(col, data.components, pos.xy);
+    col = colourPlane(col, data.components, pos);
     col = vec4($COLOURSPACE_to_rgb(col.rgb), col.a);
 )";
     if (quantise && quantisePaletteFormat.isValid()) src +=

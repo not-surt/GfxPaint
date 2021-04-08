@@ -16,8 +16,8 @@ public:
     explicit ColourComponentsPlaneWidget(QWidget *const parent = nullptr);
     virtual ~ColourComponentsPlaneWidget() override;
 
-    virtual QSize sizeHint() const override { return QSize(128, 32); }
-    virtual QSize minimumSizeHint() const override { return QSize(64, 16); }
+    virtual QSize sizeHint() const override { return QSize(128, 128); }
+    virtual QSize minimumSizeHint() const override { return QSize(64, 64); }
 
     const Colour &colour() const { return m_colour; }
     const QVector2D &pos() const { return m_pos; }
@@ -53,12 +53,6 @@ protected:
     QVector2D m_pos;
     Colour m_colour;
     const Buffer *m_palette;
-    Model *markerModel;
-
-    static const QVector<GLsizei> markerAttributeSizes;
-    static const QVector<GLfloat> markerVertices;
-    static const QVector<GLushort> markerIndices;
-    static const QVector<GLushort> markerElementSizes;
 };
 
 } // namespace GfxPaint

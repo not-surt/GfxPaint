@@ -52,12 +52,6 @@ protected:
     qreal m_pos;
     Colour m_colour;
     const Buffer *m_palette;
-    Model *markerModel;
-
-    static const QVector<GLsizei> markerAttributeSizes;
-    static const QVector<GLfloat> markerVertices;
-    static const QVector<GLushort> markerIndices;
-    static const QVector<GLushort> markerElementSizes;
 };
 
 } // namespace GfxPaint

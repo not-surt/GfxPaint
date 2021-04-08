@@ -38,6 +38,7 @@ private:
 
     Ui::ColourSpacePlaneWidget *ui;
     ColourComponentsPlaneWidget *plane;
+    ColourComponentSliderWidget *zComponentSlider;
     ColourComponentSliderWidget *alphaSlider;
 
     ColourConversionProgram *fromRGBConversionProgram;

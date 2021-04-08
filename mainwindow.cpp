@@ -588,6 +588,8 @@ void MainWindow::activateEditor(Editor *const editor)
 
         activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::setColour);
         activeEditorConnections << QObject::connect(ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::colourChanged, activeEditor, &Editor::setColour);
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->colourSpacePlaneWidget, &ColourSpacePlaneWidget::setColour);
+        activeEditorConnections << QObject::connect(ui->colourSpacePlaneWidget, &ColourSpacePlaneWidget::colourChanged, activeEditor, &Editor::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->brushViewWidget, &BrushViewWidget::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::setPalette);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->paletteEditorWidget, &PaletteEditorWidget::setPalette);

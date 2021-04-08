@@ -5,36 +5,14 @@
 
 namespace GfxPaint {
 
-const QVector<GLsizei> ColourComponentsPlaneWidget::markerAttributeSizes = {
-    2, 4,
-};
-
-const QVector<GLfloat> ColourComponentsPlaneWidget::markerVertices = {
-    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-    -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-    0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-    0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-    1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-    0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-};
-
-const QVector<GLushort> ColourComponentsPlaneWidget::markerIndices = {
-    0, 1, 2,
-    3, 4, 5,
-};
-
-const QVector<GLushort> ColourComponentsPlaneWidget::markerElementSizes = {
-    3,
-    3,
-};
-
 ColourComponentsPlaneWidget::ColourComponentsPlaneWidget(const ColourSpace colourSpace, const int xComponent, const int yComponent, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent) :
     RenderedWidget(parent),
     colourSpace(colourSpace), xComponent(xComponent), yComponent(yComponent), quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
     program(nullptr), pickProgram(nullptr), markerProgram(nullptr),
     m_pos(0.0, 0.0), m_colour{},
-    m_palette(nullptr), markerModel(nullptr)
+    m_palette(nullptr)
 {
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
 }
 
 ColourComponentsPlaneWidget::ColourComponentsPlaneWidget(QWidget *const parent) :
@@ -48,7 +26,6 @@ ColourComponentsPlaneWidget::~ColourComponentsPlaneWidget()
     delete program;
     delete pickProgram;
     delete markerProgram;
-    delete markerModel;
 }
 
 void ColourComponentsPlaneWidget::mouseEvent(QMouseEvent *event)
@@ -73,8 +50,6 @@ void ColourComponentsPlaneWidget::resizeGL(int w, int h)
     pickProgram = new ColourPlanePickProgram(colourSpace, xComponent, yComponent, quantise, m_palette ? m_palette->format() : Buffer::Format());
     markerProgram = new ModelProgram(widgetBuffer->format(), false, Buffer::Format(), 0, RenderManager::composeModeDefault);
     qDeleteAll(oldPrograms);
-    delete markerModel;
-    markerModel = new Model(GL_TRIANGLES, markerAttributeSizes, markerVertices, markerIndices, markerElementSizes);
 }
 
 void ColourComponentsPlaneWidget::setColour(const Colour &colour)
@@ -110,8 +85,8 @@ void ColourComponentsPlaneWidget::render()
     program->render(m_colour, xComponent, yComponent, RenderManager::unitToClipTransform, widgetBuffer, m_palette);
     QMatrix4x4 markerTransform;
     markerTransform.translate(m_pos.x() * 2.0f - 1.0f, m_pos.y() * 2.0f - 1.0f);
-    markerTransform.scale((float)height() / (float)width(), 1.0f);
-//    markerProgram->render(markerModel, {}, markerTransform, widgetBuffer, nullptr);
+    const float markerSize = std::min(sizeHint().width(), sizeHint().height()) / 4;
+    markerTransform.scale(markerSize / (float)width(), markerSize / (float)height());
     markerProgram->render(qApp->renderManager.models["planeMarker"], {}, markerTransform, widgetBuffer, nullptr);
 }
 

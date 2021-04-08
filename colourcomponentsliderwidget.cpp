@@ -5,36 +5,14 @@
 
 namespace GfxPaint {
 
-const QVector<GLsizei> ColourComponentSliderWidget::markerAttributeSizes = {
-    2, 4,
-};
-
-const QVector<GLfloat> ColourComponentSliderWidget::markerVertices = {
-    0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-    0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-    -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-    0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-    1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-    0.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-};
-
-const QVector<GLushort> ColourComponentSliderWidget::markerIndices = {
-    0, 1, 2,
-    3, 4, 5,
-};
-
-const QVector<GLushort> ColourComponentSliderWidget::markerElementSizes = {
-    3,
-    3,
-};
-
 ColourComponentSliderWidget::ColourComponentSliderWidget(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent) :
     RenderedWidget(parent),
     colourSpace(colourSpace), component(component), quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
     program(nullptr), pickProgram(nullptr), markerProgram(nullptr),
     m_pos(0.0), m_colour{},
-    m_palette(nullptr), markerModel(nullptr)
+    m_palette(nullptr)
 {
+    setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
 }
 
 ColourComponentSliderWidget::ColourComponentSliderWidget(QWidget *const parent) :
@@ -48,7 +26,6 @@ ColourComponentSliderWidget::~ColourComponentSliderWidget()
     delete program;
     delete pickProgram;
     delete markerProgram;
-    delete markerModel;
 }
 
 void ColourComponentSliderWidget::mouseEvent(QMouseEvent *event)
@@ -72,8 +49,6 @@ void ColourComponentSliderWidget::resizeGL(int w, int h)
     pickProgram = new ColourPlanePickProgram(colourSpace, component, -1, quantise, m_palette ? m_palette->format() : Buffer::Format());
     markerProgram = new ModelProgram(widgetBuffer->format(), false, Buffer::Format(), 0, RenderManager::composeModeDefault);
     qDeleteAll(oldPrograms);
-    delete markerModel;
-    markerModel = new Model(GL_TRIANGLES, markerAttributeSizes, markerVertices, markerIndices, markerElementSizes);
 }
 
 void ColourComponentSliderWidget::setColour(const Colour &colour)
@@ -109,8 +84,8 @@ void ColourComponentSliderWidget::render()
     program->render(m_colour, component, -1, RenderManager::unitToClipTransform, widgetBuffer, m_palette);
     QMatrix4x4 markerTransform;
     markerTransform.translate(m_pos * 2.0f - 1.0f, 0.0f);
-    markerTransform.scale((float)height() / (float)width(), 1.0f);
-//    markerProgram->render(markerModel, {}, markerTransform, widgetBuffer, nullptr);
+    const float markerSize = sizeHint().width() / 4.0;
+    markerTransform.scale(markerSize / (float)width(), 1.0);
     markerProgram->render(qApp->renderManager.models["sliderMarker"], {}, markerTransform, widgetBuffer, nullptr);
 }
 

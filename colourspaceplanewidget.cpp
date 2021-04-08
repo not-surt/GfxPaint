@@ -9,7 +9,7 @@ namespace GfxPaint {
 
 ColourSpacePlaneWidget::ColourSpacePlaneWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::ColourSpacePlaneWidget), plane(nullptr), alphaSlider(nullptr),
+    ui(new Ui::ColourSpacePlaneWidget), plane(nullptr), zComponentSlider(nullptr), alphaSlider(nullptr),
     fromRGBConversionProgram(nullptr), toRGBConversionProgram(nullptr),
     m_colour{},
     m_palette(nullptr)
@@ -22,6 +22,7 @@ ColourSpacePlaneWidget::ColourSpacePlaneWidget(QWidget *parent) :
     QObject::connect(ui->colourSpaceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
     QObject::connect(ui->xComponentComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
     QObject::connect(ui->yComponentComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
+    QObject::connect(ui->zComponentComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
     QObject::connect(ui->alphaCheckBox, &QCheckBox::toggled, this, &ColourSpacePlaneWidget::updateWidgets);
     QObject::connect(ui->quantiseCheckBox, &QCheckBox::toggled, this, &ColourSpacePlaneWidget::updateWidgets);
 }
@@ -65,6 +66,9 @@ void ColourSpacePlaneWidget::updateWidgetColours()
     plane->blockSignals(true);
     plane->setColour(m_colour);
     plane->blockSignals(false);
+    zComponentSlider->blockSignals(true);
+    zComponentSlider->setColour(m_colour);
+    zComponentSlider->blockSignals(false);
     if (ui->alphaCheckBox->isChecked()) {
         alphaSlider->blockSignals(true);
         alphaSlider->setColour(m_colour);
@@ -77,8 +81,11 @@ void ColourSpacePlaneWidget::updateWidgetPositions()
     const ColourSpace colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
     Colour spaceColour = fromRGBConversionProgram->convert(m_colour);
     plane->blockSignals(true);
-    plane->setPos(QVector2D(clamp(0.0f, 1.0f, spaceColour.rgba[ui->xComponentComboBox->currentIndex()]), clamp(0.0f, 1.0f, spaceColour.rgba[ui->yComponentComboBox->currentIndex()])));
+    plane->setPos(QVector2D(spaceColour.rgba[ui->xComponentComboBox->currentIndex()], spaceColour.rgba[ui->yComponentComboBox->currentIndex()]));
     plane->blockSignals(false);
+    zComponentSlider->blockSignals(true);
+    zComponentSlider->setPos(spaceColour.rgba[ui->zComponentComboBox->currentIndex()]);
+    zComponentSlider->blockSignals(false);
     if (ui->alphaCheckBox->isChecked()) {
         int alphaComponent = colourSpaceInfo[colourSpace].componentCount;
         alphaSlider->blockSignals(true);
@@ -93,9 +100,10 @@ void ColourSpacePlaneWidget::updateColourFromWidgets()
     Colour spaceColour = m_colour;
     spaceColour.rgba[ui->xComponentComboBox->currentIndex()] = clamp(0.0f, 1.0f, plane->pos().x());
     spaceColour.rgba[ui->yComponentComboBox->currentIndex()] = clamp(0.0f, 1.0f, plane->pos().y());
+    spaceColour.rgba[ui->zComponentComboBox->currentIndex()] = clamp(0.0f, 1.0f, (float)zComponentSlider->pos());
     if (ui->alphaCheckBox->isChecked()) {
         int alphaComponent = colourSpaceInfo[colourSpace].componentCount;
-        spaceColour.rgba[alphaComponent] = clamp(0.0, 1.0, alphaSlider->pos());
+        spaceColour.rgba[alphaComponent] = clamp(0.0f, 1.0f, (float)alphaSlider->pos());
     }
     m_colour = toRGBConversionProgram->convert(spaceColour);
 }
@@ -113,38 +121,36 @@ void ColourSpacePlaneWidget::updateWidgets()
         toRGBConversionProgram = new ColourConversionProgram(colourSpace, ColourSpace::RGB);
         qDeleteAll(oldPrograms);
     }
-    plane = new ColourComponentsPlaneWidget(colourSpace, ui->xComponentComboBox->currentIndex(), ui->yComponentComboBox->currentIndex(), ui->quantiseCheckBox->isChecked() && m_palette, m_palette ? m_palette->format() : Buffer::Format());
-    ui->colourSpacePlaneLayout->addWidget(plane);
-    plane->setPalette(m_palette);
-    QObject::connect(plane, &ColourComponentsPlaneWidget::posChanged, [this](const QVector2D &pos){
+    QVector<QComboBox *> comboBoxes = {ui->xComponentComboBox, ui->yComponentComboBox, ui->zComponentComboBox};
+    for (auto comboBox : comboBoxes) {
+        const int componentIndex = comboBox->currentIndex();
+        comboBox->blockSignals(true);
+        comboBox->clear();
+        for (int i = 0; i < colourSpaceInfo[colourSpace].componentCount; ++i) {
+            comboBox->addItem(colourSpaceInfo[colourSpace].componentLabels[i], i);
+        }
+        comboBox->setCurrentIndex(componentIndex);
+        comboBox->blockSignals(false);
+    }
+    auto updateFromChildWidget = [this](){
         updateColourFromWidgets();
         updateWidgetColours();
         emit colourChanged(m_colour);
-    });
-    const int xComponentIndex = ui->xComponentComboBox->currentIndex();
-    const int yComponentIndex = ui->yComponentComboBox->currentIndex();
-    ui->xComponentComboBox->blockSignals(true);
-    ui->yComponentComboBox->blockSignals(true);
-    ui->xComponentComboBox->clear();
-    ui->yComponentComboBox->clear();
-    for (int i = 0; i < colourSpaceInfo[colourSpace].componentCount; ++i) {
-        ui->xComponentComboBox->addItem(colourSpaceInfo[colourSpace].componentLabels[i], i);
-        ui->yComponentComboBox->addItem(colourSpaceInfo[colourSpace].componentLabels[i], i);
-    }
-    ui->xComponentComboBox->setCurrentIndex(xComponentIndex);
-    ui->yComponentComboBox->setCurrentIndex(yComponentIndex);
-    ui->xComponentComboBox->blockSignals(false);
-    ui->yComponentComboBox->blockSignals(false);
+    };
+    plane = new ColourComponentsPlaneWidget(colourSpace, ui->xComponentComboBox->currentIndex(), ui->yComponentComboBox->currentIndex(), ui->quantiseCheckBox->isChecked() && m_palette, m_palette ? m_palette->format() : Buffer::Format());
+    ui->colourSpacePlaneLayout->addWidget(plane);
+    plane->setPalette(m_palette);
+    QObject::connect(plane, &ColourComponentsPlaneWidget::posChanged, updateFromChildWidget);
+    zComponentSlider = new ColourComponentSliderWidget(colourSpace, ui->zComponentComboBox->currentIndex(), ui->quantiseCheckBox->isChecked() && m_palette, m_palette ? m_palette->format() : Buffer::Format());
+    ui->colourSpacePlaneLayout->addWidget(zComponentSlider);
+    zComponentSlider->setPalette(m_palette);
+    QObject::connect(zComponentSlider, &ColourComponentSliderWidget::posChanged, updateFromChildWidget);
     if (ui->alphaCheckBox->isChecked()) {
         int alphaComponent = colourSpaceInfo[colourSpace].componentCount;
         alphaSlider = new ColourComponentSliderWidget(colourSpace, alphaComponent, ui->quantiseCheckBox->isChecked() && m_palette, m_palette ? m_palette->format() : Buffer::Format());
         ui->colourSpacePlaneLayout->addWidget(alphaSlider);
         alphaSlider->setPalette(m_palette);
-        QObject::connect(alphaSlider, &ColourComponentSliderWidget::posChanged, [this](const GLfloat pos){
-            updateColourFromWidgets();
-            updateWidgetColours();
-            emit colourChanged(m_colour);
-        });
+        QObject::connect(alphaSlider, &ColourComponentSliderWidget::posChanged, updateFromChildWidget);
     }
     updateWidgetPositions();
     updateWidgetColours();
