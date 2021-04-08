@@ -4,7 +4,7 @@
 #include <QMatrix4x4>
 #include <QVector2D>
 #include "buffer.h"
-#include "type.h"
+#include "types.h"
 
 namespace GfxPaint {
 
@@ -37,24 +37,8 @@ struct Brush
 
     public:
         Dab &operator=(const Dab &) = default;
-        inline bool operator==(const Dab &rhs) const {
-            return this->space == rhs.space &&
-                    this->type == rhs.type &&
-                    this->metric == rhs.metric &&
-                    this->size == rhs.size &&
-                    this->fixedRatio == rhs.fixedRatio &&
-                    this->ratio == rhs.ratio &&
-                    this->angle == rhs.angle &&
-                    this->origin == rhs.origin &&
-                    this->pixelSnapX == rhs.pixelSnapX &&
-                    this->pixelSnapY == rhs.pixelSnapY &&
-                    this->hardness == rhs.hardness &&
-                    this->opacity == rhs.opacity &&
-                    this->blendMode == rhs.blendMode &&
-                    this->composeMode == rhs.composeMode &&
-                    this->buffer == rhs.buffer;
-        }
-        inline bool operator!=(const Dab &rhs) const { return !this->operator==(rhs); }
+        inline bool operator==(const Dab &rhs) const = default;
+        inline bool operator!=(const Dab &rhs) const = default;
 
         QMatrix4x4 transform() const;
 
@@ -80,15 +64,8 @@ struct Brush
         Stroke(const Stroke &other);
 
         Stroke &operator=(const Stroke &) = default;
-        inline bool operator==(const Stroke &rhs) const {
-            return this->space == rhs.space &&
-                    this->metric == rhs.metric &&
-                    this->continuous == rhs.continuous &&
-                    this->absoluteSpacing == rhs.absoluteSpacing &&
-                    this->proportionalSpacing == rhs.proportionalSpacing &&
-                    this->dabCount == rhs.dabCount;
-        }
-        inline bool operator!=(const Stroke &rhs) const { return !this->operator==(rhs); }
+        inline bool operator==(const Stroke &rhs) const = default;
+        inline bool operator!=(const Stroke &rhs) const = default;
 
         Space space;
         int metric;
@@ -102,11 +79,8 @@ struct Brush
     Brush(const Brush &other);
 
     Brush &operator=(const Brush &) = default;
-    inline bool operator==(const Brush &rhs) const {
-        return this->dab == rhs.dab &&
-                this->stroke == rhs.stroke;
-    }
-    inline bool operator!=(const Brush &rhs) const { return !this->operator==(rhs); }
+    inline bool operator==(const Brush &rhs) const = default;
+    inline bool operator!=(const Brush &rhs) const = default;
 
     Dab dab;
     Stroke stroke;

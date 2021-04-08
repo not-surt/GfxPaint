@@ -87,7 +87,7 @@ Application::Application(int &argc, char **argv)
     }
     const QList<QString> stylesKeys = styles.keys();
     for (const auto &key : stylesKeys) {
-        QAction *const action = new QAction(key);
+        QAction *const action = new QAction(key, this);
         action->setCheckable(true);
         action->setData(key);
         QObject::connect(action, &QAction::triggered, this, [this, key](){
@@ -108,7 +108,7 @@ Application::Application(int &argc, char **argv)
     palettes["Slate"] = QPalette(QColor(63, 79, 95), QColor(31, 47, 63));
     const QList<QString> palettesKeys = palettes.keys();
     for (const auto &key : palettesKeys) {
-        QAction *const action = new QAction(key);
+        QAction *const action = new QAction(key, this);
         action->setCheckable(true);
         action->setData(key);
         QObject::connect(action, &QAction::triggered, this, [this, key](){
@@ -131,7 +131,7 @@ Application::Application(int &argc, char **argv)
     stylesheets["None"] = "";
     const QList<QString> stylesheetsKeys = stylesheets.keys();
     for (const auto &key : stylesheetsKeys) {
-        QAction *const action = new QAction(key);
+        QAction *const action = new QAction(key, this);
         action->setCheckable(true);
         action->setData(key);
         QObject::connect(action, &QAction::triggered, this, [this, key](){

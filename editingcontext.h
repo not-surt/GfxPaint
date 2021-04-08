@@ -47,7 +47,7 @@ public:
     BufferNodeContext *bufferNodeContext(Node *const node) const {
         return m_bufferNodeContexts.value(node);
     }
-    QMap<Node *, Traversal::State> &states() { return m_states; }
+    QHash<Node *, Traversal::State> &states() { return m_states; }
     QItemSelectionModel &selectionModel() { return m_selectionModel; }
 
 private:
@@ -55,8 +55,8 @@ private:
     Brush m_brush;
     Colour m_colour;
     Buffer *m_palette;
-    QMap<Node *, BufferNodeContext *> m_bufferNodeContexts;
-    QMap<Node *, Traversal::State> m_states;
+    QHash<Node *, BufferNodeContext *> m_bufferNodeContexts;
+    QHash<Node *, Traversal::State> m_states;
     QItemSelectionModel m_selectionModel;
 };
 

@@ -132,7 +132,7 @@ void Scene::afterChildren(Node *const node, Traversal &traversal)
     node->afterChildren(traversal);
 }
 
-void Scene::renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const QMatrix4x4 &viewTransform, const QMatrix4x4 &parentTransform, QMap<Node *, Traversal::State> *const saveStates)
+void Scene::renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const QMatrix4x4 &viewTransform, const QMatrix4x4 &parentTransform, QHash<Node *, Traversal::State> *const saveStates)
 {
     Traversal traversal;
 
@@ -151,7 +151,7 @@ void Scene::renderSubGraph(Node *const node, Buffer *const buffer, const bool in
     if (buffer) traversal.renderTargetStack.pop();
 }
 
-void Scene::render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const QMatrix4x4 &viewTransform, QMap<Node *, Traversal::State> *const saveStates)
+void Scene::render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const QMatrix4x4 &viewTransform, QHash<Node *, Traversal::State> *const saveStates)
 {
     renderSubGraph(&root, buffer, indexed, palette, viewTransform, QMatrix4x4(), saveStates);
 }

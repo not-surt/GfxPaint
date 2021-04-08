@@ -1,5 +1,5 @@
-#ifndef COLOURCOMPONENTSLIDERWIDGET_H
-#define COLOURCOMPONENTSLIDERWIDGET_H
+#ifndef COLOURCOMPONENTSPLANEWIDGET_H
+#define COLOURCOMPONENTSPLANEWIDGET_H
 
 #include "renderedwidget.h"
 
@@ -7,29 +7,29 @@
 
 namespace GfxPaint {
 
-class ColourComponentSliderWidget : public GfxPaint::RenderedWidget
+class ColourComponentsPlaneWidget : public GfxPaint::RenderedWidget
 {
     Q_OBJECT
 
 public:
-    explicit ColourComponentSliderWidget(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent = nullptr);
-    explicit ColourComponentSliderWidget(QWidget *const parent = nullptr);
-    virtual ~ColourComponentSliderWidget() override;
+    explicit ColourComponentsPlaneWidget(const ColourSpace colourSpace, const int xComponent, const int yComponent, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent = nullptr);
+    explicit ColourComponentsPlaneWidget(QWidget *const parent = nullptr);
+    virtual ~ColourComponentsPlaneWidget() override;
 
     virtual QSize sizeHint() const override { return QSize(128, 32); }
     virtual QSize minimumSizeHint() const override { return QSize(64, 16); }
 
     const Colour &colour() const { return m_colour; }
-    qreal pos() const { return m_pos; }
+    const QVector2D &pos() const { return m_pos; }
 
 public slots:
     void setColour(const GfxPaint::Colour &colour);
     void setPalette(const GfxPaint::Buffer *const palette);
-    void setPos(const qreal pos);
+    void setPos(const QVector2D &pos);
 
 signals:
     void colourChanged(const GfxPaint::Colour &colour);
-    void posChanged(const qreal pos);
+    void posChanged(const QVector2D &pos);
 
 protected:
     virtual void mousePressEvent(QMouseEvent *event) override { mouseEvent(event); }
@@ -41,7 +41,8 @@ protected:
     void mouseEvent(QMouseEvent *event);
 
     ColourSpace colourSpace;
-    int component;
+    bool useXAxis, useYAxis;
+    int xComponent, yComponent;
     bool quantise;
     Buffer::Format quantisePaletteFormat;
 
@@ -49,7 +50,7 @@ protected:
     ColourPlanePickProgram *pickProgram;
     ModelProgram *markerProgram;
 
-    qreal m_pos;
+    QVector2D m_pos;
     Colour m_colour;
     const Buffer *m_palette;
     Model *markerModel;
@@ -62,4 +63,4 @@ protected:
 
 } // namespace GfxPaint
 
-#endif // COLOURCOMPONENTSLIDERWIDGET_H
+#endif // COLOURCOMPONENTSPLANEWIDGET_H

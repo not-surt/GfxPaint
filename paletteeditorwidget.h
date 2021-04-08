@@ -20,7 +20,7 @@ public:
     ~PaletteEditorWidget();
 
 public slots:
-    void setPalette(const Buffer *const palette);
+    void setPalette(const GfxPaint::Buffer *const palette);
 
 private:
     Ui::PaletteEditorWidget *ui;

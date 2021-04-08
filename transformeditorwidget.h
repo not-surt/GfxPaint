@@ -29,7 +29,7 @@ public:
 
 signals:
     void transformChanged(const QMatrix4x4 &transform);
-    void transformModeChanged(const TransformMode transformMode);
+    void transformModeChanged(const GfxPaint::TransformMode transformMode);
 
 private:
     Ui::TransformEditorWidget *ui;

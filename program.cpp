@@ -271,7 +271,7 @@ void PatternProgram::render(const QMatrix4x4 &transform)
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
-QString ColourSliderProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+QString ColourPlaneProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
     QString src;
 
@@ -283,7 +283,7 @@ QString ColourSliderProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) 
     }break;
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
-        src += RenderManager::colourSliderShaderPart("src", colourSpace, component, quantise, 1, quantisePaletteFormat);
+        src += RenderManager::colourPlaneShaderPart("src", colourSpace, useXAxis, useYAxis, quantise, 1, quantisePaletteFormat);
         src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, false, 0, Buffer::Format());
         src += RenderManager::fragmentMainShaderPart(destFormat, false, 0, Buffer::Format(), blendMode, RenderManager::composeModeDefault);
     }break;
@@ -293,14 +293,14 @@ QString ColourSliderProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) 
     return src;
 }
 
-void ColourSliderProgram::render(const Colour &colour, const ColourSpace colourSpace, const int component, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const quantisePalette)
+void ColourPlaneProgram::render(const Colour &colour, const int xComponent, const int yComponent, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const quantisePalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    UniformData uniformData = {colour};
+    UniformData uniformData = {colour, {xComponent, yComponent}};
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(uniformData), &uniformData, GL_DYNAMIC_DRAW);
 
@@ -317,25 +317,6 @@ void ColourSliderProgram::render(const Colour &colour, const ColourSpace colourS
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 
     //glTextureBarrier();
-}
-
-QString ColourPlaneProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
-{
-    QString src;
-
-    switch(stage) {
-    case QOpenGLShader::Vertex: {
-    }break;
-    case QOpenGLShader::Fragment: {
-    }break;
-    default: break;
-    }
-
-    return src;
-}
-
-void ColourPlaneProgram::render(const Colour &colour, const ColourSpace colourSpace, const int componentX, const int componentY, const QMatrix4x4 &transform, Buffer *const dest)
-{
 }
 
 QString ColourPaletteProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
@@ -388,17 +369,17 @@ void ColourPaletteProgram::render(const Buffer *const palette, const QSize size,
     }
 }
 
-QString ColourSliderPickProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+QString ColourPlanePickProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
     QString src;
 
     switch(stage) {
     case QOpenGLShader::Compute: {
         src += RenderManager::headerShaderPart();
-        src += RenderManager::colourSliderShaderPart("src", colourSpace, component, quantise, 0, quantisePaletteFormat);
+        src += RenderManager::colourPlaneShaderPart("src", colourSpace, true, true, quantise, 0, quantisePaletteFormat);
         src +=
 R"(
-uniform layout(location = 2) float pos;
+uniform layout(location = 2) vec2 pos;
 layout(std430, binding = 0) buffer storageData
 {
     Colour colour;
@@ -406,7 +387,7 @@ layout(std430, binding = 0) buffer storageData
 
 layout(local_size_x = 1, local_size_y = 1) in;
 void main() {
-    colour = src(vec2(pos, 0.0));
+    colour = src(pos);
 }
 )";
     }break;
@@ -416,7 +397,7 @@ void main() {
     return src;
 }
 
-Colour ColourSliderPickProgram::pick(const Colour &colour, const float pos, const Buffer *const quantisePalette)
+Colour ColourPlanePickProgram::pick(const Colour &colour, const QVector2D &pos, const Buffer *const quantisePalette)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
@@ -425,7 +406,7 @@ Colour ColourSliderPickProgram::pick(const Colour &colour, const float pos, cons
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(uniformData), &uniformData, GL_DYNAMIC_DRAW);
 
-    glUniform1f(2, static_cast<GLfloat>(pos));
+    glUniform2f(2, pos.x(), pos.y());
     if (quantise && quantisePalette) {
         qApp->renderManager.bindBufferShaderPart(program, "quantisePalette", 0, quantisePalette);
     }
@@ -476,7 +457,7 @@ void main() {
     return src;
 }
 
-Colour ColourPalettePickProgram::pick(const Buffer *const src, QVector2D pos, const QMatrix4x4 &transform)
+Colour ColourPalettePickProgram::pick(const Buffer *const src, const QVector2D &pos, const QMatrix4x4 &transform)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
@@ -486,7 +467,8 @@ Colour ColourPalettePickProgram::pick(const Buffer *const src, QVector2D pos, co
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
     glBufferData(GL_UNIFORM_BUFFER, sizeof(uniformData), &uniformData, GL_DYNAMIC_DRAW);
 
-    glUniform2fv(2, 1, &(pos[0]));
+    glUniform2fv(2, 1, (GLfloat *)&pos);
+//    glUniform2f(2, pos.x(), pos.y());
     qApp->renderManager.bindIndexedBufferShaderPart(program, "src", 0, src, false, 0, nullptr);
 
     Colour storageData;
@@ -584,12 +566,13 @@ void main() {
     return src;
 }
 
-Colour ColourPickProgram::pick(const Buffer *const dest, const Buffer *const destPalette, QVector2D pos)
+Colour ColourPickProgram::pick(const Buffer *const dest, const Buffer *const destPalette, const QVector2D &pos)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    glUniform2fv(2, 1, &(pos[0]));
+    glUniform2fv(2, 1, (GLfloat *)&pos);
+//    glUniform2f(2, pos.x(), pos.y());
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, indexed, 1, destPalette);
 
     Colour storageData;

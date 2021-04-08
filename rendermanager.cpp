@@ -8,7 +8,7 @@
 namespace GfxPaint {
 
 const QMatrix4x4 RenderManager::unitToClipTransform = ([](){
-        static const float data[] = {
+        static const GLfloat data[] = {
             2.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 2.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 1.0f, 0.0f,
@@ -22,7 +22,7 @@ const QMatrix4x4 RenderManager::unitToClipTransform = ([](){
 const QMatrix4x4 RenderManager::clipToUnitTransform(RenderManager::unitToClipTransform.inverted());
 
 const QMatrix4x4 RenderManager::flipTransform = ([](){
-    static const float data[] = {
+    static const GLfloat data[] = {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, -1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f,
@@ -132,7 +132,7 @@ RenderManager::RenderManager() :
     surface(), context(),
     logger(),
     vao(),
-    programManager()
+    models(), programManager()
 {
     // Create offscreen render context
     // OpenGL ES
@@ -162,7 +162,6 @@ RenderManager::RenderManager() :
     if (!createContextSuccess) {
         surface.destroy();
         surface.setFormat(formatGL);
-        Q_ASSERT(QThread::currentThread() == QGuiApplication::instance()->thread());
         surface.create();
         context.setFormat(surface.format());
         const bool createContextSuccess = context.create();
@@ -194,12 +193,38 @@ RenderManager::RenderManager() :
 
     vao.create();
     vao.bind();
+
+    models["sliderMarker"] = new Model(GL_TRIANGLES, {2, 4,}, {
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            0.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+        }, {
+            0, 1, 2,
+            3, 4, 5,
+        }, {3, 3,});
+
+    models["planeMarker"] = new Model(GL_TRIANGLES, {2, 4,}, {
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+        }, {
+            0, 1, 2,
+            3, 4, 5,
+        }, {3, 3,});
 }
 
 RenderManager::~RenderManager()
 {
     {
         ContextBinder contextBinder(&context, &surface);
+
+        qDeleteAll(models);
 
         logger.stopLogging();
 
@@ -516,7 +541,7 @@ Colour $NAME(const vec2 pos) {
     return src;
 }
 
-QString RenderManager::colourSliderShaderPart(const QString &name, const ColourSpace colourSpace, const int component, const bool quantise, const GLint quantisePaletteTextureLocation, const Buffer::Format quantisePaletteFormat)
+QString RenderManager::colourPlaneShaderPart(const QString &name, const ColourSpace colourSpace, const bool useXAxis, const bool useYAxis, const bool quantise, const GLint quantisePaletteTextureLocation, const Buffer::Format quantisePaletteFormat)
 {
     QString src;
     src += fileToString(":/shaders/ColorSpaces.inc.glsl");
@@ -528,21 +553,39 @@ QString RenderManager::colourSliderShaderPart(const QString &name, const ColourS
 R"(
 layout(std140, binding = 0) uniform Data {
     Colour colour;
+    ivec2 components;
 } data;
 
-vec4 colourComponentSlider(const vec4 colour, const int component, const float pos) {
-    vec4 colour0 = colour;
-    colour0[component] = 0.0;
-    vec4 colour1 = colour;
-    colour1[component] = 1.0;
-    return mix(colour0, colour1, pos);
+vec4 colourPlane(const vec4 colour, const ivec2 components, const vec2 pos) {
+    vec4 colour00 = colour;
+    vec4 colour01 = colour;
+    vec4 colour10 = colour;
+    vec4 colour11 = colour;
+)";
+    if (useXAxis) src +=
+R"(
+    colour00[components[0]] = 0.0;
+    colour01[components[0]] = 0.0;
+    colour10[components[0]] = 1.0;
+    colour11[components[0]] = 1.0;
+)";
+    if (useYAxis) src +=
+R"(
+    colour00[components[1]] = 0.0;
+    colour01[components[1]] = 1.0;
+    colour10[components[1]] = 0.0;
+    colour11[components[1]] = 1.0;
+)";
+    src +=
+R"(
+    return bilinear(colour00, colour01, colour10, colour11, pos);
 }
 
 Colour $NAME(const vec2 pos) {
     uint index = INDEX_INVALID;
     vec4 col = data.colour.rgba;
     col = vec4(rgb_to_$COLOURSPACE(col.rgb), col.a);
-    col = colourComponentSlider(col, $COMPONENT, pos.x);
+    col = colourPlane(col, data.components, pos.xy);
     col = vec4($COLOURSPACE_to_rgb(col.rgb), col.a);
 )";
     if (quantise && quantisePaletteFormat.isValid()) src +=
@@ -558,15 +601,9 @@ R"(
     stringMultiReplace(src, {
         {"$NAME", name},
         {"$COLOURSPACE", colourSpaceInfo[colourSpace].funcName},
-        {"$COMPONENT", QString::number(component)},
         {"$PALETTE_FORMAT_SCALE", QString::number(quantise ? quantisePaletteFormat.scale() : 0)},
     });
     return src;
-}
-
-QString RenderManager::colourPlaneShaderPart(const QString &name, const ColourSpace colourSpace, const int componentX, const int componentY, const bool quantise)
-{
-    return QString();
 }
 
 QString RenderManager::colourPaletteShaderPart(const QString &name)

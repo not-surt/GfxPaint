@@ -23,7 +23,7 @@ public:
     void setEditor(Editor *const editor);
 
 signals:
-    void editingNodesChanged(QSet<Node *> nodes);
+    void editingNodesChanged(QSet<GfxPaint::Node *> nodes);
 
 private:
     Ui::SceneTreeWidget *ui;

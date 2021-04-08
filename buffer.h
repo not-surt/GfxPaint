@@ -4,6 +4,7 @@
 #include <QImage>
 #include <QSharedData>
 #include <QSharedDataPointer>
+#include <QDebug>
 
 #include "opengl.h"
 
@@ -21,30 +22,6 @@ public:
             SInt,
             Float,
         };
-
-        Format(const ComponentType type = ComponentType::Invalid, const int size = 0, const int count = 0) :
-            componentType(type), componentSize(size), componentCount(count)
-        {}
-        inline bool operator==(const Format &rhs) const {
-            return this->componentType == rhs.componentType
-                    && this->componentSize == rhs.componentSize
-                    && this->componentCount == rhs.componentCount;
-        }
-        inline bool operator!=(const Format &rhs) const { return !this->operator==(rhs); }
-        inline bool operator<(const Format &rhs) const {
-            return this->componentType < rhs.componentType
-                    || this->componentSize < rhs.componentSize
-                    || this->componentCount < rhs.componentCount;
-        }
-
-        bool isValid() const {
-            return componentType != ComponentType::Invalid;
-        }
-
-        ComponentType componentType;
-        int componentSize;
-        int componentCount;
-
         struct ComponentSizeInfo {
             GLenum type;
             GLuint scale;
@@ -65,13 +42,32 @@ public:
         static const QMap<ComponentType, ComponentInfo> components;
         static const QMap<Format, FormatInfo> formats;
 
+        ComponentType componentType;
+        int componentSize;
+        int componentCount;
+
+        Format(const ComponentType type = ComponentType::Invalid, const int size = 0, const int count = 0) :
+            componentType(type), componentSize(size), componentCount(count)
+        {}
+        inline bool operator==(const Format &rhs) const = default;
+        inline bool operator!=(const Format &rhs) const = default;
+        inline bool operator<(const Format &rhs) const {
+            return this->componentType < rhs.componentType
+                    || this->componentSize < rhs.componentSize
+                    || this->componentCount < rhs.componentCount;
+        }
+
+        bool isValid() const {
+            return componentType != ComponentType::Invalid;
+        }
+
         ComponentInfo componentInfo() const {
             Q_ASSERT(components.contains(this->componentType));
             return components[this->componentType];
         }
         FormatInfo formatInfo() const {
             Q_ASSERT(formats.contains(*this));
-            return formats[*this];
+            return formats.value(*this);
         }
         QString shaderSamplerType() const { return componentInfo().shaderSamplerType; }
         QString shaderImageType() const { return componentInfo().shaderImageType; }
@@ -89,6 +85,11 @@ public:
         GLint internalFormat() const { return formatInfo().internalFormat; }
         QString shaderImageFormat() const { return formatInfo().shaderImageFormat; }
     };
+
+    const QSize size;
+    const Format format;
+    const GLuint texture;
+    const GLuint framebuffer;
 
     BufferData();
     BufferData(const QSize size, const Format format, const GLvoid *const data = nullptr);
@@ -115,15 +116,17 @@ public:
     void readPixel(const QPoint &pos, GLvoid *const pixel);
     void writePixel(const QPoint &pos, const GLvoid *const pixel);
 
-    const QSize size;
-    const Format format;
-    const GLuint texture;
-    const GLuint framebuffer;
-
 protected:
     static GLuint createTexture(const QSize size, const Format format, const GLvoid *const data);
     static GLuint createFramebuffer(const Format format, const GLuint texture);
 };
+
+inline QDebug operator<<(QDebug debug, const BufferData::Format &format)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "BufferData::Format(" << int(format.componentType) << ", " << format.componentSize << ", " << format.componentCount << ")";
+    return debug;
+}
 
 class Buffer {
 public:

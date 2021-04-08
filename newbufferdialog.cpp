@@ -31,11 +31,11 @@ NewBufferDialog::NewBufferDialog(QWidget *parent, Qt::WindowFlags flags) :
         ui->componentCountComboBox->addItem(QString::number(i) + " channel" + (i > 1 ? "s" : ""), i);
     }
 
-    for (auto blendMode : RenderManager::blendModes) {
+    for (const auto &blendMode : RenderManager::blendModes) {
         ui->blendModeComboBox->addItem(blendMode.label);
     }
 
-    for (auto composeMode : RenderManager::composeModes) {
+    for (const auto &composeMode : RenderManager::composeModes) {
         ui->composeModeComboBox->addItem(composeMode.label);
     }
     ui->composeModeComboBox->setCurrentIndex(RenderManager::composeModeDefault);

@@ -34,7 +34,7 @@ SceneTreeWidget::~SceneTreeWidget()
 
 void SceneTreeWidget::setEditor(Editor *const editor)
 {
-    for (auto connection : editorConnections) {
+    for (const auto &connection : editorConnections) {
         QObject::disconnect(connection);
     }
     editorConnections.clear();

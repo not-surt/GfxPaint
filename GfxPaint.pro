@@ -4,19 +4,24 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets #openglwidgets
+QT       += core gui widgets
+greaterThan(QT_MAJOR_VERSION, 5) {
+    QT   += openglwidgets
+}
 #QT       += gamepad
 
 TARGET = GfxPaint
 TEMPLATE = app
 
-CONFIG += c++17
-#QMAKE_CXXFLAGS += -std=c++17
+CONFIG += c++2a
+
+QMAKE_CXXFLAGS += -Wno-unused-parameter -Wno-unused-variable
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x051500    # disables all the APIs deprecated before Qt 5.15.0
+#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 #INCLUDEPATH += thirdparty/libraries/glm
 
@@ -25,7 +30,8 @@ SOURCES +=\
     brush.cpp \
     brushviewwidget.cpp \
     buffer.cpp \
-    colourplanewidget.cpp \
+    colourcomponentsplanewidget.cpp \
+    colourspaceplanewidget.cpp \
     dabeditorwidget.cpp \
     documentmanager.cpp \
     documentsmodel.cpp \
@@ -64,7 +70,8 @@ HEADERS  += \
     brush.h \
     brushviewwidget.h \
     buffer.h \
-    colourplanewidget.h \
+    colourcomponentsplanewidget.h \
+    colourspaceplanewidget.h \
     dabeditorwidget.h \
     documentmanager.h \
     documentsmodel.h \
@@ -81,6 +88,7 @@ HEADERS  += \
     strokeeditorwidget.h \
     transformeditorwidget.h \
     transformmodel.h \
+    types.h \
     utils.h \
     workbuffermanager.h \
     sessioneditorwidget.h \
@@ -93,12 +101,12 @@ HEADERS  += \
     colourcomponentsliderwidget.h \
     nodeeditorwidget.h \
     tool.h \
-    type.h \
     stroke.h \
     colourpalettewidget.h \
     paletteeditorwidget.h
 
 FORMS    += \
+    colourspaceplanewidget.ui \
     mainwindow.ui \
     dabeditorwidget.ui \
     strokeeditorwidget.ui \

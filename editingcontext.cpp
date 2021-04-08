@@ -34,7 +34,7 @@ EditingContext::~EditingContext()
 void EditingContext::updatePrograms()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    QMap<Node *, BufferNodeContext *> oldNodeContexts = m_bufferNodeContexts;
+    QHash<Node *, BufferNodeContext *> oldNodeContexts = m_bufferNodeContexts;
     m_bufferNodeContexts.clear();
     for (auto index : m_selectionModel.selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());

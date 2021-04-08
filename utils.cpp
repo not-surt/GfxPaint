@@ -5,7 +5,7 @@
 #include <QFile>
 #include <QTextStream>
 #include "application.h"
-#include "type.h"
+#include "types.h"
 
 namespace GfxPaint {
 
@@ -140,7 +140,7 @@ Buffer bufferFromImageFile(const QString &filename, Buffer *const palette, Colou
 
 void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements)
 {
-    for (auto key : replacements.keys()) string.replace(key, replacements[key]);
+    for (const auto &key : replacements.keys()) string.replace(key, replacements[key]);
 }
 
 float stairstep(const float value, const float size) {

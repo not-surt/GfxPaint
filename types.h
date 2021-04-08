@@ -37,14 +37,17 @@ struct Colour {
     Rgba rgba{RGBA_INVALID};
     GLuint index{INDEX_INVALID};
 
-    inline bool operator==(const Colour &rhs) const {
-        return std::equal(std::begin(rgba), std::end(rgba), std::begin(rhs.rgba))
-                && index == rhs.index;
-    }
-    inline bool operator!=(const Colour &rhs) const {
-        return !operator==(rhs);
-    }
+    inline bool operator==(const Colour &rhs) const = default;
+    inline bool operator!=(const Colour &rhs) const = default;
+    inline auto operator<=>(const Colour&) const = default;
 };
+
+inline QDebug operator<<(QDebug debug, const Colour &colour)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "Colour(Rgba(" << colour.rgba[0] << ", " << colour.rgba[1] << ", " << colour.rgba[2] << ", " << colour.rgba[3] << "), Index(" << colour.index << ")";
+    return debug;
+}
 
 static const Colour COLOUR_INVALID = Colour{RGBA_INVALID, INDEX_INVALID};
 

@@ -23,6 +23,19 @@ vec4 unpremultiply(const vec4 colour) {
     else return vec4(colour.rgb / colour.a, colour.a);
 }
 
+// 00 10
+// 01 11
+#define BILINEAR(valueType)\
+valueType bilinear(const valueType value00, const valueType value01, const valueType value10, const valueType value11, const vec2 pos) {\
+    valueType interp0 = mix(value00, value01, pos.y);\
+    valueType interp1 = mix(value10, value11, pos.y);\
+    return mix(interp0, interp1, pos.x);\
+}
+BILINEAR(float)
+BILINEAR(vec2)
+BILINEAR(vec3)
+BILINEAR(vec4)
+
 #define FROM_UNIT(unitType, valueType, scaleType)\
 valueType fromUnit(const unitType value, const scaleType scale) {\
     return clamp(valueType(value * unitType(scale)), valueType(0), valueType(scale));\

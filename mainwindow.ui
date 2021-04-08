@@ -328,7 +328,7 @@
      <x>0</x>
      <y>0</y>
      <width>1036</width>
-     <height>24</height>
+     <height>23</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -523,6 +523,33 @@
      </property>
      <item>
       <widget class="GfxPaint::PaletteEditorWidget" name="paletteEditorWidget" native="true"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
+  <widget class="QDockWidget" name="colourPlaneDockWidget">
+   <property name="windowTitle">
+    <string>Colour Space Plane</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>2</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_10">
+    <layout class="QVBoxLayout" name="verticalLayout_11">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="GfxPaint::ColourSpacePlaneWidget" name="colourSpacePlaneWidget" native="true"/>
      </item>
     </layout>
    </widget>
@@ -1489,6 +1516,12 @@
    <class>GfxPaint::PaletteEditorWidget</class>
    <extends>QWidget</extends>
    <header>paletteeditorwidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>GfxPaint::ColourSpacePlaneWidget</class>
+   <extends>QWidget</extends>
+   <header>colourspaceplanewidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>

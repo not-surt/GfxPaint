@@ -39,7 +39,7 @@ public:
         bool rendering;
     };
 
-    QMap<Node *, Traversal::State> *saveStates;
+    QHash<Node *, Traversal::State> *saveStates;
 
     QStack<RenderTarget> renderTargetStack;
     QStack<QMatrix4x4> transformStack;
@@ -111,8 +111,8 @@ public:
     }
     static void beforeChildren(Node *const node, Traversal &traversal);
     static void afterChildren(Node *const node, Traversal &traversal);
-    void renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const QMatrix4x4 &viewTransform, const QMatrix4x4 &parentTransform, QMap<Node *, Traversal::State> *const saveStates = nullptr);
-    void render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const QMatrix4x4 &viewTransform, QMap<Node *, Traversal::State> *const saveStates = nullptr);
+    void renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const QMatrix4x4 &viewTransform, const QMatrix4x4 &parentTransform, QHash<Node *, Traversal::State> * const saveStates = nullptr);
+    void render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const QMatrix4x4 &viewTransform, QHash<Node *, Traversal::State> * const saveStates = nullptr);
 
     Node root;
 

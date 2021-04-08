@@ -12,7 +12,7 @@
 #include <QOpenGLVertexArrayObject>
 #include "buffer.h"
 #include "brush.h"
-#include "type.h"
+#include "types.h"
 #include "program.h"
 
 namespace GfxPaint {
@@ -20,8 +20,6 @@ namespace GfxPaint {
 class RenderManager : protected OpenGL
 {
 public:
-    static constexpr std::tuple<int, int> openGLVersion = {4, 3};
-    static constexpr std::tuple<int, int> openGLESVersion = {3, 2};
     struct ProgramConstructionState {
         GLint uniformBlockBinding = 0;
         GLint uniformLocation = 0;
@@ -42,36 +40,37 @@ public:
         }
     };
 
-    static const QMap<ColourSpaceConversion, QString> colourSpaceConversionShaderFunctionNames;
-
-    QOffscreenSurface surface;
-    QOpenGLContext context;
-
-    QOpenGLDebugLogger logger;
-
-    QOpenGLVertexArrayObject vao;
-
-    static const QMatrix4x4 unitToClipTransform;
-    static const QMatrix4x4 clipToUnitTransform;
-    static const QMatrix4x4 flipTransform;
-
     struct DistanceMetricInfo {
         QString label;
         QString functionName;
     };
-    static const QList<DistanceMetricInfo> distanceMetrics;
     struct BlendModeInfo {
         QString label;
         QString functionName;
     };
-    static const QList<BlendModeInfo> blendModes;
     struct ComposeModeInfo {
         QString label;
         QString functionName;
     };
+
+    static constexpr std::tuple<int, int> openGLVersion = {4, 3};
+    static constexpr std::tuple<int, int> openGLESVersion = {3, 2};
+
+    static const QMatrix4x4 unitToClipTransform;
+    static const QMatrix4x4 clipToUnitTransform;
+    static const QMatrix4x4 flipTransform;
+    static const QMap<ColourSpaceConversion, QString> colourSpaceConversionShaderFunctionNames;
+    static const QList<DistanceMetricInfo> distanceMetrics;
+    static const QList<BlendModeInfo> blendModes;
     static const QList<ComposeModeInfo> composeModes;
     static const int composeModeDefault;
 
+    QOffscreenSurface surface;
+    QOpenGLContext context;
+    QOpenGLDebugLogger logger;
+    QOpenGLVertexArrayObject vao;
+
+    QMap<QString, Model *> models;
     ProgramManager programManager;
 
     explicit RenderManager();
@@ -90,8 +89,7 @@ public:
     static QString paletteShaderPart(const QString &name, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString bufferShaderPart(const QString &name, const GLint uniformBlockBinding, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString modelFragmentShaderPart(const QString &name);
-    static QString colourSliderShaderPart(const QString &name, const ColourSpace colourSpace, const int component, const bool quantise, const GLint quantisePaletteTextureLocation, const Buffer::Format quantisePaletteFormat);
-    static QString colourPlaneShaderPart(const QString &name, const ColourSpace colourSpace, const int componentX, const int componentY, const bool quantise);
+    static QString colourPlaneShaderPart(const QString &name, const ColourSpace colourSpace, const bool useXAxis, const bool useYAxis, const bool quantise, const GLint quantisePaletteTextureLocation, const Buffer::Format quantisePaletteFormat);
     static QString colourPaletteShaderPart(const QString &name);
     static QString fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat, const int blendMode, const int composeMode);
     static QString widgetOutputShaderPart();

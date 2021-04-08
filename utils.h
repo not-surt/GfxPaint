@@ -12,7 +12,7 @@
 #include <cmath>
 #include "opengl.h"
 #include "buffer.h"
-#include "type.h"
+#include "types.h"
 
 namespace GfxPaint {
 

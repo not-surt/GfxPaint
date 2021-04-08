@@ -57,10 +57,10 @@ public:
     void deleteEditor(Editor *const editor);
 
 public slots:
-    void activateDocument(Scene *const document);
+    void activateDocument(GfxPaint::Scene *const document);
     void activateDocumentManagerIndex(const QModelIndex &index);
     void activateDocumentItemSelection(const QItemSelection &selected, const QItemSelection &deselected);
-    void activateEditor(Editor *const editor);
+    void activateEditor(GfxPaint::Editor *const editor);
     void activateSubWindow(QMdiSubWindow *const subWindow);
 
     void openRecentSession();

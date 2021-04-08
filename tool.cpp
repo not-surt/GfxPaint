@@ -22,9 +22,9 @@ void StrokeTool::update(const QVector2D viewportPos, const Point &point) {
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
             const Brush &brush = editor.editingContext().brush();
-            Stroke points;
-            strokeOffset = editor.strokeSegmentDabs(prevWorldPoint, worldPoint, brush.dab.size, brush.stroke.absoluteSpacing, brush.stroke.proportionalSpacing, strokeOffset, points);
-            for (auto point : points.points) {
+            Stroke stroke;
+            strokeOffset = editor.strokeSegmentDabs(prevWorldPoint, worldPoint, brush.dab.size, brush.stroke.absoluteSpacing, brush.stroke.proportionalSpacing, strokeOffset, stroke);
+            for (auto point : stroke.points) {
                 const QVector2D snappedPoint = editor.pixelSnap(point.pos);
                 Brush::Dab dab(brush.dab);
                 dab.size *= point.pressure;

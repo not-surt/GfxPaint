@@ -10,7 +10,7 @@
 #include <QFileInfo>
 #include <QJsonObject>
 
-#include "type.h"
+#include "types.h"
 #include "buffer.h"
 #include "opengl.h"
 #include "program.h"

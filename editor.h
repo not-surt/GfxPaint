@@ -38,12 +38,8 @@ public:
         QSet<Qt::MouseButton> mouseButtons;
         std::array<bool, 4> wheelDirections;
 
-        bool operator==(const InputState &rhs) const {
-            return (keys == rhs.keys) && (mouseButtons == rhs.mouseButtons) && (wheelDirections == rhs.wheelDirections);
-        }
-        bool operator!=(const InputState &rhs) const {
-            return !operator==(rhs);
-        }
+        bool operator==(const InputState &rhs) const = default;
+        bool operator!=(const InputState &rhs) const = default;
         bool operator<(const InputState &rhs) const {
             return std::make_tuple(keys.values(), mouseButtons.values(), wheelDirections) < std::make_tuple(rhs.keys.values(), rhs.mouseButtons.values(), rhs.wheelDirections);
         }
@@ -131,17 +127,17 @@ public:
     QMatrix4x4 transform() const { return cameraTransform; }
 
 public slots:
-    void setBrush(const Brush &brush);
-    void setColour(const Colour &colour);
-    void setTransformMode(const TransformMode m_transformMode);
+    void setBrush(const GfxPaint::Brush &brush);
+    void setColour(const GfxPaint::Colour &colour);
+    void setTransformMode(const GfxPaint::TransformMode m_transformMode);
     void setTransform(const QMatrix4x4 &transform);
     void updateContext();
 
 signals:
-    void brushChanged(const Brush &brush);
-    void colourChanged(const Colour &colour);
-    void paletteChanged(Buffer *const palette);
-    void transformModeChanged(const TransformMode m_transformMode);
+    void brushChanged(const GfxPaint::Brush &brush);
+    void colourChanged(const GfxPaint::Colour &colour);
+    void paletteChanged(GfxPaint::Buffer *const palette);
+    void transformModeChanged(const GfxPaint::TransformMode m_transformMode);
     void transformChanged(const QMatrix4x4 &transform);
 
 protected:

@@ -58,11 +58,11 @@ struct Stroke {
     }
 
     static Point interpolate(const Point &from, const Point &to, const float position) {
-        return { lerp(from.pos, to.pos, position),
-                    lerp(from.pressure, to.pressure, position),
-                    QQuaternion::slerp(from.quaternion, to.quaternion, position),
-                    lerp(from.age, to.age, position),
-                    lerp(from.distance, to.distance, position)};
+        return {lerp(from.pos, to.pos, position),
+                lerp(from.pressure, to.pressure, position),
+                QQuaternion::slerp(from.quaternion, to.quaternion, position),
+                lerp(from.age, to.age, position),
+                lerp(from.distance, to.distance, position)};
     }
 };
 

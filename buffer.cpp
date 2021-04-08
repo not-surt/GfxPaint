@@ -13,37 +13,26 @@ const QMap<BufferData::Format::ComponentType, QString> BufferData::Format::compo
     {BufferData::Format::ComponentType::Float, "Floating-point"},
 };
 
-static const QString floatShaderSamplerType = "sampler2D";
-static const QString uIntShaderSamplerType = "usampler2D";
-static const QString sIntShaderSamplerType = "isampler2D";
-static const QString floatShaderImageType = "image2D";
-static const QString uIntShaderImageType = "uimage2D";
-static const QString sIntShaderImageType = "iimage2D";
-static const QList<GLenum> intFormats = {GL_RED_INTEGER, GL_RG_INTEGER, GL_RGB_INTEGER, GL_RGBA_INTEGER};
-static const QList<GLenum> floatFormats = {GL_RED, GL_RG, GL_RGB, GL_RGBA};
-static const QList<QString> floatShaderValueTypes = {"float", "vec2", "vec3", "vec4"};
-static const QList<QString> uIntShaderValueTypes = {"uint", "uvec2", "uvec3", "uvec4"};
-static const QList<QString> sIntShaderValueTypes = {"int", "ivec2", "ivec3", "ivec4"};
 const QMap<BufferData::Format::ComponentType, BufferData::Format::ComponentInfo> BufferData::Format::components = {
-    {ComponentType::UNorm, BufferData::Format::ComponentInfo{floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, QMap<int, ComponentSizeInfo>{
+    {ComponentType::UNorm, BufferData::Format::ComponentInfo{"sampler2D", "image2D", {GL_RED, GL_RG, GL_RGB, GL_RGBA}, {"float", "vec2", "vec3", "vec4"}, QMap<int, ComponentSizeInfo>{
          {1, {GL_UNSIGNED_BYTE, 1}},
          {2, {GL_UNSIGNED_SHORT, 1}},
      }}},
-    {ComponentType::SNorm, BufferData::Format::ComponentInfo{floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, QMap<int, ComponentSizeInfo>{
+    {ComponentType::SNorm, BufferData::Format::ComponentInfo{"sampler2D", "image2D", {GL_RED, GL_RG, GL_RGB, GL_RGBA}, {"float", "vec2", "vec3", "vec4"}, QMap<int, ComponentSizeInfo>{
          {1, {GL_BYTE, 1}},
          {2, {GL_SHORT, 1}},
      }}},
-    {ComponentType::UInt, BufferData::Format::ComponentInfo{uIntShaderSamplerType, uIntShaderImageType, intFormats, uIntShaderValueTypes, QMap<int, ComponentSizeInfo>{
+    {ComponentType::UInt, BufferData::Format::ComponentInfo{"usampler2D", "uimage2D", {GL_RED_INTEGER, GL_RG_INTEGER, GL_RGB_INTEGER, GL_RGBA_INTEGER}, {"uint", "uvec2", "uvec3", "uvec4"}, QMap<int, ComponentSizeInfo>{
          {1, {GL_UNSIGNED_BYTE, static_cast<GLuint>(std::numeric_limits<GLubyte>::max())}},
          {2, {GL_UNSIGNED_SHORT, static_cast<GLuint>(std::numeric_limits<GLushort>::max())}},
          {4, {GL_UNSIGNED_INT, static_cast<GLuint>(std::numeric_limits<GLuint>::max())}},
      }}},
-    {ComponentType::SInt, BufferData::Format::ComponentInfo{sIntShaderSamplerType, sIntShaderImageType, intFormats, sIntShaderValueTypes, QMap<int, ComponentSizeInfo>{
+    {ComponentType::SInt, BufferData::Format::ComponentInfo{"isampler2D", "iimage2D", {GL_RED_INTEGER, GL_RG_INTEGER, GL_RGB_INTEGER, GL_RGBA_INTEGER}, {"int", "ivec2", "ivec3", "ivec4"}, QMap<int, ComponentSizeInfo>{
          {1, {GL_BYTE, static_cast<GLuint>(std::numeric_limits<GLbyte>::max())}},
          {2, {GL_SHORT, static_cast<GLuint>(std::numeric_limits<GLshort>::max())}},
          {4, {GL_INT, static_cast<GLuint>(std::numeric_limits<GLint>::max())}},
      }}},
-    {ComponentType::Float, BufferData::Format::ComponentInfo{floatShaderSamplerType, floatShaderImageType, floatFormats, floatShaderValueTypes, QMap<int, ComponentSizeInfo>{
+    {ComponentType::Float, BufferData::Format::ComponentInfo{"sampler2D", "image2D", {GL_RED, GL_RG, GL_RGB, GL_RGBA}, {"float", "vec2", "vec3", "vec4"}, QMap<int, ComponentSizeInfo>{
          {2, {GL_HALF_FLOAT, 1}},
          {4, {GL_FLOAT, 1}},
      }}},
@@ -54,19 +43,19 @@ const QMap<BufferData::Format, BufferData::Format::FormatInfo> BufferData::Forma
     {Format(ComponentType::UNorm, 1, 2), {GL_RG8, "rg8"}},
     {Format(ComponentType::UNorm, 1, 3), {GL_RGB8, "rgb8"}},
     {Format(ComponentType::UNorm, 1, 4), {GL_RGBA8, "rgba8"}},
-    {Format(ComponentType::UNorm, 2, 1), {GL_R16, "r16"}},
-    {Format(ComponentType::UNorm, 2, 2), {GL_RG16, "rg16"}},
-    {Format(ComponentType::UNorm, 2, 3), {GL_RGB16, "rgb16"}},
-    {Format(ComponentType::UNorm, 2, 4), {GL_RGBA16, "rgba16"}},
+//    {Format(ComponentType::UNorm, 2, 1), {GL_R16, "r16"}},
+//    {Format(ComponentType::UNorm, 2, 2), {GL_RG16, "rg16"}},
+//    {Format(ComponentType::UNorm, 2, 3), {GL_RGB16, "rgb16"}},
+//    {Format(ComponentType::UNorm, 2, 4), {GL_RGBA16, "rgba16"}},
 
-    {Format(ComponentType::SNorm, 1, 1), {GL_R8_SNORM, "r8_snorm"}},
-    {Format(ComponentType::SNorm, 1, 2), {GL_RG8_SNORM, "rg8_snorm"}},
-    {Format(ComponentType::SNorm, 1, 3), {GL_RGB8_SNORM, "rgb8_snorm"}},
-    {Format(ComponentType::SNorm, 1, 4), {GL_RGBA8_SNORM, "rgba8_snorm"}},
-    {Format(ComponentType::SNorm, 2, 1), {GL_R16_SNORM, "r16_snorm"}},
-    {Format(ComponentType::SNorm, 2, 2), {GL_RG16_SNORM, "rg16_snorm"}},
-    {Format(ComponentType::SNorm, 2, 3), {GL_RGB16_SNORM, "rgb16_snorm"}},
-    {Format(ComponentType::SNorm, 2, 4), {GL_RGBA16_SNORM, "rgba16_snorm"}},
+//    {Format(ComponentType::SNorm, 1, 1), {GL_R8_SNORM, "r8_snorm"}},
+//    {Format(ComponentType::SNorm, 1, 2), {GL_RG8_SNORM, "rg8_snorm"}},
+//    {Format(ComponentType::SNorm, 1, 3), {GL_RGB8_SNORM, "rgb8_snorm"}},
+//    {Format(ComponentType::SNorm, 1, 4), {GL_RGBA8_SNORM, "rgba8_snorm"}},
+//    {Format(ComponentType::SNorm, 2, 1), {GL_R16_SNORM, "r16_snorm"}},
+//    {Format(ComponentType::SNorm, 2, 2), {GL_RG16_SNORM, "rg16_snorm"}},
+//    {Format(ComponentType::SNorm, 2, 3), {GL_RGB16_SNORM, "rgb16_snorm"}},
+//    {Format(ComponentType::SNorm, 2, 4), {GL_RGBA16_SNORM, "rgba16_snorm"}},
 
     {Format(ComponentType::UInt, 1, 1), {GL_R8UI, "r8ui"}},
     {Format(ComponentType::UInt, 1, 2), {GL_RG8UI, "rg8ui"}},

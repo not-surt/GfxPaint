@@ -30,7 +30,7 @@ DocumentManager::~DocumentManager()
 
 void DocumentManager::registerDocumentType(DocumentManager::DocumentOpener openFunc, const QList<QByteArray> &formats)
 {
-    for (auto format : formats) {
+    for (const auto &format : formats) {
         documentOpeners[format].append(openFunc);
     }
 }
@@ -43,7 +43,7 @@ void DocumentManager::registerEditorType(DocumentManager::EditorCreator createFu
 QString DocumentManager::openFilterString()
 {
     QStringList filters;
-    for (auto extension : documentOpeners.keys()) {
+    for (const auto &extension : documentOpeners.keys()) {
         filters.append(QString("%1 files (*.%2)").arg(QString(extension.toUpper()), QString(extension)));
     }
     return filters.join(";;");

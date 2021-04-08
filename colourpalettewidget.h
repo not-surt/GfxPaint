@@ -19,7 +19,7 @@ public:
     virtual QSize minimumSizeHint() const override { return QSize(64, 64); }
 
 public slots:
-    void setPalette(const Buffer *const palette);
+    void setPalette(const GfxPaint::Buffer *const palette);
 
 protected:
     virtual void mousePressEvent(QMouseEvent *event) override { mouseEvent(event); }

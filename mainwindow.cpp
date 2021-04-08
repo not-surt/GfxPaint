@@ -15,7 +15,7 @@
 
 #include "newbufferdialog.h"
 #include "application.h"
-#include "type.h"
+#include "types.h"
 #include "multitoolbutton.h"
 #include "utils.h"
 #include "editor.h"
@@ -45,7 +45,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     ui->actionSaveSessionAtExit->setChecked(qApp->saveSessionAtExit());
 
     ui->sessionEditorWidget->setModel(&qApp->documentManager);
-    QObject::connect(&qApp->documentManager, &DocumentsModel::closeDocument, this, &MainWindow::closeDocument);
+    QObject::connect(&qApp->documentManager, &DocumentsModel::requestCloseDocument, this, &MainWindow::closeDocument);
     //QObject::connect(ui->filesView, &QAbstractItemView::activated, this, &MainWindow::activateDocumentManagerIndex);
     QObject::connect(ui->sessionEditorWidget->selectionModel(), &QItemSelectionModel::selectionChanged, this, &MainWindow::activateDocumentItemSelection);
     //QObject::connect(ui->documentsView, &QTreeView::customContextMenuRequested, this, &MainWindow::filesViewContextMenu);
@@ -146,14 +146,14 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     mainMenuToolButton->setText("Menu");
     mainMenuToolButton->setPopupMode(QToolButton::InstantPopup);
     mainMenuToolButton->setAutoRaise(true);
-    QMenu *const mainMenu = new QMenu();
+    QMenu *const mainMenu = new QMenu(this);
     for (auto menu : ui->menuBar->actions()) {
         mainMenu->addAction(menu);
     }
     mainMenuToolButton->setMenu(mainMenu);
-    ui->mainToolBar->insertWidget(ui->mainToolBar->actions()[0], centringWidget(mainMenuToolButton));
+    ui->mainToolBar->insertWidget(ui->mainToolBar->actions().at(0), centringWidget(mainMenuToolButton));
 
-    const QList<std::pair<QList<QAction *>, QAction *>> toolGroups = {
+    const QVector<std::pair<QVector<QAction *>, QAction *>> toolGroups = {
         {{ui->actionDot, ui->actionDottedFreehand, ui->actionContinuousFreehand}, ui->actionContinuousFreehand},
         {{ui->actionLineSingle, ui->actionLineMulti}, ui->actionLineSingle},
         {{ui->actionCurveSingle, ui->actionCurveDouble}, ui->actionCurveSingle},
@@ -166,7 +166,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     };
     toolsGroup.setExclusive(true);
     ui->actionContinuousFreehand->setChecked(true);
-    for (auto pair : toolGroups) {
+    for (const auto &pair : toolGroups) {
         auto group = pair.first;
         auto defaultAction = pair.second;
         MultiToolButton *const toolButton = new MultiToolButton();
@@ -253,7 +253,7 @@ void MainWindow::writeSettings(QSettings &settings) const
     settings.beginWriteArray("subWindows");
 
     for (int i = 0; i < ui->mdiArea->subWindowList().count(); ++i) {
-        QMdiSubWindow *const subWindow = ui->mdiArea->subWindowList()[i];
+        QMdiSubWindow *const subWindow = ui->mdiArea->subWindowList().at(i);
         settings.setArrayIndex(i);
         Editor *const editor = dynamic_cast<Editor *>(subWindow->widget());
         if (editor && !editor->scene.filename().isEmpty()) {
@@ -291,7 +291,7 @@ void MainWindow::openSession()
 {
     QSettings settings;
     const QString path = !qApp->sessionManager.sessionFilename().isEmpty() ? qApp->sessionManager.sessionFilename() : settings.value("file/openPath", QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)).toString();
-    const QString filename = QFileDialog::getOpenFileName(nullptr, "Open Session", path, QString("%1 Session (*.%2)").arg(qApp->applicationName()).arg(Application::sessionExtension));
+    const QString filename = QFileDialog::getOpenFileName(nullptr, "Open Session", path, QString("%1 Session (*.%2)").arg(qApp->applicationName(), Application::sessionExtension));
     if (!filename.isEmpty()) {
         if (!qApp->sessionManager.openSession(filename)) {
             QMessageBox::critical(this, "Session Open Error", QString("Error opening session: %1").arg(filename));
@@ -337,7 +337,7 @@ bool MainWindow::saveSession(const bool saveAs)
 {
     QSettings settings;
     QString path = !qApp->sessionManager.sessionFilename().isEmpty() ? qApp->sessionManager.sessionFilename() : settings.value("file/savePath", QStandardPaths::writableLocation(QStandardPaths::PicturesLocation)).toString();
-    QString filename = !(saveAs || qApp->sessionManager.sessionFilename().isEmpty()) ? qApp->sessionManager.sessionFilename() : QFileDialog::getSaveFileName(Application::activeWindow(), "Save Session", path, QString("%1 Session (*.%2)").arg(qApp->applicationName()).arg(Application::sessionExtension));
+    QString filename = !(saveAs || qApp->sessionManager.sessionFilename().isEmpty()) ? qApp->sessionManager.sessionFilename() : QFileDialog::getSaveFileName(Application::activeWindow(), "Save Session", path, QString("%1 Session (*.%2)").arg(qApp->applicationName(), Application::sessionExtension));
     if (!filename.isEmpty()) {
         QFileInfo info(filename);
         if (info.suffix().isEmpty()) {
@@ -559,7 +559,7 @@ void MainWindow::activateDocumentItemSelection(const QItemSelection &selected, c
 
 void MainWindow::activateEditor(Editor *const editor)
 {
-    for (auto connection : activeEditorConnections) {
+    for (auto &connection : activeEditorConnections) {
         QObject::disconnect(connection);
     }
     activeEditorConnections.clear();
@@ -626,7 +626,7 @@ void MainWindow::rebuildFileActionsMenu(QMenu *const menu, const QStringList &fi
     menu->clear();
     for (int i = 0; i < filenames.length(); ++i) {
         const QString &filename = filenames.at(i);
-        QAction *const action = new QAction(QFileInfo(filename).fileName());
+        QAction *const action = new QAction(QFileInfo(filename).fileName(), this);
         action->setData(filename);
         QObject::connect(action, &QAction::triggered, this, slot);
         menu->addAction(action);
@@ -680,7 +680,7 @@ void MainWindow::buildNodesMenu()
     for (int i = 0; i < Application::nodeInfo.length(); ++i) {
         const Application::NodeInfo &nodeInfo = Application::nodeInfo[i];
         if (nodeInfo.create) {
-            QAction *const action = new QAction("Add " + nodeInfo.label);
+            QAction *const action = new QAction("Add " + nodeInfo.label, this);
             ui->menuNode->addAction(action);
             QObject::connect(action, &QAction::triggered, this, [this, nodeInfo](){
                 if (activeEditor) {
@@ -690,7 +690,7 @@ void MainWindow::buildNodesMenu()
             });
         }
         if (nodeInfo.createFromDialog) {
-            QAction *const action = new QAction("Add " + nodeInfo.label + "..." );
+            QAction *const action = new QAction("Add " + nodeInfo.label + "...", this);
             ui->menuNode->addAction(action);
             QObject::connect(action, &QAction::triggered, this, [this, nodeInfo](){
                 if (activeEditor) {
@@ -700,7 +700,7 @@ void MainWindow::buildNodesMenu()
             });
         }
         if (nodeInfo.createFromFile) {
-            QAction *const action = new QAction("Add " + nodeInfo.label + " from Files...");
+            QAction *const action = new QAction("Add " + nodeInfo.label + " from Files...", this);
             ui->menuNode->addAction(action);
             QObject::connect(action, &QAction::triggered, this, [this, nodeInfo](){
                 if (activeEditor) {
@@ -709,7 +709,7 @@ void MainWindow::buildNodesMenu()
                     const QStringList filenames = QFileDialog::getOpenFileNames(this, "Open File", path, Application::openImageFilters());
                     if (!filenames.isEmpty()) {
                         QList<Node *> nodes;
-                        for (auto filename : filenames) {
+                        for (const auto &filename : filenames) {
                             nodes.append(nodeInfo.createFromFile(filename));
                         }
                         activeEditor->insertNodes(nodes);

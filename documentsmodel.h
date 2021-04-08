@@ -35,7 +35,7 @@ public:
     virtual bool setData(const QModelIndex &index, const QVariant &value, int role) override;
 
 signals:
-    void closeDocument(Scene *const document);
+    void requestCloseDocument(GfxPaint::Scene *const document);
 
 protected:
     QList<Scene *> m_documents;

@@ -23,7 +23,7 @@ public:
     }
     virtual ~OpenGL() {}
 
-    virtual void initialize();
+    void initialize();
 };
 
 class ContextBinder

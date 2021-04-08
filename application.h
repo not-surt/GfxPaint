@@ -13,7 +13,7 @@
 #include <QActionGroup>
 #include <QElapsedTimer>
 
-#include "type.h"
+#include "types.h"
 #include "documentmanager.h"
 #include "workbuffermanager.h"
 #include "sessionmanager.h"

@@ -15,7 +15,7 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QDoubleValidator *const validator = new QDoubleValidator;
+    QDoubleValidator *const validator = new QDoubleValidator(this);
     validator->setDecimals(3);
     ui->ratioLineEdit->setValidator(validator);
 
@@ -36,11 +36,11 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     QObject::connect(ui->blendModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->composeModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
 
-    for (auto blendMode : RenderManager::blendModes) {
+    for (auto &blendMode : RenderManager::blendModes) {
         ui->blendModeComboBox->addItem(blendMode.label);
     }
 
-    for (auto composeMode : RenderManager::composeModes) {
+    for (auto &composeMode : RenderManager::composeModes) {
         ui->composeModeComboBox->addItem(composeMode.label);
     }
 

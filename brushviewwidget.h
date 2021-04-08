@@ -19,8 +19,8 @@ public:
     virtual QSize minimumSizeHint() const override { return QSize(32, 32); }
 
 public slots:
-    void setBrush(const Brush &brush);    
-    void setColour(const Colour &colour)
+    void setBrush(const GfxPaint::Brush &brush);
+    void setColour(const GfxPaint::Colour &colour)
     {
         if (this->colour != colour) {
             this->colour = colour;

@@ -141,7 +141,7 @@ bool DocumentsModel::setData(const QModelIndex &index, const QVariant &value, in
             emit dataChanged(index, index, {Qt::DisplayRole});
             return true;
         case Qt::CheckStateRole:
-            emit closeDocument(document);
+            emit requestCloseDocument(document);
             return true;
         }
     }
