@@ -23,8 +23,6 @@ QMAKE_CXXFLAGS += -Wno-unused-parameter -Wno-unused-variable
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x051500    # disables all the APIs deprecated before Qt 5.15.0
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-#INCLUDEPATH += thirdparty/libraries/glm
-
 SOURCES +=\
     application.cpp \
     brush.cpp \
@@ -33,6 +31,8 @@ SOURCES +=\
     colourcomponentsplanewidget.cpp \
     colourspaceplanewidget.cpp \
     dabeditorwidget.cpp \
+    dockwidget.cpp \
+    dockwidgettitlebarwidget.cpp \
     documentmanager.cpp \
     documentsmodel.cpp \
     editingcontext.cpp \
@@ -73,6 +73,8 @@ HEADERS  += \
     colourcomponentsplanewidget.h \
     colourspaceplanewidget.h \
     dabeditorwidget.h \
+    dockwidget.h \
+    dockwidgettitlebarwidget.h \
     documentmanager.h \
     documentsmodel.h \
     editingcontext.h \

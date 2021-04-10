@@ -19,10 +19,10 @@ ColourSpacePlaneWidget::ColourSpacePlaneWidget(QWidget *parent) :
     setColour(m_colour);
     updateWidgets();
 
-    QObject::connect(ui->colourSpaceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
-    QObject::connect(ui->xComponentComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
-    QObject::connect(ui->yComponentComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
-    QObject::connect(ui->zComponentComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
+    QObject::connect(ui->colourSpaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
+    QObject::connect(ui->xComponentComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
+    QObject::connect(ui->yComponentComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
+    QObject::connect(ui->zComponentComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ColourSpacePlaneWidget::updateWidgets);
     QObject::connect(ui->alphaCheckBox, &QCheckBox::toggled, this, &ColourSpacePlaneWidget::updateWidgets);
     QObject::connect(ui->quantiseCheckBox, &QCheckBox::toggled, this, &ColourSpacePlaneWidget::updateWidgets);
 }
@@ -122,8 +122,9 @@ void ColourSpacePlaneWidget::updateWidgets()
         qDeleteAll(oldPrograms);
     }
     QVector<QComboBox *> comboBoxes = {ui->xComponentComboBox, ui->yComponentComboBox, ui->zComponentComboBox};
-    for (auto comboBox : comboBoxes) {
-        const int componentIndex = comboBox->currentIndex();
+    for (int i = 0; i < comboBoxes.length(); ++i) {
+        QComboBox *const comboBox = comboBoxes[i];
+        const int componentIndex = (comboBox->currentIndex() >= 0 ? comboBox->currentIndex() : i);
         comboBox->blockSignals(true);
         comboBox->clear();
         for (int i = 0; i < colourSpaceInfo[colourSpace].componentCount; ++i) {

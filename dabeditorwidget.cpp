@@ -19,22 +19,22 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     validator->setDecimals(3);
     ui->ratioLineEdit->setValidator(validator);
 
-    QObject::connect(ui->spaceComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->typeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->metricComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->widthSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->heightSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->typeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->widthSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->heightSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->fixedRatioCheckBox, &QCheckBox::toggled, this, &DabEditorWidget::updateDab);
     QObject::connect(ui->ratioLineEdit, &QLineEdit::textChanged, this, &DabEditorWidget::updateRatio);
-    QObject::connect(ui->angleSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->originXSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->originYSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->pixelSnapXComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->pixelSnapYComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->hardnessSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->opacitySpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->blendModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->composeModeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->angleSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->originXSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->originYSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->pixelSnapXComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->pixelSnapYComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->hardnessSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->opacitySpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->blendModeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->composeModeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
 
     for (auto &blendMode : RenderManager::blendModes) {
         ui->blendModeComboBox->addItem(blendMode.label);

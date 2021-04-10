@@ -68,7 +68,7 @@ AbstractBufferNode::AbstractBufferNode(const AbstractBufferNode &other) :
 {
 }
 
-BufferNode::BufferNode(const Buffer &buffer, const bool indexed, const int blendMode, const int composeMode, const Colour transparent, const QSizeF &pixelAspectRatio, const QSizeF &scrollScale) :
+BufferNode::BufferNode(const Buffer &buffer, const bool indexed, const int blendMode, const int composeMode, const Colour &transparent, const QSizeF &pixelAspectRatio, const QSizeF &scrollScale) :
     SpatialNode(), AbstractBufferNode(buffer, indexed),
     blendMode(blendMode), composeMode(composeMode), transparent(transparent),
     pixelAspectRatio(pixelAspectRatio), scrollScale(scrollScale)

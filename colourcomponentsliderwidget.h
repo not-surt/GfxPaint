@@ -28,7 +28,6 @@ public slots:
     void setPos(const qreal pos);
 
 signals:
-    void colourChanged(const GfxPaint::Colour &colour);
     void posChanged(const qreal pos);
 
 protected:
@@ -46,7 +45,6 @@ protected:
     Buffer::Format quantisePaletteFormat;
 
     ColourPlaneProgram *program;
-    ColourPlanePickProgram *pickProgram;
     ModelProgram *markerProgram;
 
     qreal m_pos;

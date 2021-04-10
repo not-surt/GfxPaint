@@ -205,6 +205,24 @@ private:
     QOpenGLShaderProgram *m_program;
 };
 
+class ToolProgram : public Program {
+public:
+    ToolProgram() :
+        Program(),
+        storageBuffer(0)
+    {
+        updateKey(typeid(this), {});
+
+        glGenBuffers(1, &storageBuffer);
+    }
+    virtual ~ToolProgram() override {
+        glDeleteBuffers(1, &storageBuffer);
+    }
+
+protected:
+    GLuint storageBuffer;
+};
+
 class RenderProgram : public Program {
 public:
     RenderProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
@@ -406,54 +424,15 @@ protected:
     UniformData uniformData;
 };
 
-class ColourPaletteProgram : public Program {
-public:
-    ColourPaletteProgram(const Buffer::Format destFormat, const int blendMode, const Buffer::Format paletteFormat) :
-        Program(),
-        destFormat(destFormat),
-        blendMode(blendMode),
-        paletteFormat(paletteFormat)
-    {
-        updateKey(typeid(this), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
-    }
-
-    void render(const Buffer *const palette, const QSize size, const QSize swatchSize, const QSize cells, const QMatrix4x4 &transform, Buffer *const dest);
-
-protected:
-    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
-
-    const Buffer::Format destFormat;
-    const int blendMode;
-    const Buffer::Format paletteFormat;
-};
-
-class ToolProgram : public Program {
-public:
-    ToolProgram() :
-        Program(),
-        storageBuffer(0)
-    {
-        updateKey(typeid(this), {});
-
-        glGenBuffers(1, &storageBuffer);
-    }
-    virtual ~ToolProgram() override {
-        glDeleteBuffers(1, &storageBuffer);
-    }
-
-protected:
-    GLuint storageBuffer;
-};
-
 class ColourPlanePickProgram : public ToolProgram {
 public:
-    ColourPlanePickProgram(const ColourSpace colourSpace, const int xComponent, const int yComponent, const bool quantise, const Buffer::Format quantisePaletteFormat) :
+    ColourPlanePickProgram(const ColourSpace colourSpace, const bool useXAxis, const bool useYAxis, const bool quantise, const Buffer::Format quantisePaletteFormat) :
         ToolProgram(),
-        colourSpace(colourSpace), xComponent(xComponent), yComponent(yComponent),
+        colourSpace(colourSpace), useXAxis(useXAxis), useYAxis(useYAxis),
         quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
         uniformBuffer(0), uniformData()
     {
-        updateKey(typeid(this), {static_cast<int>(colourSpace), xComponent, yComponent, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount});
+        updateKey(typeid(this), {static_cast<int>(colourSpace), useXAxis, useYAxis, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount});
 
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
@@ -473,12 +452,33 @@ protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 
     const ColourSpace colourSpace;
-    const int xComponent, yComponent;
+    const bool useXAxis, useYAxis;
     const bool quantise;
     const Buffer::Format quantisePaletteFormat;
 
     GLuint uniformBuffer;
     UniformData uniformData;
+};
+
+class ColourPaletteProgram : public Program {
+public:
+    ColourPaletteProgram(const Buffer::Format destFormat, const int blendMode, const Buffer::Format paletteFormat) :
+        Program(),
+        destFormat(destFormat),
+        blendMode(blendMode),
+        paletteFormat(paletteFormat)
+    {
+        updateKey(typeid(this), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
+    }
+
+    void render(const Buffer *const palette, const QSize size, const QSize swatchSize, const QSize cells, const QMatrix4x4 &transform, Buffer *const dest);
+
+protected:
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+
+    const Buffer::Format destFormat;
+    const int blendMode;
+    const Buffer::Format paletteFormat;
 };
 
 class ColourPalettePickProgram : public ToolProgram {

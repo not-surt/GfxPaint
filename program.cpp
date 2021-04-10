@@ -319,6 +319,64 @@ void ColourPlaneProgram::render(const Colour &colour, const int xComponent, cons
     //glTextureBarrier();
 }
 
+QString ColourPlanePickProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+{
+    QString src;
+
+    switch(stage) {
+    case QOpenGLShader::Compute: {
+        src += RenderManager::headerShaderPart();
+        src += RenderManager::colourPlaneShaderPart("src", colourSpace, useXAxis, useYAxis, quantise, 0, quantisePaletteFormat);
+        src +=
+R"(
+uniform layout(location = 2) vec2 pos;
+layout(std430, binding = 0) buffer storageData
+{
+    Colour colour;
+};
+
+layout(local_size_x = 1, local_size_y = 1) in;
+void main() {
+    colour = src(pos);
+}
+)";
+    }break;
+    default: break;
+    }
+
+    return src;
+}
+
+Colour ColourPlanePickProgram::pick(const Colour &colour, const QVector2D &pos, const Buffer *const quantisePalette)
+{
+    QOpenGLShaderProgram &program = this->program();
+    program.bind();
+
+    UniformData uniformData = {colour};
+    glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(uniformData), &uniformData, GL_DYNAMIC_DRAW);
+
+    glUniform2fv(2, 1, (GLfloat *)&pos);
+    if (quantise && quantisePalette) {
+        qApp->renderManager.bindBufferShaderPart(program, "quantisePalette", 0, quantisePalette);
+    }
+
+    Colour storageData = colour;
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(storageData), &storageData, GL_STREAM_READ);
+
+    glDispatchCompute(1, 1, 1);
+
+    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+//    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), &storageData);
+    void *mapping = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), GL_MAP_READ_BIT);
+    memcpy(&storageData, mapping, sizeof(storageData));
+    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+    qDebug() << "PICK!" << storageData;///////////////////////////////////////////
+    return storageData;
+}
+
 QString ColourPaletteProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
     QString src;
@@ -367,63 +425,6 @@ void ColourPaletteProgram::render(const Buffer *const palette, const QSize size,
 
         glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
     }
-}
-
-QString ColourPlanePickProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
-{
-    QString src;
-
-    switch(stage) {
-    case QOpenGLShader::Compute: {
-        src += RenderManager::headerShaderPart();
-        src += RenderManager::colourPlaneShaderPart("src", colourSpace, true, true, quantise, 0, quantisePaletteFormat);
-        src +=
-R"(
-uniform layout(location = 2) vec2 pos;
-layout(std430, binding = 0) buffer storageData
-{
-    Colour colour;
-};
-
-layout(local_size_x = 1, local_size_y = 1) in;
-void main() {
-    colour = src(pos);
-}
-)";
-    }break;
-    default: break;
-    }
-
-    return src;
-}
-
-Colour ColourPlanePickProgram::pick(const Colour &colour, const QVector2D &pos, const Buffer *const quantisePalette)
-{
-    QOpenGLShaderProgram &program = this->program();
-    program.bind();
-
-    UniformData uniformData = {colour};
-    glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(uniformData), &uniformData, GL_DYNAMIC_DRAW);
-
-    glUniform2f(2, pos.x(), pos.y());
-    if (quantise && quantisePalette) {
-        qApp->renderManager.bindBufferShaderPart(program, "quantisePalette", 0, quantisePalette);
-    }
-
-    Colour storageData = colour;
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(storageData), &storageData, GL_STREAM_READ);
-
-    glDispatchCompute(1, 1, 1);
-
-    glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-//    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), &storageData);
-    void *mapping = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), GL_MAP_READ_BIT);
-    memcpy(&storageData, mapping, sizeof(storageData));
-    glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
-    return storageData;
 }
 
 QString ColourPalettePickProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const

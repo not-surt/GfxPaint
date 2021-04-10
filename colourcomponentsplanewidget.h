@@ -28,7 +28,6 @@ public slots:
     void setPos(const QVector2D &pos);
 
 signals:
-    void colourChanged(const GfxPaint::Colour &colour);
     void posChanged(const QVector2D &pos);
 
 protected:
@@ -41,13 +40,11 @@ protected:
     void mouseEvent(QMouseEvent *event);
 
     ColourSpace colourSpace;
-    bool useXAxis, useYAxis;
     int xComponent, yComponent;
     bool quantise;
     Buffer::Format quantisePaletteFormat;
 
     ColourPlaneProgram *program;
-    ColourPlanePickProgram *pickProgram;
     ModelProgram *markerProgram;
 
     QVector2D m_pos;

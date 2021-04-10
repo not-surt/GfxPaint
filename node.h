@@ -153,7 +153,7 @@ public:
     QSizeF pixelAspectRatio;
     QSizeF scrollScale;
 
-    explicit BufferNode(const Buffer &buffer, const bool indexed, const int blendMode = 0, const int composeMode = RenderManager::composeModeDefault, const Colour transparent = {RGBA_INVALID, INDEX_INVALID}, const QSizeF &pixelAspectRatio = {1.0, 1.0}, const QSizeF &scrollScale = {1.0, 1.0});
+    explicit BufferNode(const Buffer &buffer, const bool indexed, const int blendMode = 0, const int composeMode = RenderManager::composeModeDefault, const Colour &transparent = {RGBA_INVALID, INDEX_INVALID}, const QSizeF &pixelAspectRatio = {1.0, 1.0}, const QSizeF &scrollScale = {1.0, 1.0});
     explicit BufferNode(const BufferNode &other);
 
     static Node *createFromFile(const QString &filename);

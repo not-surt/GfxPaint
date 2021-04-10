@@ -8,7 +8,7 @@ namespace GfxPaint {
 ColourComponentSliderWidget::ColourComponentSliderWidget(const ColourSpace colourSpace, const int component, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent) :
     RenderedWidget(parent),
     colourSpace(colourSpace), component(component), quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
-    program(nullptr), pickProgram(nullptr), markerProgram(nullptr),
+    program(nullptr), markerProgram(nullptr),
     m_pos(0.0), m_colour{},
     m_palette(nullptr)
 {
@@ -24,16 +24,13 @@ ColourComponentSliderWidget::~ColourComponentSliderWidget()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     delete program;
-    delete pickProgram;
     delete markerProgram;
 }
 
 void ColourComponentSliderWidget::mouseEvent(QMouseEvent *event)
 {
     if (event->buttons() & Qt::LeftButton) {
-        m_pos = clamp(0.0, 1.0, static_cast<qreal>(event->pos().x()) / static_cast<qreal>(width() - 1));
-        emit posChanged(m_pos);
-        setColour(pickProgram->pick(m_colour, QVector2D(m_pos, 0.5), m_palette));
+        setPos(clamp(0.0, 1.0, static_cast<qreal>(event->pos().x()) / static_cast<qreal>(width() - 1)));
         event->accept();
     }
     else event->ignore();
@@ -43,10 +40,9 @@ void ColourComponentSliderWidget::resizeGL(int w, int h)
 {
     RenderedWidget::resizeGL(w, h);
 
-    QList<Program *> oldPrograms = {program, pickProgram, markerProgram};
+    QList<Program *> oldPrograms = {program, markerProgram};
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     program = new ColourPlaneProgram(colourSpace, true, false, widgetBuffer->format(), 0, quantise, quantisePaletteFormat);
-    pickProgram = new ColourPlanePickProgram(colourSpace, component, -1, quantise, m_palette ? m_palette->format() : Buffer::Format());
     markerProgram = new ModelProgram(widgetBuffer->format(), false, Buffer::Format(), 0, RenderManager::composeModeDefault);
     qDeleteAll(oldPrograms);
 }
@@ -55,7 +51,6 @@ void ColourComponentSliderWidget::setColour(const Colour &colour)
 {
     if (m_colour != colour) {
         m_colour = colour;
-        emit colourChanged(colour);
         update();
     }
 }

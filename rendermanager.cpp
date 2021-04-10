@@ -196,11 +196,11 @@ RenderManager::RenderManager() :
 
     models["sliderMarker"] = new Model(GL_TRIANGLES, {2, 4,}, {
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-            0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-            -1.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
             0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-            1.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-            0.0f, -1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
         }, {
             0, 1, 2,
             3, 4, 5,
@@ -254,12 +254,12 @@ precision highp int;
 precision highp sampler2D;
 precision highp isampler2D;
 precision highp usampler2D;
-//precision highp image2D;
-//precision highp iimage2D;
-//precision highp uimage2D;
-//precision highp imageBuffer;
-//precision highp iimageBuffer;
-//precision highp uimageBuffer;
+precision highp image2D;
+precision highp iimage2D;
+precision highp uimage2D;
+precision highp imageBuffer;
+precision highp iimageBuffer;
+precision highp uimageBuffer;
 )";
     }
     return src;
@@ -557,28 +557,19 @@ layout(std140, binding = 0) uniform Data {
 } data;
 
 vec4 colourPlane(const vec4 colour, const ivec2 components, const vec2 pos) {
-    vec4 colour00 = colour;
-    vec4 colour01 = colour;
-    vec4 colour10 = colour;
-    vec4 colour11 = colour;
+    vec4 col = colour;
 )";
     if (useXAxis) src +=
 R"(
-    colour00[components[0]] = 0.0;
-    colour01[components[0]] = 0.0;
-    colour10[components[0]] = 1.0;
-    colour11[components[0]] = 1.0;
+    col[components[0]] = pos.x;
 )";
     if (useYAxis) src +=
 R"(
-    colour00[components[1]] = 0.0;
-    colour01[components[1]] = 1.0;
-    colour10[components[1]] = 0.0;
-    colour11[components[1]] = 1.0;
+    col[components[1]] = pos.y;
 )";
     src +=
 R"(
-    return bilinear(colour00, colour01, colour10, colour11, pos);
+    return col;
 }
 
 Colour $NAME(const vec2 pos) {

@@ -19,6 +19,7 @@ EditingContext::EditingContext(EditingContext &other) :
     scene(other.scene),
     m_brush(other.m_brush),
     m_colour(other.m_colour),
+    m_palette(other.m_palette),
     m_bufferNodeContexts(other.m_bufferNodeContexts),
     m_selectionModel(other.m_selectionModel.model())
 {

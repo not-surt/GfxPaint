@@ -17,7 +17,7 @@
    <bool>true</bool>
   </property>
   <property name="dockOptions">
-   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::GroupedDragging</set>
+   <set>QMainWindow::AllowNestedDocks|QMainWindow::AllowTabbedDocks|QMainWindow::AnimatedDocks|QMainWindow::GroupedDragging|QMainWindow::VerticalTabs</set>
   </property>
   <property name="unifiedTitleAndToolBarOnMac">
    <bool>false</bool>
@@ -106,7 +106,7 @@
    <addaction name="separator"/>
    <addaction name="actionCloseFile"/>
   </widget>
-  <widget class="QDockWidget" name="documentsDockWidget">
+  <widget class="DockWidget" name="documentsDockWidget">
    <property name="windowTitle">
     <string>Files</string>
    </property>
@@ -133,7 +133,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="sceneDockWidget">
+  <widget class="DockWidget" name="sceneDockWidget">
    <property name="windowTitle">
     <string>Scene</string>
    </property>
@@ -160,7 +160,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="brushViewDockWidget">
+  <widget class="DockWidget" name="brushViewDockWidget">
    <property name="windowTitle">
     <string>Brush Preview</string>
    </property>
@@ -187,7 +187,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="dabEditorDockWidget">
+  <widget class="DockWidget" name="dabEditorDockWidget">
    <property name="windowTitle">
     <string>Dab Settings</string>
    </property>
@@ -214,7 +214,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="strokeEditorDockWidget">
+  <widget class="DockWidget" name="strokeEditorDockWidget">
    <property name="windowTitle">
     <string>Stroke Settings</string>
    </property>
@@ -241,7 +241,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="nodeEditorDockWidget">
+  <widget class="DockWidget" name="nodeEditorDockWidget">
    <property name="windowTitle">
     <string>Node</string>
    </property>
@@ -268,7 +268,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="colourSpaceSlidersDockWidget">
+  <widget class="DockWidget" name="colourSpaceSlidersDockWidget">
    <property name="windowTitle">
     <string>Colour Space Sliders</string>
    </property>
@@ -295,7 +295,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="transformEditorDockWidget">
+  <widget class="DockWidget" name="transformEditorDockWidget">
    <property name="windowTitle">
     <string>Transform Settings</string>
    </property>
@@ -500,7 +500,7 @@
    <addaction name="menuView"/>
    <addaction name="menuNode"/>
   </widget>
-  <widget class="QDockWidget" name="paletteEditorDockWidget">
+  <widget class="DockWidget" name="paletteEditorDockWidget">
    <property name="windowTitle">
     <string>Palette</string>
    </property>
@@ -527,7 +527,7 @@
     </layout>
    </widget>
   </widget>
-  <widget class="QDockWidget" name="colourPlaneDockWidget">
+  <widget class="DockWidget" name="colourPlaneDockWidget">
    <property name="windowTitle">
     <string>Colour Space Plane</string>
    </property>
@@ -1522,6 +1522,12 @@
    <class>GfxPaint::ColourSpacePlaneWidget</class>
    <extends>QWidget</extends>
    <header>colourspaceplanewidget.h</header>
+   <container>1</container>
+  </customwidget>
+  <customwidget>
+   <class>DockWidget</class>
+   <extends>QDockWidget</extends>
+   <header>dockwidget.h</header>
    <container>1</container>
   </customwidget>
  </customwidgets>
