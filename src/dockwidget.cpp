@@ -15,18 +15,18 @@ DockWidget::DockWidget(QWidget *const parent, const Qt::WindowFlags &flags) :
 
     QObject::connect(this, &QDockWidget::windowTitleChanged, titleBar, &DockWidgetTitlebarWidget::setTitle);
 
-//    m_menu = new QMenu(this);
-//    m_menu->addAction(new QAction("Poop!", this));
-//    m_menu->addAction(new QAction("Scoop!", this));
+    m_menu = new QMenu(this);
+    m_menu->addAction(new QAction("Poop!", this));
+    m_menu->addAction(new QAction("Scoop!", this));
     setMenu(m_menu);
 
-//    m_popup = new QWidget(this);
-//    m_popup->setLayout(new QHBoxLayout());
-//    m_popup->layout()->addWidget(new QPushButton());
-//    m_popup->layout()->addWidget(new QPushButton());
-//    m_popup->layout()->addWidget(new QPushButton());
-//    m_popup->layout()->addWidget(new QPushButton());
-//    m_popup->layout()->addWidget(new QPushButton());
+    m_popup = new QWidget(this);
+    m_popup->setLayout(new QHBoxLayout());
+    m_popup->layout()->addWidget(new QPushButton());
+    m_popup->layout()->addWidget(new QPushButton());
+    m_popup->layout()->addWidget(new QPushButton());
+    m_popup->layout()->addWidget(new QPushButton());
+    m_popup->layout()->addWidget(new QPushButton());
     setPopup(m_popup);
 
     QObject::connect(titleBar->floatAction(), &QAction::triggered, this, [this](){

@@ -35,6 +35,7 @@ private:
     void updateWidgetPositions();
     void updateColourFromWidgets();
     void updateWidgets();
+    void updateColourSpace();
 
     Ui::ColourSpacePlaneWidget *ui;
     ColourComponentsPlaneWidget *plane;
@@ -46,6 +47,7 @@ private:
 
     Colour m_colour;
     const Buffer *m_palette;
+    int xComponent, yComponent, zComponent;
 };
 
 } // namespace GfxPaint

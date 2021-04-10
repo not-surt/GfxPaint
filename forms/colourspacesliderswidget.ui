@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QLabel" name="colourSpaceLabel">
      <property name="text">
-      <string>&amp;Colour Space</string>
+      <string>Colour Space</string>
      </property>
      <property name="buddy">
       <cstring>colourSpaceComboBox</cstring>
@@ -25,43 +25,7 @@
     </widget>
    </item>
    <item row="0" column="1" colspan="2">
-    <widget class="QComboBox" name="colourSpaceComboBox">
-     <item>
-      <property name="text">
-       <string>RGB</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>sRGB</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>XYZ</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>xyY</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>HSV</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>HSL</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>HCY</string>
-      </property>
-     </item>
-    </widget>
+    <widget class="QComboBox" name="colourSpaceComboBox"/>
    </item>
    <item row="0" column="3">
     <widget class="QCheckBox" name="alphaCheckBox">

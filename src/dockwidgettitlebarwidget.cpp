@@ -20,11 +20,11 @@ DockWidgetTitlebarWidget::DockWidgetTitlebarWidget(QWidget *const parent) :
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    m_menuAction->setIcon(style->standardIcon(QStyle::SP_TitleBarMenuButton));
+    m_menuAction->setIcon(style->standardIcon(QStyle::SP_FileDialogDetailedView));
     QToolButton *const menuToolButton = new QToolButton();
     menuToolButton->setDefaultAction(m_menuAction);
     menuToolButton->setPopupMode(QToolButton::InstantPopup);
-    menuToolButton->setArrowType(Qt::ArrowType::NoArrow);
+//    menuToolButton->setArrowType(Qt::ArrowType::NoArrow);
     menuToolButton->setAutoRaise(true);
     layout->addWidget(menuToolButton);
     QObject::connect(m_popupAction, &QAction::changed, this, [this, menuToolButton](){
@@ -32,10 +32,12 @@ DockWidgetTitlebarWidget::DockWidgetTitlebarWidget(QWidget *const parent) :
     });
 
     m_popupAction->setDefaultWidget(new QWidget(this));
+    m_popupAction->setIcon(style->standardIcon(QStyle::SP_FileDialogListView));
     QToolButton *const popupToolButton = new QToolButton();
+    popupToolButton->setDefaultAction(m_popupAction);
     popupToolButton->addAction(m_popupAction);
     popupToolButton->setPopupMode(QToolButton::InstantPopup);
-    popupToolButton->setArrowType(Qt::ArrowType::DownArrow);
+//    popupToolButton->setArrowType(Qt::ArrowType::DownArrow);
     popupToolButton->setAutoRaise(true);
     layout->addWidget(popupToolButton);
     QObject::connect(m_popupAction, &QAction::changed, this, [this, popupToolButton](){

@@ -33,6 +33,7 @@ private:
     void updateSliderPositions();
     void updateColourFromSliders();
     void updateWidgets();
+    void updateColourSpace();
 
     Ui::ColourSpaceSlidersWidget *ui;
 

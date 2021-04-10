@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>369</width>
+    <width>383</width>
     <height>116</height>
    </rect>
   </property>
@@ -24,46 +24,7 @@
      </property>
     </widget>
    </item>
-   <item row="0" column="1" colspan="2">
-    <widget class="QComboBox" name="colourSpaceComboBox">
-     <item>
-      <property name="text">
-       <string>RGB</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>sRGB</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>XYZ</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>xyY</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>HSV</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>HSL</string>
-      </property>
-     </item>
-     <item>
-      <property name="text">
-       <string>HCY</string>
-      </property>
-     </item>
-    </widget>
-   </item>
-   <item row="3" column="0" colspan="5">
+   <item row="2" column="0" colspan="5">
     <layout class="QVBoxLayout" name="colourSpacePlaneLayout"/>
    </item>
    <item row="0" column="4">
@@ -72,9 +33,6 @@
       <string>Quantise</string>
      </property>
     </widget>
-   </item>
-   <item row="1" column="1">
-    <widget class="QComboBox" name="xComponentComboBox"/>
    </item>
    <item row="0" column="3">
     <widget class="QCheckBox" name="alphaCheckBox">
@@ -87,40 +45,20 @@
     </widget>
    </item>
    <item row="1" column="0">
-    <widget class="QLabel" name="xComponentLabel">
+    <widget class="QLabel" name="xYComponentsLabel">
      <property name="text">
-      <string>X Component</string>
+      <string>XY Components</string>
      </property>
      <property name="buddy">
-      <cstring>xComponentComboBox</cstring>
+      <cstring>xYComponentsComboBox</cstring>
      </property>
     </widget>
    </item>
-   <item row="1" column="3">
-    <widget class="QLabel" name="yComponentLabel">
-     <property name="text">
-      <string>Y Component</string>
-     </property>
-     <property name="buddy">
-      <cstring>yComponentComboBox</cstring>
-     </property>
-    </widget>
+   <item row="0" column="1">
+    <widget class="QComboBox" name="colourSpaceComboBox"/>
    </item>
-   <item row="1" column="4">
-    <widget class="QComboBox" name="yComponentComboBox"/>
-   </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="zComponentLabel">
-     <property name="text">
-      <string>Z Component</string>
-     </property>
-     <property name="buddy">
-      <cstring>zComponentComboBox</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
-    <widget class="QComboBox" name="zComponentComboBox"/>
+   <item row="1" column="1" colspan="4">
+    <widget class="QComboBox" name="xYComponentsComboBox"/>
    </item>
   </layout>
  </widget>
