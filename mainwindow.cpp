@@ -492,6 +492,7 @@ bool MainWindow::closeDocuments(const QList<Scene *> &documents)
         allClosed = allClosed && closeDocument(document);
     }
     return allClosed;
+//    return std::all_of(std::begin(documents), std::end(documents), std::bind(&MainWindow::closeDocument, this, documents));
 }
 
 void MainWindow::addEditor(Editor *const editor)

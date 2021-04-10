@@ -4,11 +4,11 @@
 #
 #-------------------------------------------------
 
-QT += core gui widgets
+QT       += core gui widgets
 greaterThan(QT_MAJOR_VERSION, 5) {
-    QT += openglwidgets
+    QT   += openglwidgets
 }
-#QT += gamepad
+#QT       += gamepad
 
 TARGET = GfxPaint
 TEMPLATE = app
@@ -45,7 +45,6 @@ SOURCES +=\
     rendermanager.cpp \
     scene.cpp \
     sessionmanager.cpp \
-    colourspaceplanesettingswidget.cpp \
     strokeeditorwidget.cpp \
     transformeditorwidget.cpp \
     transformmodel.cpp \
@@ -66,7 +65,7 @@ SOURCES +=\
     colourpalettewidget.cpp \
     paletteeditorwidget.cpp
 
-HEADERS += \
+HEADERS  += \
     application.h \
     brush.h \
     brushviewwidget.h \
@@ -88,7 +87,6 @@ HEADERS += \
     rendermanager.h \
     scene.h \
     sessionmanager.h \
-    colourspaceplanesettingswidget.h \
     strokeeditorwidget.h \
     transformeditorwidget.h \
     transformmodel.h \
@@ -109,11 +107,10 @@ HEADERS += \
     colourpalettewidget.h \
     paletteeditorwidget.h
 
-FORMS += \
+FORMS    += \
     colourspaceplanewidget.ui \
     mainwindow.ui \
     dabeditorwidget.ui \
-    colourspaceplanesettingswidget.ui \
     strokeeditorwidget.ui \
     transformeditorwidget.ui \
     sessioneditorwidget.ui \
