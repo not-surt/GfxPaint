@@ -1,25 +1,26 @@
-#ifndef COLOURSPACEPLANEWIDGET_H
-#define COLOURSPACEPLANEWIDGET_H
+#ifndef COLOURPLANEWIDGET_H
+#define COLOURPLANEWIDGET_H
 
 #include <QWidget>
 
-#include "colourcomponentsliderwidget.h"
+#include "types.h"
+#include "buffer.h"
 
 namespace GfxPaint {
 
 namespace Ui {
-class ColourSpacePlaneWidget;
+class ColourPlaneWidget;
 }
 class ColourComponentsPlaneWidget;
-class ColourComponentSliderWidget;
+class ColourConversionProgram;
 
-class ColourSpacePlaneWidget : public QWidget
+class ColourPlaneWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit ColourSpacePlaneWidget(QWidget *parent = nullptr);
-    ~ColourSpacePlaneWidget();
+    explicit ColourPlaneWidget(QWidget *parent = nullptr);
+    ~ColourPlaneWidget();
 
     Colour colour() const;
 
@@ -37,10 +38,10 @@ private:
     void updateWidgets();
     void updateColourSpace();
 
-    Ui::ColourSpacePlaneWidget *ui;
+    Ui::ColourPlaneWidget *ui;
     ColourComponentsPlaneWidget *plane;
-    ColourComponentSliderWidget *zComponentSlider;
-    ColourComponentSliderWidget *alphaSlider;
+    ColourComponentsPlaneWidget *zComponentSlider;
+    ColourComponentsPlaneWidget *alphaSlider;
 
     ColourConversionProgram *fromRGBConversionProgram;
     ColourConversionProgram *toRGBConversionProgram;
@@ -52,4 +53,4 @@ private:
 
 } // namespace GfxPaint
 
-#endif // COLOURSPACEPLANEWIDGET_H
+#endif // COLOURPLANEWIDGET_H

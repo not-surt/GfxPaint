@@ -587,14 +587,14 @@ void MainWindow::activateEditor(Editor *const editor)
         });
         activeEditorConnections << QObject::connect(activeEditor, &Editor::brushChanged, ui->brushViewWidget, &BrushViewWidget::setBrush);
 
-        activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::setColour);
-        activeEditorConnections << QObject::connect(ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::colourChanged, activeEditor, &Editor::setColour);
-        activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->colourSpacePlaneWidget, &ColourSpacePlaneWidget::setColour);
-        activeEditorConnections << QObject::connect(ui->colourSpacePlaneWidget, &ColourSpacePlaneWidget::colourChanged, activeEditor, &Editor::setColour);
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->colourSpaceSlidersWidget, &ColourSlidersWidget::setColour);
+        activeEditorConnections << QObject::connect(ui->colourSpaceSlidersWidget, &ColourSlidersWidget::colourChanged, activeEditor, &Editor::setColour);
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->colourSpacePlaneWidget, &ColourPlaneWidget::setColour);
+        activeEditorConnections << QObject::connect(ui->colourSpacePlaneWidget, &ColourPlaneWidget::colourChanged, activeEditor, &Editor::setColour);
         activeEditorConnections << QObject::connect(ui->paletteEditorWidget, &PaletteEditorWidget::colourPicked, activeEditor, &Editor::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->brushViewWidget, &BrushViewWidget::setColour);
-        activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::setPalette);
-        activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->colourSpacePlaneWidget, &ColourSpacePlaneWidget::setPalette);
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->colourSpaceSlidersWidget, &ColourSlidersWidget::setPalette);
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->colourSpacePlaneWidget, &ColourPlaneWidget::setPalette);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->paletteEditorWidget, &PaletteEditorWidget::setPalette);
 
         ui->sceneTreeWidget->setEnabled(true);

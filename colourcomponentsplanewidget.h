@@ -16,8 +16,8 @@ public:
     explicit ColourComponentsPlaneWidget(QWidget *const parent = nullptr);
     virtual ~ColourComponentsPlaneWidget() override;
 
-    virtual QSize sizeHint() const override { return QSize(128, 128); }
-    virtual QSize minimumSizeHint() const override { return QSize(64, 64); }
+    virtual QSize sizeHint() const override { return QSize(xComponent >= 0 ? 128 : 32, yComponent >= 0 ? 128 : 32); }
+    virtual QSize minimumSizeHint() const override { return QSize(xComponent >= 0 ? 64 : 16, yComponent >= 0 ? 64 : 16); }
 
     const Colour &colour() const { return m_colour; }
     const QVector2D &pos() const { return m_pos; }

@@ -1,14 +1,15 @@
-#include "colourspacesliderswidget.h"
-#include "ui_colourspacesliderswidget.h"
+#include "coloursliderswidget.h"
+#include "ui_coloursliderswidget.h"
 
+#include "colourcomponentsplanewidget.h"
 #include "application.h"
 #include "utils.h"
 
 namespace GfxPaint {
 
-ColourSpaceSlidersWidget::ColourSpaceSlidersWidget(QWidget *parent) :
+ColourSlidersWidget::ColourSlidersWidget(QWidget *parent) :
     QWidget(parent),
-    ui(new Ui::ColourSpaceSlidersWidget),
+    ui(new Ui::ColourSlidersWidget),
     fromRGBConversionProgram(nullptr), toRGBConversionProgram(nullptr),
     m_colour{},
     m_palette(nullptr)
@@ -25,15 +26,15 @@ ColourSpaceSlidersWidget::ColourSpaceSlidersWidget(QWidget *parent) :
     ui->colourSpaceComboBox->setCurrentIndex(0);
     ui->colourSpaceComboBox->blockSignals(false);
 
-    QObject::connect(ui->colourSpaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ColourSpaceSlidersWidget::updateColourSpace);
-    QObject::connect(ui->alphaCheckBox, &QCheckBox::toggled, this, &ColourSpaceSlidersWidget::updateWidgets);
-    QObject::connect(ui->quantiseCheckBox, &QCheckBox::toggled, this, &ColourSpaceSlidersWidget::updateWidgets);
+    QObject::connect(ui->colourSpaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ColourSlidersWidget::updateColourSpace);
+    QObject::connect(ui->alphaCheckBox, &QCheckBox::toggled, this, &ColourSlidersWidget::updateWidgets);
+    QObject::connect(ui->quantiseCheckBox, &QCheckBox::toggled, this, &ColourSlidersWidget::updateWidgets);
 
     setColour(m_colour);
     updateColourSpace();
 }
 
-ColourSpaceSlidersWidget::~ColourSpaceSlidersWidget()
+ColourSlidersWidget::~ColourSlidersWidget()
 {
     delete ui;
 
@@ -44,12 +45,12 @@ ColourSpaceSlidersWidget::~ColourSpaceSlidersWidget()
     }
 }
 
-Colour ColourSpaceSlidersWidget::colour() const
+Colour ColourSlidersWidget::colour() const
 {
     return m_colour;
 }
 
-void ColourSpaceSlidersWidget::setColour(const Colour &colour)
+void ColourSlidersWidget::setColour(const Colour &colour)
 {
     if (m_colour != colour) {
         m_colour = colour;
@@ -59,7 +60,7 @@ void ColourSpaceSlidersWidget::setColour(const Colour &colour)
     }
 }
 
-void ColourSpaceSlidersWidget::setPalette(const Buffer *const palette)
+void ColourSlidersWidget::setPalette(const Buffer *const palette)
 {
     if (m_palette != palette) {
         m_palette = palette;
@@ -67,47 +68,47 @@ void ColourSpaceSlidersWidget::setPalette(const Buffer *const palette)
     }
 }
 
-void ColourSpaceSlidersWidget::updateSliderColours()
+void ColourSlidersWidget::updateSliderColours()
 {
     const ColourSpace &colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
 
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
     for (int i = 0; i < componentCount; ++i) {
-        ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
+        ColourComponentsPlaneWidget *const colourSlider = static_cast<ColourComponentsPlaneWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
         colourSlider->blockSignals(true);
         colourSlider->setColour(m_colour);
         colourSlider->blockSignals(false);
     }
 }
 
-void ColourSpaceSlidersWidget::updateSliderPositions()
+void ColourSlidersWidget::updateSliderPositions()
 {
     const ColourSpace &colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
 
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
     Colour spaceColour = colourSpace != ColourSpace::RGB ? fromRGBConversionProgram->convert(m_colour) : m_colour;
     for (int i = 0; i < componentCount; ++i) {
-        ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
+        ColourComponentsPlaneWidget *const colourSlider = static_cast<ColourComponentsPlaneWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
         colourSlider->blockSignals(true);
-        colourSlider->setPos(clamp(0.0f, 1.0f, spaceColour.rgba[i]));
+        colourSlider->setPos(QVector2D(clamp(0.0f, 1.0f, spaceColour.rgba[i]), 0.0f));
         colourSlider->blockSignals(false);
     }
 }
 
-void ColourSpaceSlidersWidget::updateColourFromSliders()
+void ColourSlidersWidget::updateColourFromSliders()
 {
     const ColourSpace &colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
 
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
     Colour spaceColour = m_colour;
     for (int i = 0; i < componentCount; ++i) {
-        ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
-        spaceColour.rgba[i] = clamp(0.0, 1.0, colourSlider->pos());
+        ColourComponentsPlaneWidget *const colourSlider = static_cast<ColourComponentsPlaneWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
+        spaceColour.rgba[i] = clamp(0.0f, 1.0f, colourSlider->pos().x());
     }
     m_colour = colourSpace != ColourSpace::RGB ? toRGBConversionProgram->convert(spaceColour) : spaceColour;
 }
 
-void ColourSpaceSlidersWidget::updateWidgets()
+void ColourSlidersWidget::updateWidgets()
 {
     const ColourSpace &colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
 
@@ -116,10 +117,10 @@ void ColourSpaceSlidersWidget::updateWidgets()
     }
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
     for (int i = 0; i < componentCount; ++i) {
-        ColourComponentSliderWidget *const colourSlider = new ColourComponentSliderWidget(colourSpace, i, ui->quantiseCheckBox->isChecked() && m_palette, m_palette ? m_palette->format() : Buffer::Format());
+        ColourComponentsPlaneWidget *const colourSlider = new ColourComponentsPlaneWidget(colourSpace, i, -1, ui->quantiseCheckBox->isChecked() && m_palette, m_palette ? m_palette->format() : Buffer::Format());
         ui->colourSliderLayout->addWidget(colourSlider);
         colourSlider->setPalette(m_palette);
-        QObject::connect(colourSlider, &ColourComponentSliderWidget::posChanged, [this](){
+        QObject::connect(colourSlider, &ColourComponentsPlaneWidget::posChanged, [this](){
             updateColourFromSliders();
             updateSliderColours();
             emit colourChanged(m_colour);
@@ -129,7 +130,7 @@ void ColourSpaceSlidersWidget::updateWidgets()
     updateSliderColours();
 }
 
-void ColourSpaceSlidersWidget::updateColourSpace()
+void ColourSlidersWidget::updateColourSpace()
 {
     const ColourSpace &colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
 

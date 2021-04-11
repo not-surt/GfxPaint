@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>GfxPaint::ColourSpacePlaneWidget</class>
- <widget class="QWidget" name="GfxPaint::ColourSpacePlaneWidget">
+ <class>GfxPaint::ColourPlaneWidget</class>
+ <widget class="QWidget" name="GfxPaint::ColourPlaneWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -25,7 +25,7 @@
     </widget>
    </item>
    <item row="2" column="0" colspan="5">
-    <layout class="QVBoxLayout" name="colourSpacePlaneLayout"/>
+    <layout class="QVBoxLayout" name="colourPlaneLayout"/>
    </item>
    <item row="0" column="4">
     <widget class="QCheckBox" name="quantiseCheckBox">

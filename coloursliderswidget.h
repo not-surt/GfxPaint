@@ -1,23 +1,25 @@
-#ifndef COLOURSPACESLIDERSWIDGET_H
-#define COLOURSPACESLIDERSWIDGET_H
+#ifndef COLOURSLIDERSWIDGET_H
+#define COLOURSLIDERSWIDGET_H
 
 #include <QWidget>
 
-#include "colourcomponentsliderwidget.h"
+#include "types.h"
+#include "buffer.h"
 
 namespace GfxPaint {
 
 namespace Ui {
-class ColourSpaceSlidersWidget;
+class ColourSlidersWidget;
 }
+class ColourConversionProgram;
 
-class ColourSpaceSlidersWidget : public QWidget
+class ColourSlidersWidget : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit ColourSpaceSlidersWidget(QWidget *parent = nullptr);
-    ~ColourSpaceSlidersWidget();
+    explicit ColourSlidersWidget(QWidget *parent = nullptr);
+    ~ColourSlidersWidget();
 
     Colour colour() const;
 
@@ -35,7 +37,7 @@ private:
     void updateWidgets();
     void updateColourSpace();
 
-    Ui::ColourSpaceSlidersWidget *ui;
+    Ui::ColourSlidersWidget *ui;
 
     ColourConversionProgram *fromRGBConversionProgram;
     ColourConversionProgram *toRGBConversionProgram;
@@ -46,4 +48,4 @@ private:
 
 } // namespace GfxPaint
 
-#endif // COLOURSPACESLIDERSWIDGET_H
+#endif // COLOURSLIDERSWIDGET_H

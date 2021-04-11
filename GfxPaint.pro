@@ -29,7 +29,8 @@ SOURCES +=\
     brushviewwidget.cpp \
     buffer.cpp \
     colourcomponentsplanewidget.cpp \
-    colourspaceplanewidget.cpp \
+    colourplanewidget.cpp \
+    coloursliderswidget.cpp \
     dabeditorwidget.cpp \
     dockwidget.cpp \
     dockwidgettitlebarwidget.cpp \
@@ -56,9 +57,7 @@ SOURCES +=\
     newbufferdialog.cpp \
     scenemodel.cpp \
     scenetreewidget.cpp \
-    colourspacesliderswidget.cpp \
     model.cpp \
-    colourcomponentsliderwidget.cpp \
     nodeeditorwidget.cpp \
     tool.cpp \
     stroke.cpp \
@@ -71,7 +70,8 @@ HEADERS  += \
     brushviewwidget.h \
     buffer.h \
     colourcomponentsplanewidget.h \
-    colourspaceplanewidget.h \
+    colourplanewidget.h \
+    coloursliderswidget.h \
     dabeditorwidget.h \
     dockwidget.h \
     dockwidgettitlebarwidget.h \
@@ -98,9 +98,7 @@ HEADERS  += \
     newbufferdialog.h \
     scenemodel.h \
     scenetreewidget.h \
-    colourspacesliderswidget.h \
     model.h \
-    colourcomponentsliderwidget.h \
     nodeeditorwidget.h \
     tool.h \
     stroke.h \
@@ -108,7 +106,8 @@ HEADERS  += \
     paletteeditorwidget.h
 
 FORMS    += \
-    colourspaceplanewidget.ui \
+    colourplanewidget.ui \
+    coloursliderswidget.ui \
     mainwindow.ui \
     dabeditorwidget.ui \
     strokeeditorwidget.ui \
@@ -116,7 +115,6 @@ FORMS    += \
     sessioneditorwidget.ui \
     newbufferdialog.ui \
     scenetreewidget.ui \
-    colourspacesliderswidget.ui \
     nodeeditorwidget.ui \
     paletteeditorwidget.ui
 
