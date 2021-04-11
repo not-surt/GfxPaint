@@ -7,8 +7,8 @@ namespace GfxPaint {
 ColourPaletteWidget::ColourPaletteWidget(QWidget *const parent) :
     RenderedWidget(parent),
     swatchSize(16, 16), columns(16),
-    program(nullptr),
-    m_palette(nullptr)
+    program(nullptr), pickProgram(nullptr), selectionProgram(nullptr),
+    m_palette(nullptr), m_selection(nullptr)
 {
 }
 
@@ -16,40 +16,62 @@ ColourPaletteWidget::~ColourPaletteWidget()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     delete program;
+    delete pickProgram;
+    delete selectionProgram;
+    delete m_selection;
 }
 
 void ColourPaletteWidget::setPalette(const Buffer *const palette)
 {
     m_palette = palette;
-    resizeGL(width(), height());
+    QList<Program *> oldPrograms = {program, selectionProgram, pickProgram};
+    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+    if (m_palette) {
+        delete m_selection;
+        m_selection = new Buffer(m_palette->size(), BufferData::Format(BufferData::Format::ComponentType::UInt, 1, 1));
+        m_selection->clearUInt();
+        program = new ColourPaletteProgram(RenderedWidget::format, 0, m_palette->format());
+        selectionProgram = new ColourPaletteProgram(RenderedWidget::format, 0, m_selection->format());
+        pickProgram = new ColourPalettePickProgram(m_palette->format());
+    }
+    else {
+        program = nullptr;
+        selectionProgram = nullptr;
+        pickProgram = nullptr;
+    }
+    qDeleteAll(oldPrograms);
+    update();
 }
 
 void ColourPaletteWidget::mouseEvent(QMouseEvent *event)
 {
     if (event->buttons() & Qt::LeftButton) {
-//        m_pos = clamp(0.0, 1.0, static_cast<qreal>(event->pos().x()) / static_cast<qreal>(width() - 1));
-//        emit posChanged(m_pos);
-//        setColour(pickProgram->pick(m_colour, m_pos, m_palette));
-        event->accept();
+        if (m_palette) {
+            const QVector2D pos = QVector2D((float)clamp(0, width(), event->pos().x()), (float)clamp(0, height(), event->pos().y()));
+            Colour colour = pickProgram->pick(m_palette, size(), swatchSize, cells(), pos);
+            // TODO: painting with valid index screwy
+            colour.index = INDEX_INVALID;///////////////////////////////////////////////////
+            emit colourPicked(colour);
+            event->accept();
+            return;
+        }
     }
-    else event->ignore();
+
+    event->ignore();
 }
 
-void ColourPaletteWidget::resizeGL(int w, int h)
+void ColourPaletteWidget::initializeGL()
 {
-    RenderedWidget::resizeGL(w, h);
+    RenderedWidget::initializeGL();
 
-    QList<Program *> oldPrograms = {program};
-    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    program = new ColourPaletteProgram(widgetBuffer->format(), 0, m_palette ? m_palette->format() : Buffer::Format());
-    qDeleteAll(oldPrograms);
+    setPalette(m_palette);
 }
 
 void ColourPaletteWidget::render()
 {
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
-    program->render(m_palette, size(), swatchSize, QSize(16, 16), RenderManager::unitToClipTransform, widgetBuffer);
+    if (m_palette) {
+        program->render(m_palette, size(), swatchSize, cells(), RenderManager::unitToClipTransform, widgetBuffer);
+    }
 }
 
 } // namespace GfxPaint

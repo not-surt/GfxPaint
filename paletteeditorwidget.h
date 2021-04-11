@@ -4,6 +4,7 @@
 #include <QWidget>
 
 #include "buffer.h"
+#include "types.h"
 
 namespace GfxPaint {
 
@@ -21,6 +22,9 @@ public:
 
 public slots:
     void setPalette(const GfxPaint::Buffer *const palette);
+
+signals:
+    void colourPicked(const Colour &colour);
 
 private:
     Ui::PaletteEditorWidget *ui;

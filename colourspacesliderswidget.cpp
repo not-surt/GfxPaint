@@ -85,7 +85,7 @@ void ColourSpaceSlidersWidget::updateSliderPositions()
     const ColourSpace &colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
 
     const int componentCount = colourSpaceInfo[colourSpace].componentCount + (ui->alphaCheckBox->isChecked() ? 1 : 0);
-    Colour spaceColour = fromRGBConversionProgram->convert(m_colour);
+    Colour spaceColour = colourSpace != ColourSpace::RGB ? fromRGBConversionProgram->convert(m_colour) : m_colour;
     for (int i = 0; i < componentCount; ++i) {
         ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
         colourSlider->blockSignals(true);
@@ -104,7 +104,7 @@ void ColourSpaceSlidersWidget::updateColourFromSliders()
         ColourComponentSliderWidget *const colourSlider = static_cast<ColourComponentSliderWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
         spaceColour.rgba[i] = clamp(0.0, 1.0, colourSlider->pos());
     }
-    m_colour = toRGBConversionProgram->convert(spaceColour);
+    m_colour = colourSpace != ColourSpace::RGB ? toRGBConversionProgram->convert(spaceColour) : spaceColour;
 }
 
 void ColourSpaceSlidersWidget::updateWidgets()

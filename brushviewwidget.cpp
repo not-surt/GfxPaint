@@ -8,30 +8,37 @@ BrushViewWidget::BrushViewWidget(QWidget *const parent) :
     RenderedWidget(parent),
     brush(),
     colour{},
-    dabProgram(nullptr)
+    program(nullptr)
 {
 }
 
 BrushViewWidget::~BrushViewWidget()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    delete dabProgram;
+    delete program;
 }
 
 void BrushViewWidget::setBrush(const Brush &brush)
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    delete dabProgram;
-    dabProgram = nullptr;
+    QList<Program *> oldPrograms = {program};
+    program = new DabProgram(brush.dab.type, brush.dab.metric, RenderedWidget::format, false, Buffer::Format(), brush.dab.blendMode, brush.dab.composeMode);
+    qDeleteAll(oldPrograms);
 
     this->brush = brush;
     update();
 }
 
+void BrushViewWidget::initializeGL()
+{
+    RenderedWidget::initializeGL();
+
+    setBrush(brush);
+}
+
 void BrushViewWidget::render()
 {
-    if (!dabProgram) dabProgram = new DabProgram(brush.dab.type, brush.dab.metric, widgetBuffer->format(), false, Buffer::Format(), brush.dab.blendMode, brush.dab.composeMode);
-    dabProgram->render(brush.dab, colour, viewportTransform, widgetBuffer, nullptr);
+    program->render(brush.dab, colour, viewportTransform, widgetBuffer, nullptr);
 }
 
 } // namespace GfxPaint

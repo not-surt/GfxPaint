@@ -181,13 +181,15 @@ RenderManager::RenderManager() :
 
     ContextBinder contextBinder(&context, &surface);
 
-    logger.initialize();
+#ifdef QT_DEBUG
     QObject::connect(&logger, &QOpenGLDebugLogger::messageLogged, [](const QOpenGLDebugMessage & debugMessage) {
         qDebug() << "OpenGL:" << debugMessage.message();
     });
+    logger.initialize();
     logger.disableMessages(QOpenGLDebugMessage::AnySource, QOpenGLDebugMessage::AnyType, QOpenGLDebugMessage::NotificationSeverity);
     logger.disableMessages(QOpenGLDebugMessage::AnySource, QOpenGLDebugMessage::PerformanceType, QOpenGLDebugMessage::AnySeverity);
     logger.startLogging();
+#endif
 
     OpenGL::initializeOpenGLFunctions();
 

@@ -8,6 +8,8 @@ PaletteEditorWidget::PaletteEditorWidget(QWidget *parent) :
     ui(new Ui::PaletteEditorWidget)
 {
     ui->setupUi(this);
+
+    QObject::connect(ui->colourPaletteWidget, &ColourPaletteWidget::colourPicked, this, &PaletteEditorWidget::colourPicked);
 }
 
 PaletteEditorWidget::~PaletteEditorWidget()

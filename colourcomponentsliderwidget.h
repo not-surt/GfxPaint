@@ -34,7 +34,7 @@ protected:
     virtual void mousePressEvent(QMouseEvent *event) override { mouseEvent(event); }
     virtual void mouseReleaseEvent(QMouseEvent *event) override { mouseEvent(event); }
     virtual void mouseMoveEvent(QMouseEvent *event) override { mouseEvent(event); }
-    virtual void resizeGL(int w, int h) override;
+    virtual void initializeGL() override;
     virtual void render() override;
 
     void mouseEvent(QMouseEvent *event);

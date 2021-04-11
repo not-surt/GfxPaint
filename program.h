@@ -424,42 +424,6 @@ protected:
     UniformData uniformData;
 };
 
-class ColourPlanePickProgram : public ToolProgram {
-public:
-    ColourPlanePickProgram(const ColourSpace colourSpace, const bool useXAxis, const bool useYAxis, const bool quantise, const Buffer::Format quantisePaletteFormat) :
-        ToolProgram(),
-        colourSpace(colourSpace), useXAxis(useXAxis), useYAxis(useYAxis),
-        quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
-        uniformBuffer(0), uniformData()
-    {
-        updateKey(typeid(this), {static_cast<int>(colourSpace), useXAxis, useYAxis, quantise, static_cast<int>(quantisePaletteFormat.componentType), quantisePaletteFormat.componentSize, quantisePaletteFormat.componentCount});
-
-        glGenBuffers(1, &uniformBuffer);
-        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
-        glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
-    }
-    virtual ~ColourPlanePickProgram() override {
-        glDeleteBuffers(1, &uniformBuffer);
-    }
-
-    Colour pick(const Colour &colour, const QVector2D &pos, const Buffer *const quantisePalette);
-
-protected:
-    struct UniformData {
-        Colour colour alignas(16);
-    };
-
-    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
-
-    const ColourSpace colourSpace;
-    const bool useXAxis, useYAxis;
-    const bool quantise;
-    const Buffer::Format quantisePaletteFormat;
-
-    GLuint uniformBuffer;
-    UniformData uniformData;
-};
-
 class ColourPaletteProgram : public Program {
 public:
     ColourPaletteProgram(const Buffer::Format destFormat, const int blendMode, const Buffer::Format paletteFormat) :
@@ -471,7 +435,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
 
-    void render(const Buffer *const palette, const QSize size, const QSize swatchSize, const QSize cells, const QMatrix4x4 &transform, Buffer *const dest);
+    void render(const Buffer *const palette, const QSize &size, const QSize &swatchSize, const QSize &cells, const QMatrix4x4 &transform, Buffer *const dest);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -497,14 +461,11 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    Colour pick(const Buffer *const src, const QVector2D &pos, const QMatrix4x4 &transform);
+    Colour pick(const Buffer *const palette, const QSize &size, const QSize &swatchSize, const QSize &cells, const QVector2D &pos);
 
 protected:
     struct StorageData {
         Colour colour alignas(16);
-    };
-    struct UniformData {
-        mat4 matrix alignas(16);
     };
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -526,6 +487,10 @@ public:
     Colour convert(const Colour &colour);
 
 protected:
+    struct StorageData {
+        Colour colour alignas(16);
+    };
+
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 
     const ColourSpace from;
@@ -541,9 +506,13 @@ public:
         updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount, indexed, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
 
-    Colour pick(const Buffer *const dest, const Buffer *const destPalette, const QVector2D &pos);
+    Colour pick(const Buffer *const src, const Buffer *const srcPalette, const QVector2D &pos);
 
 protected:
+    struct StorageData {
+        Colour colour alignas(16);
+    };
+
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 
     const Buffer::Format format;

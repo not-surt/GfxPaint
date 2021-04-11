@@ -89,7 +89,7 @@ void ColourSpacePlaneWidget::updateWidgetPositions()
 {
     const ColourSpace &colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
 
-    Colour spaceColour = fromRGBConversionProgram->convert(m_colour);
+    Colour spaceColour = colourSpace != ColourSpace::RGB ? fromRGBConversionProgram->convert(m_colour) : m_colour;
     plane->blockSignals(true);
     plane->setPos(QVector2D(spaceColour.rgba[xComponent], spaceColour.rgba[yComponent]));
     plane->blockSignals(false);
@@ -116,7 +116,7 @@ void ColourSpacePlaneWidget::updateColourFromWidgets()
         int alphaComponent = colourSpaceInfo[colourSpace].componentCount;
         spaceColour.rgba[alphaComponent] = clamp(0.0f, 1.0f, (float)alphaSlider->pos());
     }
-    m_colour = toRGBConversionProgram->convert(spaceColour);
+    m_colour = colourSpace != ColourSpace::RGB ? toRGBConversionProgram->convert(spaceColour) : spaceColour;
 }
 
 void ColourSpacePlaneWidget::updateWidgets()

@@ -21,12 +21,17 @@ public:
 public slots:
     void setPalette(const GfxPaint::Buffer *const palette);
 
+signals:
+    void colourPicked(const Colour &colour);
+
 protected:
     virtual void mousePressEvent(QMouseEvent *event) override { mouseEvent(event); }
     virtual void mouseReleaseEvent(QMouseEvent *event) override { mouseEvent(event); }
     virtual void mouseMoveEvent(QMouseEvent *event) override { mouseEvent(event); }
-    virtual void resizeGL(int w, int h) override;
+    virtual void initializeGL() override;
     virtual void render() override;
+
+    QSize cells() { return m_palette ? QSize(columns, (m_palette->size().width() + columns - 1) / columns) : QSize(0, 0); }
 
     void mouseEvent(QMouseEvent *event);
 
@@ -34,8 +39,11 @@ protected:
     int columns;
 
     ColourPaletteProgram *program;
+    ColourPalettePickProgram *pickProgram;
+    ColourPaletteProgram *selectionProgram;
 
     const Buffer *m_palette;
+    Buffer *m_selection;
 };
 
 } // namespace GfxPaint

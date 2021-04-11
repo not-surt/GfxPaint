@@ -29,12 +29,13 @@ public slots:
     }
 
 protected:
+    virtual void initializeGL() override;
     virtual void render() override;
 
     Brush brush;
     Colour colour;
 
-    DabProgram *dabProgram;
+    DabProgram *program;
 };
 
 } // namespace GfxPaint

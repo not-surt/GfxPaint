@@ -12,7 +12,8 @@ namespace GfxPaint {
 
 Traversal::State::~State() {
     ContextBinder binder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    //delete palette;
+    // TODO: crash with delete here
+//    delete palette;
 }
 
 Scene::Scene(const QString &filename) :

@@ -36,17 +36,6 @@ void ColourComponentSliderWidget::mouseEvent(QMouseEvent *event)
     else event->ignore();
 }
 
-void ColourComponentSliderWidget::resizeGL(int w, int h)
-{
-    RenderedWidget::resizeGL(w, h);
-
-    QList<Program *> oldPrograms = {program, markerProgram};
-    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    program = new ColourPlaneProgram(colourSpace, true, false, widgetBuffer->format(), 0, quantise, quantisePaletteFormat);
-    markerProgram = new ModelProgram(widgetBuffer->format(), false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    qDeleteAll(oldPrograms);
-}
-
 void ColourComponentSliderWidget::setColour(const Colour &colour)
 {
     if (m_colour != colour) {
@@ -57,6 +46,10 @@ void ColourComponentSliderWidget::setColour(const Colour &colour)
 
 void ColourComponentSliderWidget::setPalette(const Buffer *const palette)
 {
+    QList<Program *> oldPrograms = {program};
+    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+    program = new ColourPlaneProgram(colourSpace, true, false, RenderedWidget::format, 0, quantise, quantisePaletteFormat);
+    qDeleteAll(oldPrograms);
     if (m_palette != palette) {
         m_palette = palette;
         if (quantise) update();
@@ -72,10 +65,21 @@ void ColourComponentSliderWidget::setPos(const qreal pos)
     }
 }
 
+void ColourComponentSliderWidget::initializeGL()
+{
+    RenderedWidget::initializeGL();
+
+    {
+        ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+        QList<Program *> oldPrograms = {markerProgram};
+        markerProgram = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        qDeleteAll(oldPrograms);
+    }
+    setPalette(m_palette);
+}
+
 void ColourComponentSliderWidget::render()
 {
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_BLEND);
     program->render(m_colour, component, -1, RenderManager::unitToClipTransform, widgetBuffer, m_palette);
     QMatrix4x4 markerTransform;
     markerTransform.translate(m_pos * 2.0f - 1.0f, 0.0f);

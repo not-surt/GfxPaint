@@ -45,6 +45,20 @@ void RenderedWidget::initializeGL()
 
     vao.create();
     vao.bind();
+
+    {
+        ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+
+        Program *old;
+
+        old = widgetProgram;
+        widgetProgram = new RenderedWidgetProgram(format, false, Buffer::Format());
+        delete old;
+
+        old = patternProgram;
+        patternProgram = new PatternProgram(Pattern::Checkers, format, 0);
+        delete old;
+    }
 }
 
 void RenderedWidget::resizeGL(int w, int h)
@@ -66,16 +80,6 @@ void RenderedWidget::resizeGL(int w, int h)
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
         delete widgetBuffer;
         widgetBuffer = new Buffer(QSize(w, h), format);
-
-        Program *old;
-
-        old = widgetProgram;
-        widgetProgram = new RenderedWidgetProgram(widgetBuffer->format(), false, Buffer::Format());
-        delete old;
-
-        old = patternProgram;
-        patternProgram = new PatternProgram(Pattern::Checkers, widgetBuffer->format(), 0);
-        delete old;
     }
 }
 

@@ -487,12 +487,12 @@ bool MainWindow::closeDocument(Scene *const document)
 
 bool MainWindow::closeDocuments(const QList<Scene *> &documents)
 {
-    bool allClosed = true;
-    for (auto document : documents) {
-        allClosed = allClosed && closeDocument(document);
-    }
-    return allClosed;
-//    return std::all_of(std::begin(documents), std::end(documents), std::bind(&MainWindow::closeDocument, this, documents));
+//    bool allClosed = true;
+//    for (auto document : documents) {
+//        allClosed = allClosed && closeDocument(document);
+//    }
+//    return allClosed;
+    return std::all_of(std::begin(documents), std::end(documents), [this](Scene *document){ return closeDocument(document); });
 }
 
 void MainWindow::addEditor(Editor *const editor)
@@ -591,6 +591,7 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::colourChanged, activeEditor, &Editor::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->colourSpacePlaneWidget, &ColourSpacePlaneWidget::setColour);
         activeEditorConnections << QObject::connect(ui->colourSpacePlaneWidget, &ColourSpacePlaneWidget::colourChanged, activeEditor, &Editor::setColour);
+        activeEditorConnections << QObject::connect(ui->paletteEditorWidget, &PaletteEditorWidget::colourPicked, activeEditor, &Editor::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::colourChanged, ui->brushViewWidget, &BrushViewWidget::setColour);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->colourSpaceSlidersWidget, &ColourSpaceSlidersWidget::setPalette);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::paletteChanged, ui->colourSpacePlaneWidget, &ColourSpacePlaneWidget::setPalette);
