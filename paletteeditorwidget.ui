@@ -6,16 +6,196 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
-    <height>300</height>
+    <width>403</width>
+    <height>167</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
-   <item>
-    <widget class="GfxPaint::ColourPaletteWidget" name="colourPaletteWidget" native="true"/>
+  <layout class="QGridLayout" name="gridLayout">
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item row="3" column="3">
+    <widget class="QComboBox" name="colourSpaceComponentComboBox"/>
+   </item>
+   <item row="0" column="3">
+    <widget class="QSpinBox" name="swatchSizeSpinBox">
+     <property name="suffix">
+      <string>px</string>
+     </property>
+     <property name="minimum">
+      <number>4</number>
+     </property>
+     <property name="maximum">
+      <number>256</number>
+     </property>
+     <property name="value">
+      <number>16</number>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>&amp;Column Count</string>
+     </property>
+     <property name="buddy">
+      <cstring>columnCountSpinBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="2" colspan="2">
+    <widget class="QCheckBox" name="reverseOrderCheckBox">
+     <property name="text">
+      <string>&amp;Reverse Order</string>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="1">
+    <widget class="QComboBox" name="colourSpaceComboBox"/>
+   </item>
+   <item row="4" column="0" colspan="4">
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="GfxPaint::ColourPaletteWidget" name="colourPaletteWidget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>401</width>
+        <height>38</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+   </item>
+   <item row="0" column="2">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>&amp;Swatch Size</string>
+     </property>
+     <property name="buddy">
+      <cstring>swatchSizeSpinBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="1">
+    <widget class="QSpinBox" name="columnCountSpinBox">
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>256</number>
+     </property>
+     <property name="value">
+      <number>16</number>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>&amp;Ordering</string>
+     </property>
+     <property name="buddy">
+      <cstring>orderingComboBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>&amp;Colour Space</string>
+     </property>
+     <property name="buddy">
+      <cstring>colourSpaceComboBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="2">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>&amp;Component</string>
+     </property>
+     <property name="buddy">
+      <cstring>colourSpaceComponentComboBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="2" column="1">
+    <widget class="QComboBox" name="orderingComboBox">
+     <item>
+      <property name="text">
+       <string>Indices</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Frequency</string>
+      </property>
+     </item>
+     <item>
+      <property name="text">
+       <string>Colour Component</string>
+      </property>
+     </item>
+    </widget>
+   </item>
+   <item row="1" column="1">
+    <widget class="QRadioButton" name="radioButton">
+     <property name="text">
+      <string>&amp;Fixed size</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
+     <attribute name="buttonGroup">
+      <string notr="true">fittingButtonGroup</string>
+     </attribute>
+    </widget>
+   </item>
+   <item row="1" column="2">
+    <widget class="QRadioButton" name="radioButton_2">
+     <property name="text">
+      <string>&amp;Fit columns</string>
+     </property>
+     <attribute name="buttonGroup">
+      <string notr="true">fittingButtonGroup</string>
+     </attribute>
+    </widget>
+   </item>
+   <item row="1" column="3">
+    <widget class="QRadioButton" name="radioButton_3">
+     <property name="text">
+      <string>&amp;Fit swatches</string>
+     </property>
+     <attribute name="buttonGroup">
+      <string notr="true">fittingButtonGroup</string>
+     </attribute>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string>&amp;Fitting</string>
+     </property>
+     <property name="buddy">
+      <cstring>radioButton</cstring>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>
@@ -27,6 +207,21 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
+ <tabstops>
+  <tabstop>columnCountSpinBox</tabstop>
+  <tabstop>swatchSizeSpinBox</tabstop>
+  <tabstop>radioButton</tabstop>
+  <tabstop>radioButton_2</tabstop>
+  <tabstop>radioButton_3</tabstop>
+  <tabstop>orderingComboBox</tabstop>
+  <tabstop>reverseOrderCheckBox</tabstop>
+  <tabstop>colourSpaceComboBox</tabstop>
+  <tabstop>colourSpaceComponentComboBox</tabstop>
+  <tabstop>scrollArea</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
+ <buttongroups>
+  <buttongroup name="fittingButtonGroup"/>
+ </buttongroups>
 </ui>

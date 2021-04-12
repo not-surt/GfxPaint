@@ -13,18 +13,18 @@ NewBufferDialog::NewBufferDialog(QWidget *parent, Qt::WindowFlags flags) :
 {
     ui->setupUi(this);
 
-    QObject::connect(ui->componentTypeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, [this](const int index){
+    QObject::connect(ui->componentTypeComboBox, qOverload<int>(&QComboBox::activated), this, [this](const int index){
         const Buffer::Format::ComponentType componentType = static_cast<Buffer::Format::ComponentType>(index);
         ui->componentSizeComboBox->clear();
         for (int i = 1; i <= 4; ++i) {
-            if (BufferData::Format::components[componentType].sizes.contains(i)) {
+            if (BufferData::Format::components.at(componentType).sizes.contains(i)) {
                 ui->componentSizeComboBox->addItem(QString::number(i * 8) + " bpc", i);
             }
         }
     });
 
-    for (auto key : BufferData::Format::componentTypeNames.keys()) {
-        if (key != BufferData::Format::ComponentType::Invalid) ui->componentTypeComboBox->addItem(BufferData::Format::componentTypeNames[key], static_cast<int>(key));
+    for (auto &[key, data] : BufferData::Format::componentTypeNames) {
+        if (key != BufferData::Format::ComponentType::Invalid) ui->componentTypeComboBox->addItem(BufferData::Format::componentTypeName(key), static_cast<int>(key));
     }
 
     for (int i = 1; i <= 4; ++i) {

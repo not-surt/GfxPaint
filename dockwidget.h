@@ -5,6 +5,8 @@
 
 #include "dockwidgettitlebarwidget.h"
 
+class QMenu;
+
 namespace GfxPaint {
 
 class DockWidget : public QDockWidget
@@ -13,16 +15,8 @@ class DockWidget : public QDockWidget
 public:
     DockWidget(QWidget *const parent = nullptr, const Qt::WindowFlags &flags = Qt::WindowFlags());
 
-    void setMenu(QMenu *const menu) {
-        m_menu = menu;
-        titleBar->menuAction()->setMenu(m_menu);
-        titleBar->menuAction()->setEnabled(m_menu != nullptr);
-    }
-    void setPopup(QWidget *const popup) {
-        m_popup = popup;
-        titleBar->popupAction()->setDefaultWidget(m_popup);
-        titleBar->popupAction()->setEnabled(m_menu != nullptr);
-    }
+    void setMenu(QMenu *const menu);
+    void setPopup(QWidget *const popup);
 protected:
     DockWidgetTitlebarWidget *titleBar;
     QMenu *m_menu;

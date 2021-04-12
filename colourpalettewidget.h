@@ -12,14 +12,24 @@ class ColourPaletteWidget : public GfxPaint::RenderedWidget
     Q_OBJECT
 
 public:
+    enum class FittingMode {
+        FixedSize,
+        AdaptColumnCount,
+        AdaptSwatchSize,
+    };
+    static const QMap<FittingMode, QString> fittingModes;
+
     explicit ColourPaletteWidget(QWidget *const parent = nullptr);
     virtual ~ColourPaletteWidget() override;
 
-    virtual QSize sizeHint() const override { return QSize(128, 128); }
+    virtual QSize sizeHint() const override;
     virtual QSize minimumSizeHint() const override { return QSize(64, 64); }
 
 public slots:
     void setPalette(const GfxPaint::Buffer *const palette);
+    void setFittingMode(const FittingMode fittingMode);
+    void setColumnCount(const int columns);
+    void setSwatchSize(const QSize &size);
 
 signals:
     void colourPicked(const Colour &colour);
@@ -31,12 +41,13 @@ protected:
     virtual void initializeGL() override;
     virtual void render() override;
 
-    QSize cells() { return m_palette ? QSize(columns, (m_palette->size().width() + columns - 1) / columns) : QSize(0, 0); }
+    QSize cells() { return m_palette ? QSize(m_columnCount, (m_palette->size().width() + m_columnCount - 1) / m_columnCount) : QSize(0, 0); }
 
     void mouseEvent(QMouseEvent *event);
 
-    QSize swatchSize;
-    int columns;
+    FittingMode m_fittingMode;
+    QSize m_swatchSize;
+    int m_columnCount;
 
     ColourPaletteProgram *program;
     ColourPalettePickProgram *pickProgram;
@@ -44,6 +55,7 @@ protected:
 
     const Buffer *m_palette;
     Buffer *m_selection;
+    Buffer *m_ordering;
 };
 
 } // namespace GfxPaint

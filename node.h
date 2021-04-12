@@ -137,7 +137,7 @@ public:
 protected:
     QString formatString() const {
         QString str;
-        str += BufferData::Format::componentTypeNames[buffer.format().componentType];
+        str += buffer.format().componentTypeName();
         str += ":" + QString::number(buffer.format().componentSize * 8) + "bpc";
         str += ":" + QString::number(buffer.format().componentCount);
         return str;

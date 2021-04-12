@@ -27,8 +27,8 @@ ColourPlaneWidget::ColourPlaneWidget(QWidget *parent) :
     ui->colourSpaceComboBox->setCurrentIndex(0);
     ui->colourSpaceComboBox->blockSignals(false);
 
-    QObject::connect(ui->colourSpaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ColourPlaneWidget::updateColourSpace);
-    QObject::connect(ui->xYComponentsComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &ColourPlaneWidget::updateWidgets);
+    QObject::connect(ui->colourSpaceComboBox, qOverload<int>(&QComboBox::activated), this, &ColourPlaneWidget::updateColourSpace);
+    QObject::connect(ui->xYComponentsComboBox, qOverload<int>(&QComboBox::activated), this, &ColourPlaneWidget::updateWidgets);
     QObject::connect(ui->alphaCheckBox, &QCheckBox::toggled, this, &ColourPlaneWidget::updateWidgets);
     QObject::connect(ui->quantiseCheckBox, &QCheckBox::toggled, this, &ColourPlaneWidget::updateWidgets);
 

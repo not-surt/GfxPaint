@@ -5,6 +5,9 @@
 #include <QSharedData>
 #include <QSharedDataPointer>
 #include <QDebug>
+#include <frozen/map.h>
+#include <frozen/unordered_map.h>
+#include <frozen/string.h>
 
 #include "opengl.h"
 
@@ -27,34 +30,33 @@ public:
             GLuint scale;
         };
         struct ComponentInfo {
-            QString shaderSamplerType;
-            QString shaderImageType;
-            QList<GLenum> formats;
-            QList<QString> shaderValueTypes;
-            QMap<int, ComponentSizeInfo> sizes;
+            std::string shaderSamplerType;
+            std::string shaderImageType;
+            std::vector<GLenum> formats;
+            std::vector<std::string> shaderValueTypes;
+            std::map<int, ComponentSizeInfo> sizes;
         };
         struct FormatInfo {
             GLint internalFormat;
-            QString shaderImageFormat;
+            std::string shaderImageFormat;
         };
 
-        static const QMap<ComponentType, QString> componentTypeNames;
-        static const QMap<ComponentType, ComponentInfo> components;
-        static const QMap<Format, FormatInfo> formats;
+        static const std::map<ComponentType, std::string> componentTypeNames;
+        static const std::map<ComponentType, ComponentInfo> components;
+        static const std::map<Format, FormatInfo> formats;
 
         ComponentType componentType;
         int componentSize;
         int componentCount;
 
-        Format(const ComponentType type = ComponentType::Invalid, const int size = 0, const int count = 0) :
+        constexpr Format(const ComponentType type = ComponentType::Invalid, const int size = 0, const int count = 0) :
             componentType(type), componentSize(size), componentCount(count)
         {}
-        inline bool operator==(const Format &rhs) const = default;
-        inline bool operator!=(const Format &rhs) const = default;
-        inline bool operator<(const Format &rhs) const {
-            return this->componentType < rhs.componentType
-                    || this->componentSize < rhs.componentSize
-                    || this->componentCount < rhs.componentCount;
+        constexpr inline bool operator==(const Format &rhs) const = default;
+        constexpr inline bool operator!=(const Format &rhs) const = default;
+        constexpr inline bool operator<(const Format &rhs) const {
+            return std::tie(componentType, componentSize, componentCount) <
+                   std::tie(rhs.componentType, rhs.componentSize, rhs.componentCount);
         }
 
         bool isValid() const {
@@ -63,17 +65,19 @@ public:
 
         ComponentInfo componentInfo() const {
             Q_ASSERT(components.contains(this->componentType));
-            return components[this->componentType];
+            return components.at(this->componentType);
         }
         FormatInfo formatInfo() const {
             Q_ASSERT(formats.contains(*this));
-            return formats.value(*this);
+            return formats.at(*this);
         }
-        QString shaderSamplerType() const { return componentInfo().shaderSamplerType; }
-        QString shaderImageType() const { return componentInfo().shaderImageType; }
+        QString componentTypeName() const { return QString::fromStdString(componentTypeNames.at(componentType)); }
+        static QString componentTypeName(const ComponentType componentType) { return QString::fromStdString(componentTypeNames.at(componentType)); }
+        QString shaderSamplerType() const { return QString::fromStdString(componentInfo().shaderSamplerType); }
+        QString shaderImageType() const { return QString::fromStdString(componentInfo().shaderImageType); }
         GLenum format() const { return componentInfo().formats[this->componentCount - 1]; }
-        QString shaderValueType() const { return componentInfo().shaderValueTypes[this->componentCount - 1]; }
-        QString shaderScalarValueType() const { return componentInfo().shaderValueTypes[0]; }
+        QString shaderValueType() const { return QString::fromStdString(componentInfo().shaderValueTypes[this->componentCount - 1]); }
+        QString shaderScalarValueType() const { return QString::fromStdString(componentInfo().shaderValueTypes[0]); }
         GLenum type() const {
             Q_ASSERT(componentInfo().sizes.contains(this->componentSize));
             return componentInfo().sizes[this->componentSize].type;
@@ -83,7 +87,7 @@ public:
             return componentInfo().sizes[this->componentSize].scale;
         }
         GLint internalFormat() const { return formatInfo().internalFormat; }
-        QString shaderImageFormat() const { return formatInfo().shaderImageFormat; }
+        QString shaderImageFormat() const { return QString::fromStdString(formatInfo().shaderImageFormat); }
     };
 
     const QSize size;

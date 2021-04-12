@@ -17,7 +17,7 @@
    <item row="0" column="0">
     <widget class="QLabel" name="colourSpaceLabel">
      <property name="text">
-      <string>Colour Space</string>
+      <string>&amp;Colour Space</string>
      </property>
      <property name="buddy">
       <cstring>colourSpaceComboBox</cstring>
@@ -30,7 +30,7 @@
    <item row="0" column="3">
     <widget class="QCheckBox" name="alphaCheckBox">
      <property name="text">
-      <string>Alpha</string>
+      <string>&amp;Alpha</string>
      </property>
      <property name="checked">
       <bool>true</bool>
@@ -40,7 +40,7 @@
    <item row="0" column="4">
     <widget class="QCheckBox" name="quantiseCheckBox">
      <property name="text">
-      <string>Quantise</string>
+      <string>&amp;Quantise</string>
      </property>
     </widget>
    </item>

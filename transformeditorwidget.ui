@@ -52,7 +52,7 @@
    <item row="2" column="0">
     <widget class="QPushButton" name="identityButton">
      <property name="text">
-      <string>Identity</string>
+      <string>&amp;Identity</string>
      </property>
     </widget>
    </item>
@@ -78,12 +78,18 @@
    <item row="2" column="1">
     <widget class="QCheckBox" name="independentCheckBox">
      <property name="text">
-      <string>Independent</string>
+      <string>&amp;Independent</string>
      </property>
     </widget>
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>modeComboBox</tabstop>
+  <tabstop>transformTableView</tabstop>
+  <tabstop>identityButton</tabstop>
+  <tabstop>independentCheckBox</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

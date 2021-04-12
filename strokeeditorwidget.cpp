@@ -10,8 +10,8 @@ StrokeEditorWidget::StrokeEditorWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &StrokeEditorWidget::updateStroke);
-    QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &StrokeEditorWidget::updateStroke);
+    QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::activated), this, &StrokeEditorWidget::updateStroke);
+    QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::activated), this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->continuousCheckBox, &QCheckBox::toggled, this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->absoluteSpacingWidthSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->absoluteSpacingHeightSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);

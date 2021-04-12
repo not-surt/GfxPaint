@@ -19,9 +19,9 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     validator->setDecimals(3);
     ui->ratioLineEdit->setValidator(validator);
 
-    QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->typeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->typeComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->widthSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->heightSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->fixedRatioCheckBox, &QCheckBox::toggled, this, &DabEditorWidget::updateDab);
@@ -29,12 +29,12 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     QObject::connect(ui->angleSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->originXSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->originYSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->pixelSnapXComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->pixelSnapYComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->pixelSnapXComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->pixelSnapYComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->hardnessSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->opacitySpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->blendModeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->composeModeComboBox, qOverload<int>(&QComboBox::currentIndexChanged), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->blendModeComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
+    QObject::connect(ui->composeModeComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
 
     for (auto &blendMode : RenderManager::blendModes) {
         ui->blendModeComboBox->addItem(blendMode.label);

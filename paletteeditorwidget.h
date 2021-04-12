@@ -26,6 +26,10 @@ public slots:
 signals:
     void colourPicked(const Colour &colour);
 
+protected:
+    void reorder();
+    void updateColourSpaceComponentComboBox();
+
 private:
     Ui::PaletteEditorWidget *ui;
 };

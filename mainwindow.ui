@@ -290,7 +290,7 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="GfxPaint::ColourSpaceSlidersWidget" name="colourSpaceSlidersWidget" native="true"/>
+      <widget class="GfxPaint::ColourSlidersWidget" name="colourSlidersWidget" native="true"/>
      </item>
     </layout>
    </widget>
@@ -549,7 +549,7 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="GfxPaint::ColourSpacePlaneWidget" name="colourSpacePlaneWidget" native="true"/>
+      <widget class="GfxPaint::ColourPlaneWidget" name="colourPlaneWidget" native="true"/>
      </item>
     </layout>
    </widget>
@@ -1490,9 +1490,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>GfxPaint::ColourSpaceSlidersWidget</class>
+   <class>GfxPaint::ColourSlidersWidget</class>
    <extends>QWidget</extends>
-   <header>colourspacesliderswidget.h</header>
+   <header>coloursliderswidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>
@@ -1519,9 +1519,9 @@
    <container>1</container>
   </customwidget>
   <customwidget>
-   <class>GfxPaint::ColourSpacePlaneWidget</class>
+   <class>GfxPaint::ColourPlaneWidget</class>
    <extends>QWidget</extends>
-   <header>colourspaceplanewidget.h</header>
+   <header>colourplanewidget.h</header>
    <container>1</container>
   </customwidget>
   <customwidget>

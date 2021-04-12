@@ -37,4 +37,16 @@ DockWidget::DockWidget(QWidget *const parent, const Qt::WindowFlags &flags) :
     });
 }
 
+void DockWidget::setMenu(QMenu *const menu) {
+    m_menu = menu;
+    titleBar->menuAction()->setMenu(m_menu);
+    titleBar->menuAction()->setEnabled(m_menu != nullptr);
+}
+
+void DockWidget::setPopup(QWidget *const popup) {
+    m_popup = popup;
+    titleBar->popupAction()->setDefaultWidget(m_popup);
+    titleBar->popupAction()->setEnabled(m_menu != nullptr);
+}
+
 } // namespace GfxPaint
