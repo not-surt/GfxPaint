@@ -23,8 +23,8 @@ QMAKE_CXXFLAGS += -Wno-unused-parameter -Wno-unused-variable
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x051500    # disables all the APIs deprecated before Qt 5.15.0
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
-VPATH += ./src/ ./thirdparty/
-INCLUDEPATH += ./src/ ./thirdparty/include/
+VPATH += src/ thirdparty/
+INCLUDEPATH += src/ thirdparty/include/
 
 SOURCES +=\
     application.cpp \
@@ -91,6 +91,21 @@ HEADERS  += \
     scene.h \
     sessionmanager.h \
     strokeeditorwidget.h \
+    frozen/algorithm.h \
+    frozen/bits/algorithms.h \
+    frozen/bits/basic_types.h \
+    frozen/bits/constexpr_assert.h \
+    frozen/bits/defines.h \
+    frozen/bits/elsa.h \
+    frozen/bits/exceptions.h \
+    frozen/bits/pmh.h \
+    frozen/bits/version.h \
+    frozen/map.h \
+    frozen/random.h \
+    frozen/set.h \
+    frozen/string.h \
+    frozen/unordered_map.h \
+    frozen/unordered_set.h \
     transformeditorwidget.h \
     transformmodel.h \
     types.h \
