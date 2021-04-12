@@ -28,19 +28,19 @@
 
 namespace GfxPaint {
 
-const QMap<QImage::Format, QImage::Format> Application::qImageConversion = {
+const std::map<QImage::Format, QImage::Format> Application::qImageConversion = {
     {QImage::Format_Mono, QImage::Format_Indexed8},
     {QImage::Format_Grayscale8, QImage::Format_Indexed8},
     {QImage::Format_RGB32, QImage::Format_ARGB32},
     {QImage::Format_ARGB32_Premultiplied, QImage::Format_ARGB32},
 };
 
-const QMap<QImage::Format, Buffer::Format> Application::qImageToBuffer = {
+const std::map<QImage::Format, Buffer::Format> Application::qImageToBuffer = {
     {QImage::Format_Indexed8, Buffer::Format(BufferData::Format::ComponentType::UInt, 1, 1)},
     {QImage::Format_ARGB32, Buffer::Format(BufferData::Format::ComponentType::UInt, 1, 4)}
 };
 
-const QMap<Buffer::Format, QImage::Format> Application::bufferToQImage = {
+const std::map<Buffer::Format, QImage::Format> Application::bufferToQImage = {
     {Buffer::Format(BufferData::Format::ComponentType::UInt, 1, 1), QImage::Format_Indexed8},
     {Buffer::Format(BufferData::Format::ComponentType::UInt, 1, 4), QImage::Format_ARGB32},
 };

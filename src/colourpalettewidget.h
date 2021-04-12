@@ -12,13 +12,6 @@ class ColourPaletteWidget : public GfxPaint::RenderedWidget
     Q_OBJECT
 
 public:
-    enum class FittingMode {
-        FixedSize,
-        AdaptColumnCount,
-        AdaptSwatchSize,
-    };
-    static const QMap<FittingMode, QString> fittingModes;
-
     explicit ColourPaletteWidget(QWidget *const parent = nullptr);
     virtual ~ColourPaletteWidget() override;
 
@@ -27,7 +20,6 @@ public:
 
 public slots:
     void setPalette(const GfxPaint::Buffer *const palette);
-    void setFittingMode(const FittingMode fittingMode);
     void setColumnCount(const int columns);
     void setSwatchSize(const QSize &size);
 
@@ -45,7 +37,6 @@ protected:
 
     void mouseEvent(QMouseEvent *event);
 
-    FittingMode m_fittingMode;
     QSize m_swatchSize;
     int m_columnCount;
 

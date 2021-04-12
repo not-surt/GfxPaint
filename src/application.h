@@ -58,9 +58,9 @@ public:
     bool saveSessionAtExit() const;
     float time() const;
 
-    static const QMap<QImage::Format, QImage::Format> qImageConversion;
-    static const QMap<QImage::Format, Buffer::Format> qImageToBuffer;
-    static const QMap<Buffer::Format, QImage::Format> bufferToQImage;
+    static const std::map<QImage::Format, QImage::Format> qImageConversion;
+    static const std::map<QImage::Format, Buffer::Format> qImageToBuffer;
+    static const std::map<Buffer::Format, QImage::Format> bufferToQImage;
     static const QString sessionExtension;
 
     RenderManager renderManager;

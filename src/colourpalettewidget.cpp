@@ -4,12 +4,6 @@
 
 namespace GfxPaint {
 
-static const QMap<ColourPaletteWidget::FittingMode, QString> fittingModes{
-    {ColourPaletteWidget::FittingMode::FixedSize, "Fixed Size"},
-    {ColourPaletteWidget::FittingMode::AdaptColumnCount, "Adapt Column Count"},
-    {ColourPaletteWidget::FittingMode::AdaptSwatchSize, "Adapt Swatch Size"},
-};
-
 ColourPaletteWidget::ColourPaletteWidget(QWidget *const parent) :
     RenderedWidget(parent),
     m_swatchSize(16, 16), m_columnCount(16),
@@ -53,12 +47,6 @@ void ColourPaletteWidget::setPalette(const Buffer *const palette)
         pickProgram = nullptr;
     }
     qDeleteAll(oldPrograms);
-    update();
-}
-
-void ColourPaletteWidget::setFittingMode(const ColourPaletteWidget::FittingMode fittingMode)
-{
-    m_fittingMode = fittingMode;
     update();
 }
 

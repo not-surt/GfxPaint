@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>403</width>
-    <height>167</height>
+    <width>446</width>
+    <height>197</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -75,8 +75,8 @@
        <rect>
         <x>0</x>
         <y>0</y>
-        <width>401</width>
-        <height>38</height>
+        <width>444</width>
+        <height>68</height>
        </rect>
       </property>
      </widget>
@@ -154,46 +154,17 @@
      </item>
     </widget>
    </item>
-   <item row="1" column="1">
-    <widget class="QRadioButton" name="radioButton">
-     <property name="text">
-      <string>&amp;Fixed size</string>
-     </property>
-     <property name="checked">
-      <bool>true</bool>
-     </property>
-     <attribute name="buttonGroup">
-      <string notr="true">fittingButtonGroup</string>
-     </attribute>
-    </widget>
-   </item>
-   <item row="1" column="2">
-    <widget class="QRadioButton" name="radioButton_2">
+   <item row="1" column="0">
+    <widget class="QCheckBox" name="checkBox_2">
      <property name="text">
       <string>&amp;Fit columns</string>
      </property>
-     <attribute name="buttonGroup">
-      <string notr="true">fittingButtonGroup</string>
-     </attribute>
     </widget>
    </item>
-   <item row="1" column="3">
-    <widget class="QRadioButton" name="radioButton_3">
+   <item row="1" column="1">
+    <widget class="QCheckBox" name="checkBox_3">
      <property name="text">
       <string>&amp;Fit swatches</string>
-     </property>
-     <attribute name="buttonGroup">
-      <string notr="true">fittingButtonGroup</string>
-     </attribute>
-    </widget>
-   </item>
-   <item row="1" column="0">
-    <widget class="QLabel" name="label_6">
-     <property name="text">
-      <string>&amp;Fitting</string>
-     </property>
-     <property name="buddy">
-      <cstring>radioButton</cstring>
      </property>
     </widget>
    </item>
@@ -210,9 +181,6 @@
  <tabstops>
   <tabstop>columnCountSpinBox</tabstop>
   <tabstop>swatchSizeSpinBox</tabstop>
-  <tabstop>radioButton</tabstop>
-  <tabstop>radioButton_2</tabstop>
-  <tabstop>radioButton_3</tabstop>
   <tabstop>orderingComboBox</tabstop>
   <tabstop>reverseOrderCheckBox</tabstop>
   <tabstop>colourSpaceComboBox</tabstop>
