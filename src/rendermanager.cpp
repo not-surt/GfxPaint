@@ -607,13 +607,13 @@ R"(
 uniform ivec2 cells;
 
 Colour $NAME(const vec2 pos) {
-    ivec2 cell = ivec2(floor(pos / vec2(cells)));
+    ivec2 cell = ivec2(floor(vec2(cells) * pos));
     int index = cell.x + cell.y * cells.x;
     if (cell.x >= 0 && cell.x < cells.x &&
         cell.y >= 0 && cell.y < cells.y &&
         index >= 0 && index < int(paletteSize($NAMEPalettePaletteTexture)))
         return Colour(vec4($NAMEPalettePalette(Index(index))), Index(index));
-    else return Colour(vec4(0.0, 0.0, 0.0, 0.0), INDEX_INVALID);
+    else return COLOUR_INVALID;
 }
 )";
     stringMultiReplace(src, {

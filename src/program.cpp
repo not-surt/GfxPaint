@@ -326,8 +326,19 @@ QString ColourPaletteProgram::generateSource(QOpenGLShader::ShaderTypeBit stage)
     switch(stage) {
     case QOpenGLShader::Vertex: {
         src += RenderManager::headerShaderPart();
-        src += RenderManager::attributelessShaderPart(AttributelessModel::UnitQuad);
-        src += RenderManager::vertexMainShaderPart();
+        src += RenderManager::attributelessShaderPart(AttributelessModel::ClipQuad);
+//        src += RenderManager::vertexMainShaderPart();
+        src += R"(
+uniform mat4 matrix;
+
+out layout(location = 0) vec2 pos;
+
+void main(void) {
+    vec2 vertexPos = vertices[gl_VertexID];
+    pos = vertexPos;
+    gl_Position = matrix * vec4(vertexPos, 0.0, 1.0);
+}
+)";
     }break;
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
@@ -345,7 +356,7 @@ QString ColourPaletteProgram::generateSource(QOpenGLShader::ShaderTypeBit stage)
     return src;
 }
 
-void ColourPaletteProgram::render(const Buffer *const palette, const QSize &size, const QSize &swatchSize, const QSize &cells, const QMatrix4x4 &transform, Buffer *const dest)
+void ColourPaletteProgram::render(const Buffer *const palette, const QSize &cells, const QMatrix4x4 &transform, Buffer *const dest)
 {
     if (palette) {
         Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
@@ -353,14 +364,8 @@ void ColourPaletteProgram::render(const Buffer *const palette, const QSize &size
         QOpenGLShaderProgram &program = this->program();
         program.bind();
 
-        glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
-
-        const QSize size2 = QSize(cells.width() * swatchSize.width(), cells.height() * swatchSize.height());
-        glUniform2i(program.uniformLocation("srcRectPos"), 0, 0);
-        glUniform2i(program.uniformLocation("srcRectSize"), size2.width(), size2.height());
-
+        glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, RenderManager::unitToClipTransform.data());
         glUniform2i(program.uniformLocation("cells"), cells.width(), cells.height());
-        glUniform2i(program.uniformLocation("swatchSize"), swatchSize.width(), swatchSize.height());
 
         qApp->renderManager.bindBufferShaderPart(program, "srcPalette", 0, palette);
         qApp->renderManager.bindBufferShaderPart(program, "dest", 1, dest);
@@ -387,12 +392,9 @@ layout(std430, binding = 0) buffer storageData
     Colour colour;
 };
 
-uniform ivec2 srcRectPos;
-uniform ivec2 srcRectSize;
-
 layout (local_size_x = 1, local_size_y = 1) in;
 void main() {
-    colour = src(vec2(srcRectPos) + pos * vec2(srcRectSize));
+    colour = src(pos);
 }
 )";
     }break;
@@ -402,25 +404,18 @@ void main() {
     return src;
 }
 
-Colour ColourPalettePickProgram::pick(const Buffer *const palette, const QSize &size, const QSize &swatchSize, const QSize &cells, const QVector2D &pos)
+Colour ColourPalettePickProgram::pick(const Buffer *const palette, const QSize &cells, const QVector2D &pos)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, GfxPaint::viewportTransform(size).data());
-
-    const QSize size2 = QSize(cells.width() * swatchSize.width(), cells.height() * swatchSize.height());
-    glUniform2i(program.uniformLocation("srcRectPos"), 0, 0);
-    glUniform2i(program.uniformLocation("srcRectSize"), size2.width(), size2.height());
-
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, RenderManager::unitToClipTransform.data());
     glUniform2i(program.uniformLocation("cells"), cells.width(), cells.height());
 
     qApp->renderManager.bindBufferShaderPart(program, "srcPalette", 0, palette);
 
-//    glUniform2fv(2, 1, (GLfloat *)&pos);
-//    glUniform2f(2, pos.x(), pos.y());
-    glUniform2f(program.uniformLocation("pos"), (float)pos.x() / (float)size.width(), (float)pos.y() / (float)size.height());
-//    glUniform2f(program.uniformLocation("pos"), 40, 5);
+//    glUniform2fv(program.uniformLocation("pos"), 1, (GLfloat *)&pos);
+    glUniform2f(program.uniformLocation("pos"), pos.x(), pos.y());
 
     StorageData storageData;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);

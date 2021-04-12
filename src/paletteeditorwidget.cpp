@@ -26,9 +26,11 @@ PaletteEditorWidget::PaletteEditorWidget(QWidget *parent) :
 
     QObject::connect(ui->colourPaletteWidget, &ColourPaletteWidget::colourPicked, this, &PaletteEditorWidget::colourPicked);
     QObject::connect(ui->columnCountSpinBox, &QSpinBox::valueChanged, ui->colourPaletteWidget, &ColourPaletteWidget::setColumnCount);
+    QObject::connect(ui->fitColumnCountCheckBox, &QCheckBox::toggled, ui->colourPaletteWidget, &ColourPaletteWidget::setFitColumnCount);
     QObject::connect(ui->swatchSizeSpinBox, &QSpinBox::valueChanged, this, [this](const int size){
         ui->colourPaletteWidget->setSwatchSize(QSize(size, size));
     });
+    QObject::connect(ui->fitSwatchSizeCheckBox, &QCheckBox::toggled, ui->colourPaletteWidget, &ColourPaletteWidget::setFitSwatchSize);
 }
 
 PaletteEditorWidget::~PaletteEditorWidget()

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>446</width>
-    <height>197</height>
+    <height>200</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,71 +26,21 @@
    <property name="bottomMargin">
     <number>0</number>
    </property>
-   <item row="3" column="3">
+   <item row="4" column="2">
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>&amp;Component</string>
+     </property>
+     <property name="buddy">
+      <cstring>colourSpaceComponentComboBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="3">
     <widget class="QComboBox" name="colourSpaceComponentComboBox"/>
    </item>
-   <item row="0" column="3">
-    <widget class="QSpinBox" name="swatchSizeSpinBox">
-     <property name="suffix">
-      <string>px</string>
-     </property>
-     <property name="minimum">
-      <number>4</number>
-     </property>
-     <property name="maximum">
-      <number>256</number>
-     </property>
-     <property name="value">
-      <number>16</number>
-     </property>
-    </widget>
-   </item>
-   <item row="0" column="0">
-    <widget class="QLabel" name="label_4">
-     <property name="text">
-      <string>&amp;Column Count</string>
-     </property>
-     <property name="buddy">
-      <cstring>columnCountSpinBox</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="2" colspan="2">
-    <widget class="QCheckBox" name="reverseOrderCheckBox">
-     <property name="text">
-      <string>&amp;Reverse Order</string>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="1">
+   <item row="4" column="1">
     <widget class="QComboBox" name="colourSpaceComboBox"/>
-   </item>
-   <item row="4" column="0" colspan="4">
-    <widget class="QScrollArea" name="scrollArea">
-     <property name="widgetResizable">
-      <bool>true</bool>
-     </property>
-     <widget class="GfxPaint::ColourPaletteWidget" name="colourPaletteWidget">
-      <property name="geometry">
-       <rect>
-        <x>0</x>
-        <y>0</y>
-        <width>444</width>
-        <height>68</height>
-       </rect>
-      </property>
-     </widget>
-    </widget>
-   </item>
-   <item row="0" column="2">
-    <widget class="QLabel" name="label_5">
-     <property name="text">
-      <string>&amp;Swatch Size</string>
-     </property>
-     <property name="buddy">
-      <cstring>swatchSizeSpinBox</cstring>
-     </property>
-    </widget>
    </item>
    <item row="0" column="1">
     <widget class="QSpinBox" name="columnCountSpinBox">
@@ -105,37 +55,7 @@
      </property>
     </widget>
    </item>
-   <item row="2" column="0">
-    <widget class="QLabel" name="label">
-     <property name="text">
-      <string>&amp;Ordering</string>
-     </property>
-     <property name="buddy">
-      <cstring>orderingComboBox</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="0">
-    <widget class="QLabel" name="label_2">
-     <property name="text">
-      <string>&amp;Colour Space</string>
-     </property>
-     <property name="buddy">
-      <cstring>colourSpaceComboBox</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="3" column="2">
-    <widget class="QLabel" name="label_3">
-     <property name="text">
-      <string>&amp;Component</string>
-     </property>
-     <property name="buddy">
-      <cstring>colourSpaceComponentComboBox</cstring>
-     </property>
-    </widget>
-   </item>
-   <item row="2" column="1">
+   <item row="3" column="1">
     <widget class="QComboBox" name="orderingComboBox">
      <item>
       <property name="text">
@@ -154,17 +74,100 @@
      </item>
     </widget>
    </item>
-   <item row="1" column="0">
-    <widget class="QCheckBox" name="checkBox_2">
+   <item row="5" column="0" colspan="4">
+    <widget class="QScrollArea" name="scrollArea">
+     <property name="widgetResizable">
+      <bool>true</bool>
+     </property>
+     <widget class="GfxPaint::ColourPaletteWidget" name="colourPaletteWidget">
+      <property name="geometry">
+       <rect>
+        <x>0</x>
+        <y>0</y>
+        <width>444</width>
+        <height>68</height>
+       </rect>
+      </property>
+     </widget>
+    </widget>
+   </item>
+   <item row="3" column="2" colspan="2">
+    <widget class="QCheckBox" name="reverseOrderCheckBox">
      <property name="text">
-      <string>&amp;Fit columns</string>
+      <string>&amp;Reverse Ordering</string>
+     </property>
+    </widget>
+   </item>
+   <item row="4" column="0">
+    <widget class="QLabel" name="label_2">
+     <property name="text">
+      <string>&amp;Colour Space</string>
+     </property>
+     <property name="buddy">
+      <cstring>colourSpaceComboBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="0">
+    <widget class="QLabel" name="label_4">
+     <property name="text">
+      <string>&amp;Column Count</string>
+     </property>
+     <property name="buddy">
+      <cstring>columnCountSpinBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="3" column="0">
+    <widget class="QLabel" name="label">
+     <property name="text">
+      <string>&amp;Ordering</string>
+     </property>
+     <property name="buddy">
+      <cstring>orderingComboBox</cstring>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="0">
+    <widget class="QLabel" name="label_5">
+     <property name="text">
+      <string>&amp;Swatch Size</string>
+     </property>
+     <property name="buddy">
+      <cstring>swatchSizeSpinBox</cstring>
      </property>
     </widget>
    </item>
    <item row="1" column="1">
-    <widget class="QCheckBox" name="checkBox_3">
+    <widget class="QSpinBox" name="swatchSizeSpinBox">
+     <property name="suffix">
+      <string>px</string>
+     </property>
+     <property name="minimum">
+      <number>4</number>
+     </property>
+     <property name="maximum">
+      <number>256</number>
+     </property>
+     <property name="value">
+      <number>16</number>
+     </property>
+    </widget>
+   </item>
+   <item row="0" column="2" colspan="2">
+    <widget class="QCheckBox" name="fitColumnCountCheckBox">
      <property name="text">
-      <string>&amp;Fit swatches</string>
+      <string>&amp;Fit Column Count</string>
+     </property>
+    </widget>
+   </item>
+   <item row="1" column="2" colspan="2">
+    <widget class="QCheckBox" name="fitSwatchSizeCheckBox">
+     <property name="text">
+      <string>&amp;Fit Swatch Size</string>
+     </property>
+     <property name="checked">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
@@ -180,7 +183,9 @@
  </customwidgets>
  <tabstops>
   <tabstop>columnCountSpinBox</tabstop>
+  <tabstop>fitColumnCountCheckBox</tabstop>
   <tabstop>swatchSizeSpinBox</tabstop>
+  <tabstop>fitSwatchSizeCheckBox</tabstop>
   <tabstop>orderingComboBox</tabstop>
   <tabstop>reverseOrderCheckBox</tabstop>
   <tabstop>colourSpaceComboBox</tabstop>
@@ -189,7 +194,4 @@
  </tabstops>
  <resources/>
  <connections/>
- <buttongroups>
-  <buttongroup name="fittingButtonGroup"/>
- </buttongroups>
 </ui>

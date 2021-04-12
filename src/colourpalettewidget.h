@@ -20,25 +20,39 @@ public:
 
 public slots:
     void setPalette(const GfxPaint::Buffer *const palette);
-    void setColumnCount(const int columns);
-    void setSwatchSize(const QSize &size);
+    void setColumnCount(const int columnCount);
+    void setFitColumnCount(const bool fitColumnCount);
+    void setSwatchSize(const QSize &swatchSize);
+    void setFitSwatchSize(const bool fitColumnCount);
 
 signals:
     void colourPicked(const Colour &colour);
 
 protected:
-    virtual void mousePressEvent(QMouseEvent *event) override { mouseEvent(event); }
-    virtual void mouseReleaseEvent(QMouseEvent *event) override { mouseEvent(event); }
-    virtual void mouseMoveEvent(QMouseEvent *event) override { mouseEvent(event); }
+    virtual void mousePressEvent(QMouseEvent *const event) override { processMouseEvent(event); }
+    virtual void mouseReleaseEvent(QMouseEvent *const event) override { processMouseEvent(event); }
+    virtual void mouseMoveEvent(QMouseEvent *const event) override { processMouseEvent(event); }
     virtual void initializeGL() override;
     virtual void render() override;
+    virtual int heightForWidth(const int width) const override;
+    virtual bool hasHeightForWidth() const override { return true/*m_fitColumnCount || m_fitSwatchSize*/; }
 
-    QSize cells() { return m_palette ? QSize(m_columnCount, (m_palette->size().width() + m_columnCount - 1) / m_columnCount) : QSize(0, 0); }
+    int columnCountForWidth(const int width) const {
+        return (m_fitColumnCount ? width / m_swatchSize.width() : m_columnCount);
+    }
+    QSize cellsForWidth(const int width) const {
+        const int actualColumnCount = columnCountForWidth(width);
+        const int actualRowCount = (m_palette ? (m_palette->width() + actualColumnCount - 1) / actualColumnCount : 0);
+        return QSize(actualColumnCount, actualRowCount);
+    }
+    QSize cells() const;
+    void updatePaletteLayout();
+    void processMouseEvent(QMouseEvent *const event);
 
-    void mouseEvent(QMouseEvent *event);
-
-    QSize m_swatchSize;
     int m_columnCount;
+    bool m_fitColumnCount;
+    QSize m_swatchSize;
+    bool m_fitSwatchSize;
 
     ColourPaletteProgram *program;
     ColourPalettePickProgram *pickProgram;
@@ -46,7 +60,7 @@ protected:
 
     const Buffer *m_palette;
     Buffer *m_selection;
-    Buffer *m_ordering;
+    Buffer *m_ordering;    
 };
 
 } // namespace GfxPaint

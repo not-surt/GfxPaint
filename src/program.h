@@ -435,7 +435,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
 
-    void render(const Buffer *const palette, const QSize &size, const QSize &swatchSize, const QSize &cells, const QMatrix4x4 &transform, Buffer *const dest);
+    void render(const Buffer *const palette, const QSize &cells, const QMatrix4x4 &transform, Buffer *const dest);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -461,7 +461,7 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    Colour pick(const Buffer *const palette, const QSize &size, const QSize &swatchSize, const QSize &cells, const QVector2D &pos);
+    Colour pick(const Buffer *const palette, const QSize &cells, const QVector2D &pos);
 
 protected:
     struct StorageData {

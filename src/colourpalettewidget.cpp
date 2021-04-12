@@ -6,11 +6,12 @@ namespace GfxPaint {
 
 ColourPaletteWidget::ColourPaletteWidget(QWidget *const parent) :
     RenderedWidget(parent),
-    m_swatchSize(16, 16), m_columnCount(16),
+    m_columnCount(16), m_fitColumnCount(false),
+    m_swatchSize(16, 16), m_fitSwatchSize(true),
     program(nullptr), pickProgram(nullptr), selectionProgram(nullptr),
     m_palette(nullptr), m_selection(nullptr), m_ordering(nullptr)
 {
-    setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+    updatePaletteLayout();
 }
 
 ColourPaletteWidget::~ColourPaletteWidget()
@@ -23,7 +24,7 @@ ColourPaletteWidget::~ColourPaletteWidget()
     delete m_ordering;
 }
 
-QSize ColourPaletteWidget::sizeHint() const { return QSize(512, 1024); }
+QSize ColourPaletteWidget::sizeHint() const { return QSize(cells().width() * m_swatchSize.width(), cells().height() * m_swatchSize.height()); }
 
 void ColourPaletteWidget::setPalette(const Buffer *const palette)
 {
@@ -50,24 +51,44 @@ void ColourPaletteWidget::setPalette(const Buffer *const palette)
     update();
 }
 
-void ColourPaletteWidget::setColumnCount(const int columns)
+void ColourPaletteWidget::updatePaletteLayout()
 {
-    m_columnCount = columns;
-    update();
+    setSizePolicy(m_fitColumnCount || m_fitSwatchSize ? QSizePolicy::Preferred : QSizePolicy::Fixed,
+                  QSizePolicy::Fixed);
+    updateGeometry();
 }
 
-void ColourPaletteWidget::setSwatchSize(const QSize &size)
+void ColourPaletteWidget::setColumnCount(const int columnCount)
 {
-    m_swatchSize = size;
-    update();
+    m_columnCount = columnCount;
+    updatePaletteLayout();
 }
 
-void ColourPaletteWidget::mouseEvent(QMouseEvent *event)
+void ColourPaletteWidget::setFitColumnCount(const bool fitColumnCount)
+{
+    m_fitColumnCount = fitColumnCount;
+    updatePaletteLayout();
+}
+
+void ColourPaletteWidget::setSwatchSize(const QSize &swatchSize)
+{
+    m_swatchSize = swatchSize;
+    updatePaletteLayout();
+}
+
+void ColourPaletteWidget::setFitSwatchSize(const bool fitSwatchSize)
+{
+    m_fitSwatchSize = fitSwatchSize;
+    updatePaletteLayout();
+}
+
+void ColourPaletteWidget::processMouseEvent(QMouseEvent * const event)
 {
     if (event->buttons() & Qt::LeftButton) {
         if (m_palette) {
-            const QVector2D pos = QVector2D((float)clamp(0, width(), event->pos().x()), (float)clamp(0, height(), event->pos().y()));
-            Colour colour = pickProgram->pick(m_palette, size(), m_swatchSize, cells(), pos);
+            const QVector2D pos = QVector2D((float)clamp(0.0f, 1.0f, (float)event->pos().x() / (float)width()),
+                                            (float)clamp(0.0f, 1.0f, (float)event->pos().y() / (float)height()));
+            Colour colour = pickProgram->pick(m_palette, cells(), pos);
             // TODO: painting with valid index screwy
             colour.index = INDEX_INVALID;///////////////////////////////////////////////////
             emit colourPicked(colour);
@@ -89,8 +110,19 @@ void ColourPaletteWidget::initializeGL()
 void ColourPaletteWidget::render()
 {
     if (m_palette) {
-        program->render(m_palette, size(), m_swatchSize, cells(), RenderManager::unitToClipTransform, widgetBuffer);
+        program->render(m_palette, cells(), RenderManager::unitToClipTransform, widgetBuffer);
     }
+}
+
+int ColourPaletteWidget::heightForWidth(const int width) const {
+    const QSize actualCells = cellsForWidth(width);
+    const float actualSwatchWidth = (m_fitSwatchSize ? (float)width / (float)actualCells.width() : m_swatchSize.width());
+    const float actualSwatchHeight = (actualSwatchWidth / (float)m_swatchSize.width()) * (float)m_swatchSize.height();
+    return (int)std::ceil(actualCells.height() * actualSwatchHeight);
+}
+
+QSize ColourPaletteWidget::cells() const {
+    return cellsForWidth(width());
 }
 
 } // namespace GfxPaint
