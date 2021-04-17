@@ -31,19 +31,24 @@ void Editor::init()
 Editor::Editor(Scene &scene, QWidget *parent) :
     RenderedWidget(parent),
     scene(scene), model(*qApp->documentManager.documentModel(&scene)),
-    strokeTool(*this), pickTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
+    strokeTool(*this), rectTool(*this), pickTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
     m_editingContext(scene),
     cameraTransform(), m_transformMode(),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
     toolSet{
-        {{{}, {Qt::LeftButton}, {}}, &strokeTool},
-        {{{}, {Qt::MiddleButton}, {}}, &panTool},
-        {{{Qt::Key_Space}, {}, {}}, &panTool},
-        {{{}, {}, {{false, false, true, true}}}, &zoomTool},
-        {{{Qt::Key_Control}, {Qt::LeftButton}, {}}, &pickTool},
-        {{{Qt::Key_Control}, {Qt::MiddleButton}, {}}, &rotoZoomTool},
-        {{{Qt::Key_Control, Qt::Key_Space}, {}, {}}, &rotoZoomTool},
-        {{{Qt::Key_Control}, {}, {{false, false, true, true}}}, &rotateTool},
+        {{{}, {Qt::LeftButton}, {}}, {&strokeTool, 0}},
+        {{{Qt::Key_R}, {Qt::LeftButton}, {}}, {&rectTool, 0}},
+        {{{}, {}, {{false, false, true, true}}}, {&zoomTool, 0}},
+        {{{Qt::Key_Control}, {Qt::LeftButton}, {}}, {&pickTool, 0}},
+        {{{}, {Qt::MiddleButton}, {}}, {&panTool, 0}},
+        {{{Qt::Key_Control}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
+        {{{Qt::Key_Shift}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},
+        {{{Qt::Key_Control, Qt::Key_Shift}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::RotoZoom)}},
+        {{{Qt::Key_Space}, {}, {}}, {&panTool, 0}},
+        {{{Qt::Key_Control, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
+        {{{Qt::Key_Shift, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},
+        {{{Qt::Key_Control, Qt::Key_Shift, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::RotoZoom)}},
+        {{{Qt::Key_Shift}, {}, {{false, false, true, true}}}, {&rotateTool, 0}},
     },
     toolStack()
 {
@@ -53,7 +58,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
 Editor::Editor(const Editor &other) :
     RenderedWidget(other.parentWidget()),
     scene(other.scene), model(other.model),
-    strokeTool(other.strokeTool), pickTool(other.pickTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
+    strokeTool(other.strokeTool), rectTool(other.rectTool), pickTool(other.pickTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform), m_transformMode(other.m_transformMode),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
@@ -89,6 +94,8 @@ bool Editor::eventFilter(QObject *const watched, QEvent *const event)
 
 bool Editor::event(QEvent *const event)
 {
+    bool consume = false;
+
     // Handle input event
     const QKeyEvent *const keyEvent = static_cast<QKeyEvent *>(event);
     if ((event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) ||
@@ -113,7 +120,11 @@ bool Editor::event(QEvent *const event)
         rotation = 0.0f;
         tilt = {0.0f, 0.0f};
         quaternion = QQuaternion(0.0f, 0.0f, 0.0f, 1.0f);
-        if (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) inputState.keys.insert(static_cast<Qt::Key>(keyEvent->key()));
+        if (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) {
+            cursorPos = QVector2D(mapFromGlobal(QCursor::pos()));
+            pressure = 1.0f;
+            inputState.keys.insert(static_cast<Qt::Key>(keyEvent->key()));
+        }
         else if (event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) inputState.keys.remove(static_cast<Qt::Key>(keyEvent->key()));
         else if (event->type() == QEvent::MouseButtonPress) inputState.mouseButtons.insert(mouseEvent->button());
         else if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::NonClientAreaMouseButtonRelease) inputState.mouseButtons.remove(mouseEvent->button());
@@ -144,15 +155,13 @@ bool Editor::event(QEvent *const event)
         }
         Point point{QVector2D(mouseToWorld(cursorPos)), static_cast<float>(pressure), quaternion};
 
-        bool consume = false;
-
         // Remove non-matching tools
         auto i = std::begin(toolStack);
         while (i != std::end(toolStack)) {
             const InputState &trigger = i->first;
-            Tool *const tool = i->second;
+            auto [tool, mode] = i->second;
             if (!trigger.test(inputState)) {
-                tool->end(mouseToViewport(cursorPos), point);
+                tool->end(mouseToViewport(cursorPos), point, mode);
                 i = toolStack.erase(i);
                 releaseMouse();
                 consume = true;
@@ -165,14 +174,15 @@ bool Editor::event(QEvent *const event)
         for (auto &trigger : toolSet.keys()) {
             if (trigger.test(inputState)) {
                 if (!toolStack.isEmpty()) {
-                    Tool *const oldTool = toolStack.top().second;
-                    oldTool->end(mouseToViewport(cursorPos), point);
+//                    auto [oldTool, oldMode] = toolStack.top().second;
+                    // TODO: why????
+//                    oldTool->end(mouseToViewport(cursorPos), point, mode);
                 }
-                Tool *const tool = toolSet[trigger];
-                auto pair = std::make_pair(trigger, tool);
+                auto [tool, mode] = toolSet[trigger];
+                auto pair = std::make_pair(trigger, std::make_pair(tool, mode));
                 if (!toolStack.contains(pair)) {
                     toolStack.push(pair);
-                    tool->begin(mouseToViewport(cursorPos), point);
+                    tool->begin(mouseToViewport(cursorPos), point, mode);
                 }
                 grabMouse();
                 consume = true;
@@ -182,31 +192,30 @@ bool Editor::event(QEvent *const event)
         // Handle mouse wheel
         if (event->type() == QEvent::Wheel) {
             if (!toolStack.isEmpty()) {
-                Tool *const tool = toolStack.top().second;
-                tool->wheel(mouseToViewport(cursorPos), wheelDelta);
+                auto [tool, mode] = toolStack.top().second;
+                tool->wheel(mouseToViewport(cursorPos), wheelDelta, mode);
             }
             consume = true;
         }
         // Update current tool
         else if (event->type() == QEvent::MouseMove ||
+                 event->type() == QEvent::NonClientAreaMouseMove ||
                  event->type() == QEvent::TabletMove) {
             if (!toolStack.isEmpty()) {
-                Tool *const tool = toolStack.top().second;
-                tool->update(mouseToViewport(cursorPos), point);
+                auto [tool, mode] = toolStack.top().second;
+                tool->update(mouseToViewport(cursorPos), point, mode);
             }
             consume = true;
         }
-
-        return consume;
     }
 
     if (event->type() == QEvent::Enter) {
         cursorOver = true;
-        return true;
+        consume = true;
     }
     else if (event->type() == QEvent::Leave) {
         cursorOver = false;
-        return true;
+        consume = true;
     }
     else if (event->type() == QEvent::FocusOut ||
         event->type() == QEvent::WindowDeactivate) {
@@ -214,10 +223,14 @@ bool Editor::event(QEvent *const event)
         toolStack = {};
         releaseMouse();
         cursorOver = false;
-        return true;
+        consume = true;
     }
 
-    return RenderedWidget::event(event);
+    if (consume) {
+        event->accept();
+        return true;
+    }
+    else return RenderedWidget::event(event);
 }
 
 void Editor::updateWindowTitle()
@@ -309,14 +322,12 @@ void Editor::render()
 
                 const QVector2D point = QVector2D(mouseToWorld(cursorPos));
                 const QVector2D snappedPoint = pixelSnap(point);
-//                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
-                Tool *const tool = &strokeTool;
-                tool->preview(mouseToViewport(cursorPos), {mouseToWorld(cursorPos), 1.0, quaternion});
+                activeTool().onCanvasPreview(mouseToViewport(cursorPos), {mouseToWorld(cursorPos), 1.0, quaternion});
 //                bufferNodeContext->strokeBuffer->bindFramebuffer();
 //                drawDab(m_editingContext.brush().dab, m_editingContext.colour(), *bufferNode, snappedPoint);
             }
         }
-    }    
+    }
 
     // Draw scene
     widgetBuffer->bindFramebuffer();
@@ -336,16 +347,18 @@ void Editor::render()
 
     LineProgram *lineProgram = new LineProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
     std::vector<LineProgram::Point> points{
-        {{16.0, 256.0f}, 0.0f, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
-        {{16.0, 16.0f}, 0.0f, 0.0f, 0.0f, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
-        {{256.0, 16.0f}, 16.0f, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
-        {{256.0, 256.0f}, 32.0f, 0.0f, 0.0f, {{0.0f, 1.0f, 1.0f, 1.0f}, INDEX_INVALID}},
-        {{16.0, 256.0f}, 16.0f, 0.0f, 0.0f, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
-        {{128.0, 128.0f}, 8.0f, 0.0f, 0.0f, {{0.0f, 0.0f, 0.0f, 0.5f}, INDEX_INVALID}},
-        {{16.0, 16.0f}, 0.0f, 0.0f, 0.0f, {{0.0f, 0.0f, 0.0f, 0.0f}, INDEX_INVALID}},
-        {{16.0, 16.0f}, 0.0f, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{16.0, 256.0f}, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{16.0, 16.0f}, 0.0f, 0.0f, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{256.0, 16.0f}, 16.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{256.0, 256.0f}, 32.0f, 0.0f, {{0.0f, 1.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{16.0, 256.0f}, 16.0f, 0.0f, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{128.0, 128.0f}, 8.0f, 0.0f, {{0.0f, 0.0f, 0.0f, 0.5f}, INDEX_INVALID}},
+        {{16.0, 16.0f}, 0.0f, 0.0f, {{0.0f, 0.0f, 0.0f, 0.0f}, INDEX_INVALID}},
+        {{16.0, 16.0f}, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
     };
     lineProgram->render(points, {{1.0f, 0.0f, 0.0f, 1.0f}, INDEX_INVALID}, viewportTransform * cameraTransform, widgetBuffer, nullptr);
+
+    activeTool().onTopPreview(mouseToViewport(cursorPos), {mouseToWorld(cursorPos), 1.0, quaternion});
 }
 
 float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const QVector2D dabSize, const QVector2D absoluteSpacing, const QVector2D proportionalSpacing, const float offset, Stroke &output) {

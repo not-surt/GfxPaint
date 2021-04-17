@@ -73,7 +73,6 @@ bool ColourPaletteWidget::event(QEvent *const event)
             // TODO: painting with valid index screwy
             colour.index = INDEX_INVALID;///////////////////////////////////////////////////
             emit colourPicked(colour);
-            qDebug() << index << dragStartIndex << dragEndIndex;////////////////////////
         }
     }
 
@@ -182,7 +181,6 @@ void ColourPaletteWidget::render()
 }
 
 int ColourPaletteWidget::heightForWidth(const int width) const {
-    qDebug() << width << this->width();//////////////
     const QSize actualCells = cellsForWidth(width);
     const float actualSwatchWidth = (m_fitSwatchSize ? (float)width / (float)actualCells.width() : m_swatchSize.width());
     const float actualSwatchHeight = (actualSwatchWidth / (float)m_swatchSize.width()) * (float)m_swatchSize.height();

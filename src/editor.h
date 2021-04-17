@@ -71,6 +71,15 @@ public:
 
     EditingContext &editingContext() { return m_editingContext; }
 
+    Buffer *getWidgetBuffer() { return RenderedWidget::widgetBuffer; }
+
+    Tool &activeTool() {
+        if (!toolStack.isEmpty()) {
+            return *toolStack.top().second.first;
+        }
+        else return strokeTool;
+    }
+
     void activate();
 
     void insertNodes(const QList<Node *> &nodes);
@@ -117,6 +126,7 @@ public:
     SceneModel &model;
 
     StrokeTool strokeTool;
+    RectTool rectTool;
     PickTool pickTool;
     PanTool panTool;
     RotoZoomTool rotoZoomTool;
@@ -159,8 +169,8 @@ protected:
     QVector2D tilt;
     QQuaternion quaternion;
 
-    QMap<InputState, Tool *> toolSet;
-    QStack<std::pair<InputState, Tool *>> toolStack;
+    QMap<InputState, std::pair<Tool *, int>> toolSet;
+    QStack<std::pair<InputState, std::pair<Tool *, int>>> toolStack;
 };
 
 } // namespace GfxPaint

@@ -327,7 +327,6 @@ public:
     struct Point {
         QVector2D pos alignas(8);
         GLfloat width alignas(4);
-        GLfloat lineRelPos alignas(4);
         GLfloat lineAbsPos alignas(4);
         Colour colour alignas(16);
     };

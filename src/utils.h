@@ -87,7 +87,7 @@ float snap(const float offset, const float size, const float target, const bool 
 QVector2D snap(const QVector2D offset, const QVector2D size, const QVector2D target, const bool relative = false, const QVector2D relativeTo = {});
 
 void rotateScaleAtOrigin(QMatrix4x4 &transform, const float rotation, const float scaling, const QVector2D origin);
-QMatrix4x4 transformPointToPoint(const QVector2D origin, const QVector2D from, const QVector2D to);
+QMatrix4x4 transformPointToPoint(const QVector2D origin, const QVector2D from, const QVector2D to, const bool scale = true, const bool rotate = true);
 
 } // namespace GfxPaint
 

@@ -392,6 +392,7 @@ bool MainWindow::event(QEvent *const event)
 {
     if (event->type() == QEvent::WindowActivate) {
         qApp->sessionManager.updateWindowActivationOrder(this);
+        event->accept();
         return true;
     }
     else return QMainWindow::event(event);

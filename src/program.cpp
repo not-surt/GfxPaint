@@ -207,18 +207,10 @@ QString LineProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
     case QOpenGLShader::Vertex: {
         src += RenderManager::headerShaderPart();
         src += R"(
-layout(location = 0) in vec2 pos;
-layout(location = 1) in float width;
-layout(location = 2) in float lineRelPos;
-layout(location = 3) in float lineAbsPos;
-layout(location = 4) in Rgba rgba;
-layout(location = 5) in Index index;
-
 struct Point {
     vec2 pos;
     float width;
-    float lineRelPos;
-    float lineAbsPos;
+    float linePos;
     Colour colour;
 };
 
@@ -227,24 +219,22 @@ layout(std430, binding = 0) buffer StorageData
     Point points[];
 } storageData;
 
-out vec2 geomPos;
-out float geomWidth;
-out float geomLineRelPos;
-out float geomLineAbsPos;
-out Rgba geomRgba;
-out Index geomIndex;
-out flat uint geomInstance;
+out VertexOut {
+    vec2 pos;
+    float width;
+    float linePos;
+    Rgba rgba;
+    Index index;
+} vOut;
 
 void main(void)
 {
     Point point = storageData.points[gl_InstanceID + gl_VertexID];
-    geomPos = point.pos;
-    geomWidth = point.width;
-    geomLineRelPos = point.lineRelPos;
-    geomLineAbsPos = point.lineAbsPos;
-    geomRgba = point.colour.rgba;
-    geomIndex = point.colour.index;
-    geomInstance = uint(gl_InstanceID);
+    vOut.pos = point.pos;
+    vOut.width = point.width;
+    vOut.linePos = point.linePos;
+    vOut.rgba = point.colour.rgba;
+    vOut.index = point.colour.index;
 }
 )";
     }break;
@@ -254,152 +244,125 @@ void main(void)
 layout (lines_adjacency) in;
 layout (triangle_strip, max_vertices = 16) out;
 
-in vec2 geomPos[];
-in float geomWidth[];
-in float geomLineRelPos[];
-in float geomLineAbsPos[];
-in Rgba geomRgba[];
-in Index geomIndex[];
-in flat uint geomInstance[];
+in VertexOut {
+    vec2 pos;
+    float width;
+    float linePos;
+    Rgba rgba;
+    Index index;
+} gIn[];
 
 uniform mat4 matrix;
 
-out float fragLineRelPos;
-out float fragLineAbsPos;
-out float fragSegmentRelPos;
-out float fragSegmentAbsPos;
-out Rgba fragRgba;
-out Index fragIndex;
+out GeometryOut {
+    float linePos;
+    float segmentPos;
+    flat float segmentLength;
+    Rgba rgba;
+    flat Index index;
+    flat Rgba colour[2];
+    vec2 uv;
+} gOut;
 
-bool intersectRays(const vec2 as, const vec2 ad, const vec2 bs, const vec2 bd, out vec2 p, out float u, out float v)
+void createEndPoint(const vec2 point0, const vec2 vector0, const vec2 point1, const vec2 vector1)
 {
-    vec2 delta = bs - as;
-    float det = bd.x * ad.y - bd.y * ad.x;
-    if (det != 0.0) {
-        u = (delta.y * bd.x - delta.x * bd.y) / det;
-        v = (delta.y * ad.x - delta.x * ad.y) / det;
-        p = as + ad * u;
-        return true;
+    vec2 intersection;
+    float t0, t1;
+    bool hasIntersection = intersectRays(point0, vector0, point1, vector1, intersection, t0, t1);
+    if (hasIntersection) {
+        gl_Position = matrix * vec4(intersection, 0.0, 1.0);
+//    gOut.linePos = gIn[1].linePos;
+//    gOut.segmentPos = 0.0/*gOut.segmentLength * -startAU*/;
     }
-    else return false;
+    else {
+        gl_Position = matrix * vec4(point0, 0.0, 1.0);
+//    gOut.linePos = gIn[1].linePos;
+//    gOut.segmentPos = 0.0/*gOut.segmentLength * -startAU*/;
+    }
+    EmitVertex();
 }
 
 void main(void)
 {
-    vec2 segmentVector = geomPos[2] - geomPos[1];
-    float segmentLength = length(segmentVector);
+    vec2 segmentVector = gIn[2].pos - gIn[1].pos;
     vec2 segmentPerp = normalize(perp(segmentVector));
+    gOut.segmentLength = length(segmentVector);
+    gOut.colour = Rgba[](gIn[1].rgba, gIn[2].rgba);
 
     // Segment start
-    fragRgba = geomRgba[1];
-    fragIndex = geomIndex[1];
+    vec2 startHalfWidthVector = segmentPerp * gIn[1].width / 2.0;
+    vec2 startPointA = gIn[1].pos - startHalfWidthVector;
+    vec2 startPointB = gIn[1].pos + startHalfWidthVector;
 
-    vec2 startHalfWidthVector = segmentPerp * geomWidth[1] / 2.0;
-    vec2 startPointA = geomPos[1] - startHalfWidthVector;
-    vec2 startPointB = geomPos[1] + startHalfWidthVector;
-
-    vec2 prevSegmentVector = geomPos[1] - geomPos[0];
+    vec2 prevSegmentVector = gIn[1].pos - gIn[0].pos;
     vec2 prevSegmentPerp = normalize(perp(prevSegmentVector));
-    vec2 prevEndHalfWidthVector = prevSegmentPerp * geomWidth[1] / 2.0;
-    vec2 prevEndPointA = geomPos[1] - prevEndHalfWidthVector;
-    vec2 prevEndPointB = geomPos[1] + prevEndHalfWidthVector;
-
-    vec2 actualStartA;
-    float startAU, startAV;
-    bool startAIntersecting = intersectRays(startPointA, segmentVector, prevEndPointA, prevSegmentVector, actualStartA, startAU, startAV);
-    gl_Position = matrix * vec4(startAIntersecting ? actualStartA : startPointA, 0.0, 1.0);
-    fragLineRelPos = geomLineRelPos[1];
-    fragLineAbsPos = geomLineAbsPos[1];
-    fragSegmentAbsPos = 0.0/*segmentLength * -startAU*/;
-    fragSegmentRelPos = 0.0/*startAU*/;
-    EmitVertex();
-
-    vec2 actualStartB;
-    float startBU, startBV;
-    bool startBIntersecting = intersectRays(startPointB, segmentVector, prevEndPointB, prevSegmentVector, actualStartB, startBU, startBV);
-    gl_Position = matrix * vec4(startBIntersecting ? actualStartB : startPointB, 0.0, 1.0);
-    fragLineRelPos = geomLineRelPos[1];
-    fragLineAbsPos = geomLineAbsPos[1];
-    fragSegmentAbsPos = 0.0/*segmentLength * -startBU*/;
-    fragSegmentRelPos = 0.0/*startBU*/;
-    EmitVertex();
+    vec2 prevEndHalfWidthVector = prevSegmentPerp * gIn[1].width / 2.0;
+    vec2 prevEndPointA = gIn[1].pos - prevEndHalfWidthVector;
+    vec2 prevEndPointB = gIn[1].pos + prevEndHalfWidthVector;
 
     // Segment end
-    fragRgba = geomRgba[2];
-    fragIndex = geomIndex[2];
+    vec2 endHalfWidthVector = segmentPerp * gIn[2].width / 2.0;
+    vec2 endPointA = gIn[2].pos - endHalfWidthVector;
+    vec2 endPointB = gIn[2].pos + endHalfWidthVector;
 
-    vec2 endHalfWidthVector = segmentPerp * geomWidth[2] / 2.0;
-    vec2 endPointA = geomPos[2] - endHalfWidthVector;
-    vec2 endPointB = geomPos[2] + endHalfWidthVector;
-
-    vec2 nextSegmentVector = geomPos[3] - geomPos[2];
+    vec2 nextSegmentVector = gIn[3].pos - gIn[2].pos;
     vec2 nextSegmentPerp = normalize(perp(nextSegmentVector));
-    vec2 nextStartHalfWidthVector = nextSegmentPerp * geomWidth[2] / 2.0;
-    vec2 nextStartPointA = geomPos[2] - nextStartHalfWidthVector;
-    vec2 nextStartPointB = geomPos[2] + nextStartHalfWidthVector;
+    vec2 nextStartHalfWidthVector = nextSegmentPerp * gIn[2].width / 2.0;
+    vec2 nextStartPointA = gIn[2].pos - nextStartHalfWidthVector;
+    vec2 nextStartPointB = gIn[2].pos + nextStartHalfWidthVector;
 
-    vec2 actualEndA;
-    float endAU, endAV;
-    bool endAIntersecting = intersectRays(endPointA, segmentVector, nextStartPointA, nextSegmentVector, actualEndA, endAU, endAV);
-    gl_Position = matrix * vec4(endAIntersecting ? actualEndA : endPointA, 0.0, 1.0);
-    fragLineRelPos = geomLineRelPos[2];
-    fragLineAbsPos = geomLineAbsPos[2];
-    fragSegmentAbsPos = segmentLength/* * endAU*/;
-    fragSegmentRelPos = endAU;
+    gOut.rgba = gIn[1].rgba;
+    gOut.index = gIn[1].index;
+    gOut.uv = vec2(0.0, 0.0);
+    createEndPoint(startPointA, segmentVector, prevEndPointA, prevSegmentVector);
+    gl_Position = matrix * vec4(gIn[1].pos, 0.0, 1.0);
+    gOut.uv = vec2(0.0, 0.5);
     EmitVertex();
-
-    vec2 actualEndB;
-    float endBU, endBV;
-    bool endBIntersecting = intersectRays(endPointB, segmentVector, nextStartPointB, nextSegmentVector, actualEndB, endBU, endBV);
-    gl_Position = matrix * vec4(endBIntersecting ? actualEndB : endPointB, 0.0, 1.0);
-    fragLineRelPos = geomLineRelPos[2];
-    fragLineAbsPos = geomLineAbsPos[2];
-    fragSegmentAbsPos = segmentLength/* * endBU*/;
-    fragSegmentRelPos = endBU;
+    gOut.rgba = gIn[2].rgba;
+    gOut.index = gIn[2].index;
+    gOut.uv = vec2(1.0, 0.0);
+    createEndPoint(endPointA, segmentVector, nextStartPointA, nextSegmentVector);
+    gl_Position = matrix * vec4(gIn[2].pos, 0.0, 1.0);
+    gOut.uv = vec2(1.0, 0.5);
     EmitVertex();
+    EndPrimitive();
 
-    // Connect to previous segment
-    if (geomInstance[0] != 0u) {
-//        vec2 prevSegmentVector = geomPos[1] - geomPos[0];
-//        vec2 prevSegmentPerp = normalize(perp(prevSegmentVector));
-//        vec2 avgPerp = normalize(segmentPerp + prevSegmentPerp);
-
-//        fragLineRelPos = geomLineRelPos[1];
-//        fragLineAbsPos = geomLineAbsPos[1];
-//        fragSegmentAbsPos = 0.0;
-//        fragSegmentRelPos = 0.0;
-//        fragRgba = geomRgba[1];
-//        fragIndex = geomIndex[1];
-
-//        // Previous segment end
-//        vec2 prevEndHalfWidthVector = prevSegmentPerp * geomWidth[1] / 2.0;
-//        gl_Position = matrix * vec4(geomPos[1] - prevEndHalfWidthVector, 0.0, 1.0);
-//        EmitVertex();
-//        gl_Position = matrix * vec4(geomPos[1] + prevEndHalfWidthVector, 0.0, 1.0);
-//        EmitVertex();
-
-//        // current segment start
-//        gl_Position = matrix * vec4(geomPos[1] - startHalfWidthVector, 0.0, 1.0);
-//        EmitVertex();
-//        gl_Position = matrix * vec4(geomPos[1] + startHalfWidthVector, 0.0, 1.0);
-//        EmitVertex();
-//        EndPrimitive();
-    }
+    gOut.rgba = gIn[1].rgba;
+    gOut.index = gIn[1].index;
+    gOut.uv = vec2(0.0, 1.0);
+    createEndPoint(startPointB, segmentVector, prevEndPointB, prevSegmentVector);
+    gl_Position = matrix * vec4(gIn[1].pos, 0.0, 1.0);
+    gOut.uv = vec2(0.0, 0.5);
+    EmitVertex();
+    gOut.rgba = gIn[2].rgba;
+    gOut.index = gIn[2].index;
+    gOut.uv = vec2(1.0, 1.0);
+    createEndPoint(endPointB, segmentVector, nextStartPointB, nextSegmentVector);
+    gl_Position = matrix * vec4(gIn[2].pos, 0.0, 1.0);
+    gOut.uv = vec2(1.0, 0.5);
+    EmitVertex();
+    EndPrimitive();
 }
 )";
     }break;
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
         src += R"(
-in float fragLineRelPos;
-in float fragLineAbsPos;
-in float fragSegmentRelPos;
-in float fragSegmentAbsPos;
-in Rgba fragRgba;
-in flat Index fragIndex;
+in GeometryOut {
+    float linePos;
+    float segmentPos;
+    flat float segmentLength;
+    Rgba rgba;
+    flat Index index;
+    flat Rgba colour[2];
+    vec2 uv;
+} fIn;
+
+uniform float lineLength;
 
 Colour src(const vec2 pos) {
-    return Colour(int(fragSegmentAbsPos) % 10 < 5 ? fragRgba : Rgba(0.0, 0.0, 0.0, 1.0), fragIndex);
+//    return Colour(int(fIn.segmentPos) % 10 < 5 ? fIn.rgba : Rgba(0.0, 0.0, 0.0, 1.0), fIn.index);
+    return Colour(int(mod(fIn.uv.x, 0.5) < 0.25) + int(mod(fIn.uv.y, 0.5) < 0.25) == 1 ? mix(fIn.colour[0], fIn.colour[1], fIn.uv.x) : Rgba(0.0, 0.0, 0.0, 1.0), fIn.index);
 }
 )";
         src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);

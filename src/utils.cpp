@@ -171,44 +171,15 @@ void rotateScaleAtOrigin(QMatrix4x4 &transform, const float rotation, const floa
     transform = transform * workMatrix;
 }
 
-QMatrix4x4 transformPointToPoint(const QVector2D origin, const QVector2D from, const QVector2D to)
+QMatrix4x4 transformPointToPoint(const QVector2D origin, const QVector2D from, const QVector2D to, const bool scale, const bool rotate)
 {
     const QVector2D fromVector = QVector2D(from - origin);
     const QVector2D toVector = QVector2D(to - origin);
-    const float scaling = toVector.length() / fromVector.length();
-    const float rotation = qRadiansToDegrees(atan2(toVector.y(), toVector.x()) - atan2(fromVector.y(), fromVector.x()));
+    const float scaling = scale ? toVector.length() / fromVector.length() : 1.0f;
+    const float rotation = rotate ? qRadiansToDegrees(atan2(toVector.y(), toVector.x()) - atan2(fromVector.y(), fromVector.x())) : 0.0f;
     QMatrix4x4 transform;
     rotateScaleAtOrigin(transform, rotation, scaling, origin);
     return transform;
 }
-/*
-bool KeyEventTransition::eventTest(QEvent *event) {
-    const QStateMachine::WrappedEvent *const wrappedEvent = static_cast<const QStateMachine::WrappedEvent *>(event);
-    const QKeyEvent *const keyEvent = static_cast<const QKeyEvent *>(wrappedEvent->event());
-    return QEventTransition::eventTest(event) &&
-            keyEvent->key() == key() &&
-            (modifierMask() == Qt::NoModifier || keyEvent->modifiers() & modifierMask()) &&
-            !keyEvent->isAutoRepeat();
-}
 
-bool MouseEventTransition::eventTest(QEvent *event) {
-    const QStateMachine::WrappedEvent *const wrappedEvent = static_cast<const QStateMachine::WrappedEvent *>(event);
-    const QMouseEvent *const mouseEvent = static_cast<const QMouseEvent *>(wrappedEvent->event());
-    return QEventTransition::eventTest(event) &&
-            mouseEvent->button() == button() &&
-            (modifierMask() == Qt::NoModifier || mouseEvent->modifiers() & modifierMask());
-}
-
-bool ModifierKeyEventTransition::eventTest(QEvent *event) {
-    static const QSet<Qt::Key> modifiers = {Qt::Key_Shift, Qt::Key_Control, Qt::Key_Meta, Qt::Key_Alt, Qt::Key_AltGr};
-    const QStateMachine::WrappedEvent *const wrappedEvent = static_cast<const QStateMachine::WrappedEvent *>(event);
-    if (wrappedEvent->object() == eventSource()) {
-        if ((wrappedEvent->event()->type() == QEvent::KeyPress || wrappedEvent->event()->type() == QEvent::KeyRelease)) {
-            const QKeyEvent *const keyEvent = static_cast<const QKeyEvent *>(wrappedEvent->event());
-            if (modifiers.contains(static_cast<Qt::Key>(keyEvent->key()))) return true;
-        }
-    }
-    return false;
-}
-*/
 } // namespace GfxPaint

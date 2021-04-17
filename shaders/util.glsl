@@ -27,6 +27,19 @@ vec2 perp(const vec2 vector) {
     return vec2(-vector.y, vector.x);
 }
 
+bool intersectRays(const vec2 as, const vec2 ad, const vec2 bs, const vec2 bd, out vec2 p, out float u, out float v)
+{
+    vec2 delta = bs - as;
+    float det = bd.x * ad.y - bd.y * ad.x;
+    if (det != 0.0) {
+        u = (delta.y * bd.x - delta.x * bd.y) / det;
+        v = (delta.y * ad.x - delta.x * ad.y) / det;
+        p = as + ad * u;
+        return true;
+    }
+    else return false;
+}
+
 // 00 10
 // 01 11
 #define BILINEAR(valueType)\
