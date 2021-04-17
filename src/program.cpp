@@ -233,6 +233,7 @@ out float geomLineRelPos;
 out float geomLineAbsPos;
 out Rgba geomRgba;
 out Index geomIndex;
+out flat uint geomInstance;
 
 void main(void)
 {
@@ -243,6 +244,7 @@ void main(void)
     geomLineAbsPos = point.lineAbsPos;
     geomRgba = point.colour.rgba;
     geomIndex = point.colour.index;
+    geomInstance = uint(gl_InstanceID);
 }
 )";
     }break;
@@ -250,7 +252,7 @@ void main(void)
         src += RenderManager::headerShaderPart();
         src += R"(
 layout (lines_adjacency) in;
-layout (triangle_strip, max_vertices = 8) out;
+layout (triangle_strip, max_vertices = 16) out;
 
 in vec2 geomPos[];
 in float geomWidth[];
@@ -258,6 +260,7 @@ in float geomLineRelPos[];
 in float geomLineAbsPos[];
 in Rgba geomRgba[];
 in Index geomIndex[];
+in flat uint geomInstance[];
 
 uniform mat4 matrix;
 
@@ -268,6 +271,19 @@ out float fragSegmentAbsPos;
 out Rgba fragRgba;
 out Index fragIndex;
 
+bool intersectRays(const vec2 as, const vec2 ad, const vec2 bs, const vec2 bd, out vec2 p, out float u, out float v)
+{
+    vec2 delta = bs - as;
+    float det = bd.x * ad.y - bd.y * ad.x;
+    if (det != 0.0) {
+        u = (delta.y * bd.x - delta.x * bd.y) / det;
+        v = (delta.y * ad.x - delta.x * ad.y) / det;
+        p = as + ad * u;
+        return true;
+    }
+    else return false;
+}
+
 void main(void)
 {
     vec2 segmentVector = geomPos[2] - geomPos[1];
@@ -275,34 +291,75 @@ void main(void)
     vec2 segmentPerp = normalize(perp(segmentVector));
 
     // Segment start
-    fragLineRelPos = geomLineRelPos[1];
-    fragLineAbsPos = geomLineAbsPos[1];
-    fragSegmentAbsPos = 0.0;
-    fragSegmentRelPos = 0.0;
     fragRgba = geomRgba[1];
     fragIndex = geomIndex[1];
+
     vec2 startHalfWidthVector = segmentPerp * geomWidth[1] / 2.0;
-    gl_Position = matrix * vec4(geomPos[1] - startHalfWidthVector, 0.0, 1.0);
+    vec2 startPointA = geomPos[1] - startHalfWidthVector;
+    vec2 startPointB = geomPos[1] + startHalfWidthVector;
+
+    vec2 prevSegmentVector = geomPos[1] - geomPos[0];
+    vec2 prevSegmentPerp = normalize(perp(prevSegmentVector));
+    vec2 prevEndHalfWidthVector = prevSegmentPerp * geomWidth[1] / 2.0;
+    vec2 prevEndPointA = geomPos[1] - prevEndHalfWidthVector;
+    vec2 prevEndPointB = geomPos[1] + prevEndHalfWidthVector;
+
+    vec2 actualStartA;
+    float startAU, startAV;
+    bool startAIntersecting = intersectRays(startPointA, segmentVector, prevEndPointA, prevSegmentVector, actualStartA, startAU, startAV);
+    gl_Position = matrix * vec4(startAIntersecting ? actualStartA : startPointA, 0.0, 1.0);
+    fragLineRelPos = geomLineRelPos[1];
+    fragLineAbsPos = geomLineAbsPos[1];
+    fragSegmentAbsPos = 0.0/*segmentLength * -startAU*/;
+    fragSegmentRelPos = 0.0/*startAU*/;
     EmitVertex();
-    gl_Position = matrix * vec4(geomPos[1] + startHalfWidthVector, 0.0, 1.0);
+
+    vec2 actualStartB;
+    float startBU, startBV;
+    bool startBIntersecting = intersectRays(startPointB, segmentVector, prevEndPointB, prevSegmentVector, actualStartB, startBU, startBV);
+    gl_Position = matrix * vec4(startBIntersecting ? actualStartB : startPointB, 0.0, 1.0);
+    fragLineRelPos = geomLineRelPos[1];
+    fragLineAbsPos = geomLineAbsPos[1];
+    fragSegmentAbsPos = 0.0/*segmentLength * -startBU*/;
+    fragSegmentRelPos = 0.0/*startBU*/;
     EmitVertex();
 
     // Segment end
-    fragLineRelPos = geomLineRelPos[2];
-    fragLineAbsPos = geomLineAbsPos[2];
-    fragSegmentAbsPos = segmentLength;
-    fragSegmentRelPos = 1.0;
     fragRgba = geomRgba[2];
     fragIndex = geomIndex[2];
-    vec2 endHalfWidthVector = segmentPerp * geomWidth[2] / 2.0;
-    gl_Position = matrix * vec4(geomPos[2] - endHalfWidthVector, 0.0, 1.0);
-    EmitVertex();
-    gl_Position = matrix * vec4(geomPos[2] + endHalfWidthVector, 0.0, 1.0);
-    EmitVertex();
-    EndPrimitive();
 
-//    // Connect to previous segment
-//    if (gl_InstanceID != 0) {
+    vec2 endHalfWidthVector = segmentPerp * geomWidth[2] / 2.0;
+    vec2 endPointA = geomPos[2] - endHalfWidthVector;
+    vec2 endPointB = geomPos[2] + endHalfWidthVector;
+
+    vec2 nextSegmentVector = geomPos[3] - geomPos[2];
+    vec2 nextSegmentPerp = normalize(perp(nextSegmentVector));
+    vec2 nextStartHalfWidthVector = nextSegmentPerp * geomWidth[2] / 2.0;
+    vec2 nextStartPointA = geomPos[2] - nextStartHalfWidthVector;
+    vec2 nextStartPointB = geomPos[2] + nextStartHalfWidthVector;
+
+    vec2 actualEndA;
+    float endAU, endAV;
+    bool endAIntersecting = intersectRays(endPointA, segmentVector, nextStartPointA, nextSegmentVector, actualEndA, endAU, endAV);
+    gl_Position = matrix * vec4(endAIntersecting ? actualEndA : endPointA, 0.0, 1.0);
+    fragLineRelPos = geomLineRelPos[2];
+    fragLineAbsPos = geomLineAbsPos[2];
+    fragSegmentAbsPos = segmentLength/* * endAU*/;
+    fragSegmentRelPos = endAU;
+    EmitVertex();
+
+    vec2 actualEndB;
+    float endBU, endBV;
+    bool endBIntersecting = intersectRays(endPointB, segmentVector, nextStartPointB, nextSegmentVector, actualEndB, endBU, endBV);
+    gl_Position = matrix * vec4(endBIntersecting ? actualEndB : endPointB, 0.0, 1.0);
+    fragLineRelPos = geomLineRelPos[2];
+    fragLineAbsPos = geomLineAbsPos[2];
+    fragSegmentAbsPos = segmentLength/* * endBU*/;
+    fragSegmentRelPos = endBU;
+    EmitVertex();
+
+    // Connect to previous segment
+    if (geomInstance[0] != 0u) {
 //        vec2 prevSegmentVector = geomPos[1] - geomPos[0];
 //        vec2 prevSegmentPerp = normalize(perp(prevSegmentVector));
 //        vec2 avgPerp = normalize(segmentPerp + prevSegmentPerp);
@@ -327,7 +384,7 @@ void main(void)
 //        gl_Position = matrix * vec4(geomPos[1] + startHalfWidthVector, 0.0, 1.0);
 //        EmitVertex();
 //        EndPrimitive();
-//    }
+    }
 }
 )";
     }break;
@@ -365,48 +422,12 @@ void LineProgram::render(const std::vector<LineProgram::Point> &points, const Co
 
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
 
-    GLuint vao;
-    GLuint vertexBuffer;
-
-    glGenVertexArrays(1, &vao);
-    glGenBuffers(1, &vertexBuffer);
-
     glBindVertexArray(vao);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(LineProgram::Point), points.data(), GL_STATIC_DRAW);
 
-    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
-    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(LineProgram::Point), points.data(), GL_STATIC_DRAW);
-
-    struct Attrib {
-        GLint size;
-        GLenum type;
-        size_t offset;
-    };
-    const std::vector<Attrib> attribs{
-        {2, GL_FLOAT, 16},
-        {1, GL_FLOAT, 16},
-        {1, GL_FLOAT, 16},
-        {1, GL_FLOAT, 16},
-        {4, GL_FLOAT, 16},
-        {1, GL_UNSIGNED_INT, 16},
-    };
-    const size_t stride = sizeof(LineProgram::Point);
-    for (size_t i = 0u, offset = 0u; i < attribs.size(); offset += attribs[i].offset, ++i) {
-        glVertexAttribPointer(i, attribs[i].size, attribs[i].type, false, stride, (GLvoid *)offset);
-        glVertexAttribDivisor(i, 0);
-        glVertexBindingDivisor(i, 0);
-        glEnableVertexAttribArray(i);
-    }
-
-//    for (size_t i = 0; i < points.size() - 3; ++i) {
-//        glDrawArrays(GL_LINES_ADJACENCY, i, 4);
-//    }
     glDrawArraysInstanced(GL_LINES_ADJACENCY, 0, 4, points.size() - 3);
-
-    glDeleteBuffers(1, &vertexBuffer);
-    glDeleteVertexArrays(1, &vao);
 }
 
 QString DabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const

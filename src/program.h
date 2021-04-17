@@ -334,19 +334,23 @@ public:
 
     LineProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
         RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
-        storageBuffer(0)
+        vao(0), storageBuffer(0)
     {
         updateKey(typeid(this), {});
+
+        glGenVertexArrays(1, &vao);
         glGenBuffers(1, &storageBuffer);
     }
 
     virtual ~LineProgram() override {
         glDeleteBuffers(1, &storageBuffer);
+        glDeleteVertexArrays(1, &vao);
     }
 
     void render(const std::vector<Point> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
+    GLuint vao;
     GLuint storageBuffer;
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
