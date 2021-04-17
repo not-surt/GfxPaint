@@ -29,9 +29,7 @@ signals:
     void colourPicked(const Colour &colour);
 
 protected:
-    virtual void mousePressEvent(QMouseEvent *const event) override { processMouseEvent(event); }
-    virtual void mouseReleaseEvent(QMouseEvent *const event) override { processMouseEvent(event); }
-    virtual void mouseMoveEvent(QMouseEvent *const event) override { processMouseEvent(event); }
+    virtual bool event(QEvent *const event) override;
     virtual void initializeGL() override;
     virtual void render() override;
     virtual int heightForWidth(const int width) const override;
@@ -47,14 +45,17 @@ protected:
     }
     QSize cells() const;
     void updatePaletteLayout();
-    void processMouseEvent(QMouseEvent *const event);
 
     int m_columnCount;
     bool m_fitColumnCount;
     QSize m_swatchSize;
     bool m_fitSwatchSize;
 
+    Index leftIndex, rightIndex;
+    Index dragStartIndex, dragEndIndex;
+
     ColourPaletteProgram *program;
+    ModelProgram *markerProgram;
     ColourPalettePickProgram *pickProgram;
     ColourPaletteProgram *selectionProgram;
 

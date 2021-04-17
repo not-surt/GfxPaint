@@ -149,11 +149,34 @@ QString ModelProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
     switch(stage) {
     case QOpenGLShader::Vertex: {
         src += RenderManager::headerShaderPart();
-        src += RenderManager::modelVertexMainShaderPart();
+        src +=
+            R"(
+uniform mat4 matrix;
+
+in layout(location = 0) vec2 vertexPos;
+in layout(location = 1) vec4 vertexColour;
+
+out layout(location = 0) vec2 pos;
+out layout(location = 1) vec4 colour;
+
+void main(void) {
+    pos = vec2(0.0, 0.0);
+    colour = vertexColour;
+    gl_Position = matrix * vec4(vertexPos, 0.0, 1.0);
+}
+)";
     }break;
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
-        src += RenderManager::modelFragmentShaderPart("src");
+        src +=
+        R"(
+//in layout(location = 0) vec2 pos;
+in layout(location = 1) vec4 colour;
+
+Colour src(const vec2 pos) {
+    return Colour(colour, INDEX_INVALID);
+}
+)";
         src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
         src += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
     }break;
@@ -171,12 +194,219 @@ void ModelProgram::render(Model *const model, const Colour &colour, const QMatri
 
     glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
 
-    glUniform2i(program.uniformLocation("srcRectPos"), 0, 0);
-    glUniform2i(program.uniformLocation("srcRectSize"), 1, 1);
-
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
 
     model->render();
+}
+
+QString LineProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+{
+    QString src;
+
+    switch(stage) {
+    case QOpenGLShader::Vertex: {
+        src += RenderManager::headerShaderPart();
+        src += R"(
+layout(location = 0) in vec2 pos;
+layout(location = 1) in float width;
+layout(location = 2) in float lineRelPos;
+layout(location = 3) in float lineAbsPos;
+layout(location = 4) in Rgba rgba;
+layout(location = 5) in Index index;
+
+struct Point {
+    vec2 pos;
+    float width;
+    float lineRelPos;
+    float lineAbsPos;
+    Colour colour;
+};
+
+layout(std430, binding = 0) buffer StorageData
+{
+    Point points[];
+} storageData;
+
+out vec2 geomPos;
+out float geomWidth;
+out float geomLineRelPos;
+out float geomLineAbsPos;
+out Rgba geomRgba;
+out Index geomIndex;
+
+void main(void)
+{
+    Point point = storageData.points[gl_InstanceID + gl_VertexID];
+    geomPos = point.pos;
+    geomWidth = point.width;
+    geomLineRelPos = point.lineRelPos;
+    geomLineAbsPos = point.lineAbsPos;
+    geomRgba = point.colour.rgba;
+    geomIndex = point.colour.index;
+}
+)";
+    }break;
+    case QOpenGLShader::Geometry: {
+        src += RenderManager::headerShaderPart();
+        src += R"(
+layout (lines_adjacency) in;
+layout (triangle_strip, max_vertices = 8) out;
+
+in vec2 geomPos[];
+in float geomWidth[];
+in float geomLineRelPos[];
+in float geomLineAbsPos[];
+in Rgba geomRgba[];
+in Index geomIndex[];
+
+uniform mat4 matrix;
+
+out float fragLineRelPos;
+out float fragLineAbsPos;
+out float fragSegmentRelPos;
+out float fragSegmentAbsPos;
+out Rgba fragRgba;
+out Index fragIndex;
+
+void main(void)
+{
+    vec2 segmentVector = geomPos[2] - geomPos[1];
+    float segmentLength = length(segmentVector);
+    vec2 segmentPerp = normalize(perp(segmentVector));
+
+    // Segment start
+    fragLineRelPos = geomLineRelPos[1];
+    fragLineAbsPos = geomLineAbsPos[1];
+    fragSegmentAbsPos = 0.0;
+    fragSegmentRelPos = 0.0;
+    fragRgba = geomRgba[1];
+    fragIndex = geomIndex[1];
+    vec2 startHalfWidthVector = segmentPerp * geomWidth[1] / 2.0;
+    gl_Position = matrix * vec4(geomPos[1] - startHalfWidthVector, 0.0, 1.0);
+    EmitVertex();
+    gl_Position = matrix * vec4(geomPos[1] + startHalfWidthVector, 0.0, 1.0);
+    EmitVertex();
+
+    // Segment end
+    fragLineRelPos = geomLineRelPos[2];
+    fragLineAbsPos = geomLineAbsPos[2];
+    fragSegmentAbsPos = segmentLength;
+    fragSegmentRelPos = 1.0;
+    fragRgba = geomRgba[2];
+    fragIndex = geomIndex[2];
+    vec2 endHalfWidthVector = segmentPerp * geomWidth[2] / 2.0;
+    gl_Position = matrix * vec4(geomPos[2] - endHalfWidthVector, 0.0, 1.0);
+    EmitVertex();
+    gl_Position = matrix * vec4(geomPos[2] + endHalfWidthVector, 0.0, 1.0);
+    EmitVertex();
+    EndPrimitive();
+
+//    // Connect to previous segment
+//    if (gl_InstanceID != 0) {
+//        vec2 prevSegmentVector = geomPos[1] - geomPos[0];
+//        vec2 prevSegmentPerp = normalize(perp(prevSegmentVector));
+//        vec2 avgPerp = normalize(segmentPerp + prevSegmentPerp);
+
+//        fragLineRelPos = geomLineRelPos[1];
+//        fragLineAbsPos = geomLineAbsPos[1];
+//        fragSegmentAbsPos = 0.0;
+//        fragSegmentRelPos = 0.0;
+//        fragRgba = geomRgba[1];
+//        fragIndex = geomIndex[1];
+
+//        // Previous segment end
+//        vec2 prevEndHalfWidthVector = prevSegmentPerp * geomWidth[1] / 2.0;
+//        gl_Position = matrix * vec4(geomPos[1] - prevEndHalfWidthVector, 0.0, 1.0);
+//        EmitVertex();
+//        gl_Position = matrix * vec4(geomPos[1] + prevEndHalfWidthVector, 0.0, 1.0);
+//        EmitVertex();
+
+//        // current segment start
+//        gl_Position = matrix * vec4(geomPos[1] - startHalfWidthVector, 0.0, 1.0);
+//        EmitVertex();
+//        gl_Position = matrix * vec4(geomPos[1] + startHalfWidthVector, 0.0, 1.0);
+//        EmitVertex();
+//        EndPrimitive();
+//    }
+}
+)";
+    }break;
+    case QOpenGLShader::Fragment: {
+        src += RenderManager::headerShaderPart();
+        src += R"(
+in float fragLineRelPos;
+in float fragLineAbsPos;
+in float fragSegmentRelPos;
+in float fragSegmentAbsPos;
+in Rgba fragRgba;
+in flat Index fragIndex;
+
+Colour src(const vec2 pos) {
+    return Colour(int(fragSegmentAbsPos) % 10 < 5 ? fragRgba : Rgba(0.0, 0.0, 0.0, 1.0), fragIndex);
+}
+)";
+        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
+        src += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
+    }break;
+    default: break;
+    }
+
+    return src;
+}
+
+void LineProgram::render(const std::vector<LineProgram::Point> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette)
+{
+    Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
+
+    QOpenGLShaderProgram &program = this->program();
+    program.bind();
+
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
+
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
+
+    GLuint vao;
+    GLuint vertexBuffer;
+
+    glGenVertexArrays(1, &vao);
+    glGenBuffers(1, &vertexBuffer);
+
+    glBindVertexArray(vao);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(LineProgram::Point), points.data(), GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, points.size() * sizeof(LineProgram::Point), points.data(), GL_STATIC_DRAW);
+
+    struct Attrib {
+        GLint size;
+        GLenum type;
+        size_t offset;
+    };
+    const std::vector<Attrib> attribs{
+        {2, GL_FLOAT, 16},
+        {1, GL_FLOAT, 16},
+        {1, GL_FLOAT, 16},
+        {1, GL_FLOAT, 16},
+        {4, GL_FLOAT, 16},
+        {1, GL_UNSIGNED_INT, 16},
+    };
+    const size_t stride = sizeof(LineProgram::Point);
+    for (size_t i = 0u, offset = 0u; i < attribs.size(); offset += attribs[i].offset, ++i) {
+        glVertexAttribPointer(i, attribs[i].size, attribs[i].type, false, stride, (GLvoid *)offset);
+        glVertexAttribDivisor(i, 0);
+        glVertexBindingDivisor(i, 0);
+        glEnableVertexAttribArray(i);
+    }
+
+//    for (size_t i = 0; i < points.size() - 3; ++i) {
+//        glDrawArrays(GL_LINES_ADJACENCY, i, 4);
+//    }
+    glDrawArraysInstanced(GL_LINES_ADJACENCY, 0, 4, points.size() - 3);
+
+    glDeleteBuffers(1, &vertexBuffer);
+    glDeleteVertexArrays(1, &vao);
 }
 
 QString DabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const

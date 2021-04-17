@@ -64,6 +64,7 @@ Editor::Editor(const Editor &other) :
 
 Editor::~Editor()
 {
+    qDebug() << "Editor destructor!";
 }
 
 bool Editor::eventFilter(QObject *const watched, QEvent *const event)
@@ -75,6 +76,7 @@ bool Editor::eventFilter(QObject *const watched, QEvent *const event)
     }
     else if (event->type() == QEvent::Wheel)  {
         const QWheelEvent *const wheelEvent = static_cast<QWheelEvent *>(event);
+        // TODO: wheel wierdness!
         qDebug() << "Window Wheel" << wheelEvent->angleDelta();//////////////////
 //        QWheelEvent *eventCopy = new QWheelEvent(wheelEvent->pos(), wheelEvent->globalPos(), wheelEvent->pixelDelta(), wheelEvent->angleDelta(), wheelEvent->delta(), wheelEvent->orientation(), wheelEvent->buttons(), wheelEvent->modifiers(), wheelEvent->phase(), wheelEvent->source());
 //        QApplication::postEvent(this, eventCopy);
@@ -91,8 +93,10 @@ bool Editor::event(QEvent *const event)
     const QKeyEvent *const keyEvent = static_cast<QKeyEvent *>(event);
     if ((event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) ||
             (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) ||
-            event->type() == QEvent::MouseButtonRelease ||
             event->type() == QEvent::MouseButtonPress ||
+            event->type() == QEvent::MouseButtonRelease ||
+            event->type() == QEvent::NonClientAreaMouseButtonRelease ||
+            event->type() == QEvent::NonClientAreaMouseMove ||
             event->type() == QEvent::MouseMove ||
             event->type() == QEvent::Wheel ||
             event->type() == QEvent::TabletPress ||
@@ -112,7 +116,7 @@ bool Editor::event(QEvent *const event)
         if (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) inputState.keys.insert(static_cast<Qt::Key>(keyEvent->key()));
         else if (event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) inputState.keys.remove(static_cast<Qt::Key>(keyEvent->key()));
         else if (event->type() == QEvent::MouseButtonPress) inputState.mouseButtons.insert(mouseEvent->button());
-        else if (event->type() == QEvent::MouseButtonRelease) inputState.mouseButtons.remove(mouseEvent->button());
+        else if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::NonClientAreaMouseButtonRelease) inputState.mouseButtons.remove(mouseEvent->button());
         else if (event->type() == QEvent::TabletPress) inputState.mouseButtons.insert(tabletEvent->button());
         else if (event->type() == QEvent::TabletRelease) inputState.mouseButtons.remove(tabletEvent->button());
         else if (event->type() == QEvent::Wheel) {
@@ -120,13 +124,13 @@ bool Editor::event(QEvent *const event)
             static const float stepSize = 8 * 15;
             wheelDelta = QVector2D(wheelEvent->angleDelta()) / stepSize;
         }
-        if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
+        if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove || event->type() == QEvent::NonClientAreaMouseMove) {
             cursorDelta = QVector2D(mouseEvent->localPos()) - cursorPos;
         }
         if (event->type() == QEvent::TabletRelease || event->type() == QEvent::TabletMove) {
             cursorDelta = QVector2D(tabletEvent->posF()) - cursorPos;
         }
-        if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove) {
+        if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::NonClientAreaMouseButtonRelease || event->type() == QEvent::MouseMove || event->type() == QEvent::NonClientAreaMouseMove) {
             cursorPos = QVector2D(mouseEvent->localPos());
             pressure = 1.0f;
         }
@@ -329,6 +333,19 @@ void Editor::render()
             }
         }
     }
+
+    LineProgram *lineProgram = new LineProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+    std::vector<LineProgram::Point> points{
+        {{16.0, 256.0f}, 0.0f, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{16.0, 16.0f}, 0.0f, 0.0f, 0.0f, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{256.0, 16.0f}, 16.0f, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{256.0, 256.0f}, 32.0f, 0.0f, 0.0f, {{0.0f, 1.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{16.0, 256.0f}, 16.0f, 0.0f, 0.0f, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+        {{128.0, 128.0f}, 8.0f, 0.0f, 0.0f, {{0.0f, 0.0f, 0.0f, 0.5f}, INDEX_INVALID}},
+        {{16.0, 16.0f}, 0.0f, 0.0f, 0.0f, {{0.0f, 0.0f, 0.0f, 0.0f}, INDEX_INVALID}},
+        {{16.0, 16.0f}, 0.0f, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+    };
+    lineProgram->render(points, {{1.0f, 0.0f, 0.0f, 1.0f}, INDEX_INVALID}, viewportTransform * cameraTransform, widgetBuffer, nullptr);
 }
 
 float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const QVector2D dabSize, const QVector2D absoluteSpacing, const QVector2D proportionalSpacing, const float offset, Stroke &output) {

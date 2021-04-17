@@ -183,7 +183,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
 MainWindow::~MainWindow()
 {
     for (auto editor : editorSubWindows.keys()) {
-        deleteEditor(editor);
+//        deleteEditor(editor); // If parented then should be deleted automatically?
     }
     delete ui;
 }
@@ -724,6 +724,21 @@ void MainWindow::buildNodesMenu()
             });
         }
     }
+    ui->menuNode->addSeparator();
+    QAction *const removeNodesAction = new QAction("Remove nodes", this);
+    ui->menuNode->addAction(removeNodesAction);
+    QObject::connect(removeNodesAction, &QAction::triggered, this, [this](){
+        if (activeEditor) {
+            activeEditor->removeSelectedNodes();
+        }
+    });
+    QAction *const duplicateNodesAction = new QAction("Duplicate nodes", this);
+    ui->menuNode->addAction(duplicateNodesAction);
+    QObject::connect(removeNodesAction, &QAction::triggered, this, [this](){
+        if (activeEditor) {
+            activeEditor->duplicateSelectedNodes();
+        }
+    });
 }
 
 void MainWindow::filesViewContextMenu(const QPoint &pos)

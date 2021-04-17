@@ -23,6 +23,10 @@ vec4 unpremultiply(const vec4 colour) {
     else return vec4(colour.rgb / colour.a, colour.a);
 }
 
+vec2 perp(const vec2 vector) {
+    return vec2(-vector.y, vector.x);
+}
+
 // 00 10
 // 01 11
 #define BILINEAR(valueType)\

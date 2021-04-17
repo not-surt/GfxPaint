@@ -34,8 +34,8 @@ typedef GLuint Index;
 #define INDEX_INVALID std::numeric_limits<GLuint>::max()
 
 struct Colour {
-    Rgba rgba{RGBA_INVALID};
-    GLuint index{INDEX_INVALID};
+    Rgba rgba alignas(16){RGBA_INVALID};
+    GLuint index alignas(4){INDEX_INVALID};
 
     inline bool operator==(const Colour &rhs) const = default;
     inline bool operator!=(const Colour &rhs) const = default;

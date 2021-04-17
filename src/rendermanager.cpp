@@ -219,6 +219,19 @@ RenderManager::RenderManager() :
             0, 1, 2,
             3, 4, 5,
         }, {3, 3,});
+
+
+    models["paletteMouseMarker"] = new Model(GL_TRIANGLES, {2, 4,}, {
+            0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 0.5f, 0.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f,
+            0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+        }, {
+            0, 1, 2,
+            3, 4, 5,
+        }, {3, 3,});
 }
 
 RenderManager::~RenderManager()
@@ -321,28 +334,6 @@ const vec2 vertices[4] = vec2[](
     };
     QString src;
     src += models[model];
-    return src;
-}
-
-QString RenderManager::modelVertexMainShaderPart()
-{
-    QString src;
-    src +=
-R"(
-uniform mat4 matrix;
-
-in layout(location = 0) vec2 vertexPos;
-in layout(location = 1) vec4 vertexColour;
-
-out layout(location = 0) vec2 pos;
-out layout(location = 1) vec4 colour;
-
-void main(void) {
-    pos = vec2(0.0, 0.0);
-    colour = vertexColour;
-    gl_Position = matrix * vec4(vertexPos, 0.0, 1.0);
-}
-)";
     return src;
 }
 
@@ -469,24 +460,6 @@ R"(
     return src;
 }
 
-QString RenderManager::modelFragmentShaderPart(const QString &name)
-{
-    QString src;
-    src +=
-R"(
-//in layout(location = 0) vec2 pos;
-in layout(location = 1) vec4 colour;
-
-Colour $NAME(const vec2 pos) {
-    return Colour(colour, INDEX_INVALID);
-}
-)";
-    stringMultiReplace(src, {
-        {"$NAME", name},
-    });
-    return src;
-}
-
 QString RenderManager::dabShaderPart(const QString &name, const Brush::Dab::Type type, const int metric)
 {
     const QMap<Brush::Dab::Type, QString> types = {
@@ -606,12 +579,23 @@ QString RenderManager::colourPaletteShaderPart(const QString &name)
 R"(
 uniform ivec2 cells;
 
-Colour $NAME(const vec2 pos) {
-    ivec2 cell = ivec2(floor(vec2(cells) * pos));
+ivec2 posCell(const ivec2 cells, const vec2 pos) {
+    return ivec2(floor(vec2(cells) * pos));
+}
+
+Index cellIndex(const ivec2 cells, const int size, const vec2 pos) {
+    ivec2 cell = posCell(cells, pos);
     int index = cell.x + cell.y * cells.x;
     if (cell.x >= 0 && cell.x < cells.x &&
         cell.y >= 0 && cell.y < cells.y &&
-        index >= 0 && index < int(paletteSize($NAMEPalettePaletteTexture)))
+        index >= 0 && index < size)
+        return Index(index);
+    else return INDEX_INVALID;
+}
+
+Colour $NAME(const vec2 pos) {
+    Index index = cellIndex(cells, int(paletteSize($NAMEPalettePaletteTexture)), pos);
+    if (index != INDEX_INVALID)
         return Colour(vec4($NAMEPalettePalette(Index(index))), Index(index));
     else return COLOUR_INVALID;
 }

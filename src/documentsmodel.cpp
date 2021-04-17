@@ -55,7 +55,9 @@ void DocumentsModel::removeDocument(Scene *const document)
     beginRemoveRows(QModelIndex(), index, index);
     for (auto editor : m_documentEditors[document]) {
         removeEditor(editor);
-        delete editor;
+        // TODO: crash! destructor still being called, multiple deletes?
+//        delete editor;
+//        editor->deleteLater();
     }
     m_documentEditors.take(document);
     m_documentModels.take(document)->deleteLater();

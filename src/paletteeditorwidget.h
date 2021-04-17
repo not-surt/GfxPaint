@@ -20,6 +20,8 @@ public:
     explicit PaletteEditorWidget(QWidget *parent = nullptr);
     ~PaletteEditorWidget();
 
+    virtual bool eventFilter(QObject *const watched, QEvent *const event) override;
+
 public slots:
     void setPalette(const GfxPaint::Buffer *const palette);
 

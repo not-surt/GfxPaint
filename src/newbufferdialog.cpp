@@ -13,16 +13,7 @@ NewBufferDialog::NewBufferDialog(QWidget *parent, Qt::WindowFlags flags) :
 {
     ui->setupUi(this);
 
-    QObject::connect(ui->componentTypeComboBox, qOverload<int>(&QComboBox::activated), this, [this](const int index){
-        const Buffer::Format::ComponentType componentType = static_cast<Buffer::Format::ComponentType>(index);
-        ui->componentSizeComboBox->clear();
-        for (int i = 1; i <= 4; ++i) {
-            if (BufferData::Format::components.at(componentType).sizes.contains(i)) {
-                ui->componentSizeComboBox->addItem(QString::number(i * 8) + " bpc", i);
-            }
-        }
-    });
-
+    QObject::connect(ui->componentTypeComboBox, qOverload<int>(&QComboBox::activated), this, &NewBufferDialog::updateComponentSizeComboBox);
     for (auto &[key, data] : BufferData::Format::componentTypeNames) {
         if (key != BufferData::Format::ComponentType::Invalid) ui->componentTypeComboBox->addItem(BufferData::Format::componentTypeName(key), static_cast<int>(key));
     }
@@ -53,6 +44,7 @@ NewBufferDialog::NewBufferDialog(QWidget *parent, Qt::WindowFlags flags) :
         ui->pixelHeightSpinBox->setValue(pixelRatio.height());
     }
     if (settings.contains("window/newBuffer/formatComponentType")) ui->componentTypeComboBox->setCurrentIndex(settings.value("window/newBuffer/formatComponentType").toInt());
+    updateComponentSizeComboBox(ui->componentTypeComboBox->currentIndex());
     if (settings.contains("window/newBuffer/formatComponentSize")) ui->componentSizeComboBox->setCurrentIndex(settings.value("window/newBuffer/formatComponentSize").toInt());
     if (settings.contains("window/newBuffer/formatComponentCount")) ui->componentCountComboBox->setCurrentIndex(settings.value("window/newBuffer/formatComponentCount").toInt());
     if (settings.contains("window/newBuffer/indexed")) ui->indexedCheckBox->setChecked(settings.value("window/newBuffer/indexed").toBool());
@@ -80,6 +72,17 @@ void NewBufferDialog::hideEvent(QHideEvent *event)
     settings.setValue("window/newBuffer/composeMode", ui->composeModeComboBox->currentIndex());
     settings.setValue("window/newBuffer/opacity", ui->opacitySpinBox->value());
     QDialog::hideEvent(event);
+}
+
+void NewBufferDialog::updateComponentSizeComboBox(const int componentTypeIndex)
+{
+    const Buffer::Format::ComponentType componentType = static_cast<Buffer::Format::ComponentType>(componentTypeIndex);
+    ui->componentSizeComboBox->clear();
+    for (int i = 1; i <= 4; ++i) {
+        if (BufferData::Format::components.at(componentType).sizes.contains(i)) {
+            ui->componentSizeComboBox->addItem(QString::number(i * 8) + " bpc", i);
+        }
+    }
 }
 
 } // namespace GfxPaint

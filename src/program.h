@@ -281,7 +281,7 @@ public:
 
 protected:
     struct UniformData {
-        mat4 matrix alignas(16);
+        mat4 matrix alignas(64);
         Colour transparent alignas(16);
     };
 
@@ -311,8 +311,7 @@ layout(std140, binding = $BINDING) uniform $NAMEBufferUniformData {
 class ModelProgram : public RenderProgram {
 public:
     ModelProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
-        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
-        uniformData{}
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode)
     {
         updateKey(typeid(this), {});
     }
@@ -320,13 +319,37 @@ public:
     void render(Model *const model, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
-    struct UniformData {
-        mat4 matrix alignas(16);
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+};
+
+class LineProgram : public RenderProgram {
+public:
+    struct Point {
+        QVector2D pos alignas(8);
+        GLfloat width alignas(4);
+        GLfloat lineRelPos alignas(4);
+        GLfloat lineAbsPos alignas(4);
+        Colour colour alignas(16);
     };
 
-    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+    LineProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
+        storageBuffer(0)
+    {
+        updateKey(typeid(this), {});
+        glGenBuffers(1, &storageBuffer);
+    }
 
-    UniformData uniformData;
+    virtual ~LineProgram() override {
+        glDeleteBuffers(1, &storageBuffer);
+    }
+
+    void render(const std::vector<Point> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+
+protected:
+    GLuint storageBuffer;
+
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 };
 
 class PatternProgram : public Program {
@@ -371,8 +394,8 @@ protected:
     struct UniformData {
         mat4 matrix alignas(16);
         Colour colour alignas(16);
-        GLfloat hardness alignas(16);
-        GLfloat alpha alignas(16);
+        GLfloat hardness alignas(4);
+        GLfloat alpha alignas(4);
     };
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -408,7 +431,7 @@ public:
 protected:
     struct UniformData {
         Colour colour alignas(16);
-        ivec2 components alignas(16);
+        ivec2 components alignas(8);
     };
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;

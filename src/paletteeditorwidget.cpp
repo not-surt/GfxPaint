@@ -1,6 +1,8 @@
 #include "paletteeditorwidget.h"
 #include "ui_paletteeditorwidget.h"
 
+#include <QScroller>
+
 namespace GfxPaint {
 
 PaletteEditorWidget::PaletteEditorWidget(QWidget *parent) :
@@ -31,11 +33,33 @@ PaletteEditorWidget::PaletteEditorWidget(QWidget *parent) :
         ui->colourPaletteWidget->setSwatchSize(QSize(size, size));
     });
     QObject::connect(ui->fitSwatchSizeCheckBox, &QCheckBox::toggled, ui->colourPaletteWidget, &ColourPaletteWidget::setFitSwatchSize);
+
+    ui->scrollArea->installEventFilter(this);
+    QScroller *scroller = QScroller::scroller(ui->scrollArea);
+    QScrollerProperties scrollerProperties;
+    scrollerProperties.setScrollMetric(QScrollerProperties::HorizontalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+    scrollerProperties.setScrollMetric(QScrollerProperties::VerticalOvershootPolicy, QScrollerProperties::OvershootAlwaysOff);
+    scrollerProperties.setScrollMetric(QScrollerProperties::DecelerationFactor, 10.0);
+    scroller->setScrollerProperties(scrollerProperties);
+    QScroller::grabGesture(ui->scrollArea, QScroller::MiddleMouseButtonGesture);
 }
 
 PaletteEditorWidget::~PaletteEditorWidget()
 {
     delete ui;
+}
+
+bool PaletteEditorWidget::eventFilter(QObject *const watched, QEvent *const event)
+{
+    if (watched == ui->scrollArea) {
+        if (event->type() == QEvent::QEvent::MouseButtonPress) {
+
+        }
+        if (event->type() == QEvent::QEvent::MouseButtonRelease) {
+
+        }
+    }
+    return false;
 }
 
 void PaletteEditorWidget::setPalette(const Buffer *const palette)
