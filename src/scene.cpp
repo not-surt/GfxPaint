@@ -144,8 +144,8 @@ void Scene::renderSubGraph(Node *const node, Buffer *const buffer, const bool in
     traversal.transformStack.push(parentTransform);
     if (palette) traversal.paletteStack.push(palette);
 
-//    traverse<Traversal &>(node, Scene::beforeChildren, Scene::afterChildren, traversal);
-    traverse(node, traversal);
+    traverse<Traversal &>(node, Scene::beforeChildren, Scene::afterChildren, traversal);
+//    traverse(node, traversal);
 
     if (palette) traversal.paletteStack.pop();
     traversal.transformStack.pop();

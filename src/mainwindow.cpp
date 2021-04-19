@@ -493,7 +493,7 @@ bool MainWindow::closeDocuments(const QList<Scene *> &documents)
 //        allClosed = allClosed && closeDocument(document);
 //    }
 //    return allClosed;
-    return std::all_of(std::begin(documents), std::end(documents), [this](Scene *document){ return closeDocument(document); });
+    return std::all_of(documents.begin(), documents.end(), [this](Scene *document){ return closeDocument(document); });
 }
 
 void MainWindow::addEditor(Editor *const editor)
@@ -605,7 +605,7 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(activeEditor, &Editor::transformChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransform);
         activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformChanged, activeEditor, &Editor::setTransform);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::transformModeChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransformMode);
-        activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformMode);
+        activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformTarget);
 
         installEventFilter(activeEditor);
 

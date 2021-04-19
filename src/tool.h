@@ -12,7 +12,7 @@ class Editor;
 
 class Tool {
 public:
-    Tool(Editor &editor) :
+    explicit Tool(Editor &editor) :
         editor(editor), active(false)
     {}
     virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) {}
@@ -22,6 +22,7 @@ public:
     virtual void onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) {}
     virtual void abort(const int mode = 0) {}
     virtual void wheel(const QVector2D &viewportPos, const QVector2D &delta, const int mode = 0) {}
+    virtual bool isExclusive() const { return true; }
 
 protected:
     Editor &editor;
@@ -30,7 +31,7 @@ protected:
 
 class StrokeTool : public Tool {
 public:
-    StrokeTool(Editor &editor) :
+    explicit StrokeTool(Editor &editor) :
         Tool(editor),
         strokeOffset(0.0), strokePoints()
     {}
@@ -38,7 +39,6 @@ public:
     virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
     virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
     virtual void onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void abort(const int mode = 0) override {}
 
 protected:
     float strokeOffset;
@@ -47,7 +47,7 @@ protected:
 
 class RectTool : public Tool {
 public:
-    RectTool(Editor &editor) :
+    explicit RectTool(Editor &editor) :
         Tool(editor),
         points()
     {}
@@ -55,36 +55,45 @@ public:
     virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
     virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
     virtual void onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void abort(const int mode = 0) override {}
+    virtual void onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
 
 protected:
-    float strokeOffset;
     std::array<QVector2D, 2> points;
 };
 
 class PickTool : public Tool {
 public:
-    PickTool(Editor &editor) :
+    explicit PickTool(Editor &editor) :
         Tool(editor)
     {}
     virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
     virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void abort(const int mode = 0) override {}
 
 protected:
 };
 
+class TransformTargetOverrideTool : public Tool {
+public:
+    explicit TransformTargetOverrideTool(Editor &editor) :
+        Tool(editor),
+        oldTransformMode()
+    {}
+    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual bool isExclusive() const override { return false; }
+
+protected:
+    int oldTransformMode;
+};
+
 class PanTool : public Tool {
 public:
-    PanTool(Editor &editor) :
+    explicit PanTool(Editor &editor) :
         Tool(editor),
         oldViewportPos()
     {}
     virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
     virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void abort(const int mode = 0) override {}
 
 protected:
     QVector2D oldViewportPos;
@@ -97,15 +106,13 @@ public:
         Zoom,
         Rotate,
     };
-    RotoZoomTool(Editor &editor) :
+    explicit RotoZoomTool(Editor &editor) :
         Tool(editor),
         oldViewportPos()
     {}
     virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
     virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
     virtual void onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void abort(const int mode = 0) override {}
 
 protected:
     QVector2D oldViewportPos;
@@ -113,7 +120,7 @@ protected:
 
 class ZoomTool : public Tool {
 public:
-    ZoomTool(Editor &editor) :
+    explicit ZoomTool(Editor &editor) :
         Tool(editor)
     {}
     virtual void wheel(const QVector2D &viewportPos, const QVector2D &delta, const int mode = 0) override;
@@ -121,7 +128,7 @@ public:
 
 class RotateTool : public Tool {
 public:
-    RotateTool(Editor &editor) :
+    explicit RotateTool(Editor &editor) :
         Tool(editor)
     {}
     virtual void wheel(const QVector2D &viewportPos, const QVector2D &delta, const int mode = 0) override;

@@ -10,9 +10,10 @@ EditingContext::EditingContext(Scene &scene) :
     m_colour{{0.0, 0.0, 0.0, 1.0}, INDEX_INVALID},
     m_palette(nullptr),
     m_bufferNodeContexts(),
-    m_selectionModel(qApp->documentManager.documentModel(&scene))
+    m_selectionModel(qApp->documentManager.documentModel(&scene)),
+    m_selectedNodes()
 {
-    updatePrograms();
+    update();
 }
 
 EditingContext::EditingContext(EditingContext &other) :
@@ -21,7 +22,8 @@ EditingContext::EditingContext(EditingContext &other) :
     m_colour(other.m_colour),
     m_palette(other.m_palette),
     m_bufferNodeContexts(other.m_bufferNodeContexts),
-    m_selectionModel(other.m_selectionModel.model())
+    m_selectionModel(other.m_selectionModel.model()),
+    m_selectedNodes(other.m_selectedNodes)
 {
     m_selectionModel.select(other.m_selectionModel.selection(), QItemSelectionModel::ClearAndSelect);
 }
@@ -32,13 +34,22 @@ EditingContext::~EditingContext()
     qDeleteAll(m_bufferNodeContexts);
 }
 
-void EditingContext::updatePrograms()
+void EditingContext::update()
 {
+    m_states.clear();
+    m_selectedNodes.clear();
+    for (auto index : m_selectionModel.selectedRows()) {
+        Node *node = static_cast<Node *>(index.internalPointer());
+        m_states.insert(node, Traversal::State());
+        m_selectedNodes.append(node);
+    }
+    // Update node states (non render)
+    scene.render(nullptr, false, nullptr, QMatrix4x4(), &m_states);
+
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     QHash<Node *, BufferNodeContext *> oldNodeContexts = m_bufferNodeContexts;
     m_bufferNodeContexts.clear();
-    for (auto index : m_selectionModel.selectedRows()) {
-        Node *node = static_cast<Node *>(index.internalPointer());
+    for (Node *node : m_selectedNodes) {
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
             Traversal::State &state = m_states[node];
@@ -58,7 +69,7 @@ void EditingContext::updatePrograms()
 void EditingContext::setBrush(const Brush &brush)
 {
     this->m_brush = brush;
-    updatePrograms();
+    update();
 }
 
 void EditingContext::setColour(const Colour &colour)

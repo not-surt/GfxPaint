@@ -24,18 +24,18 @@ public:
     const QMatrix4x4 &transform() const;
     void setTransform(const QMatrix4x4 &transform);
 
-    TransformMode transformMode() const;
-    void setTransformMode(const TransformMode transformMode);
+    TransformTarget transformMode() const;
+    void setTransformMode(const TransformTarget transformMode);
 
 signals:
     void transformChanged(const QMatrix4x4 &transform);
-    void transformModeChanged(const GfxPaint::TransformMode transformMode);
+    void transformModeChanged(const GfxPaint::TransformTarget transformMode);
 
 private:
     Ui::TransformEditorWidget *ui;
 
     TransformModel model;
-    TransformMode m_transformMode;
+    TransformTarget m_transformMode;
 };
 
 } // namespace GfxPaint

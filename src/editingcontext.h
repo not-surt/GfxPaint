@@ -35,7 +35,7 @@ public:
     explicit EditingContext(EditingContext &other);
     ~EditingContext();
 
-    void updatePrograms();
+    void update();
 
     void setBrush(const Brush &brush);
     void setColour(const Colour &colour);
@@ -49,6 +49,7 @@ public:
     }
     QHash<Node *, Traversal::State> &states() { return m_states; }
     QItemSelectionModel &selectionModel() { return m_selectionModel; }
+    QList<Node *> &selectedNodes() { return m_selectedNodes; }
 
 private:
     Scene &scene;
@@ -58,6 +59,7 @@ private:
     QHash<Node *, BufferNodeContext *> m_bufferNodeContexts;
     QHash<Node *, Traversal::State> m_states;
     QItemSelectionModel m_selectionModel;
+    QList<Node *> m_selectedNodes;
 };
 
 } // namespace GfxPaint

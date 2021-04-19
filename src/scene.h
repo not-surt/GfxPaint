@@ -81,18 +81,18 @@ public:
     bool save(const QString &filename = QString());
 
 // MSVC don't like
-//    template <typename ...Targs>
-//    using TraversalFunc = void (*const)(Node *const, Targs...);
-//    template <typename ...Targs>
-//    static void traverse(Node *const root, TraversalFunc<Targs...> beforeChildren, TraversalFunc<Targs...> afterChildren, Targs... args) {
-    static void traverse(Node *const root, Traversal &traversal) {
+    template <typename ...Targs>
+    using TraversalFunc = void (*const)(Node *const, Targs...);
+    template <typename ...Targs>
+    static void traverse(Node *const root, TraversalFunc<Targs...> beforeChildren, TraversalFunc<Targs...> afterChildren, Targs... args) {
+//    static void traverse(Node *const root, Traversal &traversal) {
         QStack<QQueue<Node *>> stack;
         QQueue<Node *> queue;
         queue.enqueue(root);
         stack.push(queue);
         do {
-//            beforeChildren(stack.top().head(), args...);
-            beforeChildren(stack.top().head(), traversal);
+            beforeChildren(stack.top().head(), args...);
+//            beforeChildren(stack.top().head(), traversal);
             QQueue<Node *> queue;
             for (auto child : stack.top().head()->children) {
                 if (child->enabled) {
@@ -103,8 +103,8 @@ public:
             while (!stack.isEmpty() && stack.top().isEmpty()) {
                 stack.pop();
                 if (!stack.isEmpty()) {
-//                    afterChildren(stack.top().dequeue(), args...);
-                    afterChildren(stack.top().dequeue(), traversal);
+                    afterChildren(stack.top().dequeue(), args...);
+//                    afterChildren(stack.top().dequeue(), traversal);
                 }
             }
         } while (!stack.isEmpty());

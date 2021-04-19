@@ -13,8 +13,7 @@ void StrokeTool::begin(const QVector2D &viewportPos, const Point &point, const i
 void StrokeTool::update(const QVector2D &viewportPos, const Point &point, const int mode) {
     const Stroke::Point &prevWorldPoint = strokePoints.points.last();
     const Stroke::Point worldPoint = strokePoints.add(point);
-    for (auto index : editor.editingContext().selectionModel().selectedRows()) {
-        Node *node = static_cast<Node *>(index.internalPointer());
+    for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         const EditingContext::BufferNodeContext *const bufferNodeContext = editor.editingContext().bufferNodeContext(node);
@@ -47,13 +46,12 @@ void StrokeTool::end(const QVector2D &viewportPos, const Point &point, const int
     if (strokePoints.points.count() == 1) update(viewportPos, point);
 
     // Clear stroke buffer
-    for (auto index : editor.editingContext().selectionModel().selectedRows()) {
-        Node *node = static_cast<Node *>(index.internalPointer());
+    for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         const EditingContext::BufferNodeContext *const bufferNodeContext = editor.editingContext().bufferNodeContext(node);
         if (bufferNode) {
-            bufferNodeContext->strokeBuffer->clear();
+//            bufferNodeContext->strokeBuffer->clear();
         }
     }
 }
@@ -80,8 +78,7 @@ void RectTool::update(const QVector2D &viewportPos, const Point &point, const in
 {
     qDebug() << "RectTool::update";
     points[1] = point.pos;
-    for (auto index : editor.editingContext().selectionModel().selectedRows()) {
-        Node *node = static_cast<Node *>(index.internalPointer());
+    for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         const EditingContext::BufferNodeContext *const bufferNodeContext = editor.editingContext().bufferNodeContext(node);
@@ -89,7 +86,18 @@ void RectTool::update(const QVector2D &viewportPos, const Point &point, const in
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
-            // draw here!
+            Model *const model = new Model(GL_TRIANGLE_STRIP, {2, 4,}, {
+                                           points[0].x(), points[0].y(), 1.0f, 0.0f, 0.0f, 1.0f,
+                                           points[1].x(), points[0].y(), 1.0f, 1.0f, 0.0f, 1.0f,
+                                           points[0].x(), points[1].y(), 1.0f, 0.0f, 0.0f, 1.0f,
+                                           points[1].x(), points[1].y(), 0.0f, 1.0f, 0.0f, 1.0f,
+                                           }, {
+                                           0, 1, 2, 3,
+                                           }, {4,});
+            ModelProgram *const program = new ModelProgram(bufferNode->buffer.format(), false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+            program->render(model, {}, GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, nullptr);
+            delete program;
+            delete model;
         }
     }
 }
@@ -98,6 +106,7 @@ void RectTool::end(const QVector2D &viewportPos, const Point &point, const int m
 {
     qDebug() << "RectTool::end";
     points[1] = point.pos;
+    update(viewportPos, point);
 }
 
 void RectTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode)
@@ -110,6 +119,34 @@ void RectTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point,
     points = savePoints;
 }
 
+void RectTool::onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+    Model *const markerModel = qApp->renderManager.models["planeMarker"];
+    ModelProgram *const markerProgram = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+    QMatrix4x4 markerTransform = editor.getViewportTransform();
+    const QVector2D viewportPoint = editor.worldToViewport(points[0]);
+    markerTransform.translate(viewportPoint.toVector3D());
+    float markerSize = 16.0f;
+    markerTransform.scale(markerSize, markerSize);
+    markerProgram->render(markerModel, {}, markerTransform, editor.getWidgetBuffer(), nullptr);
+    delete markerProgram;
+
+//    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+//    Model *const model = new Model(GL_TRIANGLE_STRIP, {2, 4,}, {
+//                                       points[0].x(), points[0].y(), 1.0f, 0.0f, 0.0f, 1.0f,
+//                                       points[1].x(), points[0].y(), 1.0f, 1.0f, 0.0f, 1.0f,
+//                                       points[0].x(), points[1].y(), 1.0f, 0.0f, 0.0f, 1.0f,
+//                                       points[1].x(), points[1].y(), 0.0f, 1.0f, 0.0f, 1.0f,
+//                                       }, {
+//                                       0, 1, 2, 3,
+//                                       }, {4,});
+//    ModelProgram *const program = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+//    program->render(model, {}, editor.getViewportTransform() * editor.transform(), editor.getWidgetBuffer(), nullptr);
+//    delete program;
+//    delete model;
+}
+
 void PickTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
 {
     update(viewportPos, point);
@@ -117,8 +154,7 @@ void PickTool::begin(const QVector2D &viewportPos, const Point &point, const int
 
 void PickTool::update(const QVector2D &viewportPos, const Point &point, const int mode)
 {
-    for (auto index : editor.editingContext().selectionModel().selectedRows()) {
-        Node *node = static_cast<Node *>(index.internalPointer());
+    for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
         EditingContext::BufferNodeContext *const bufferNodeContext = editor.editingContext().bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
@@ -130,8 +166,15 @@ void PickTool::update(const QVector2D &viewportPos, const Point &point, const in
     }
 }
 
-void PickTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
+void TransformTargetOverrideTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
 {
+    oldTransformMode = static_cast<int>(editor.transformTarget());
+    editor.setTransformTarget(static_cast<TransformTarget>(mode));
+}
+
+void TransformTargetOverrideTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    editor.setTransformTarget(static_cast<TransformTarget>(oldTransformMode));
 }
 
 void PanTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
@@ -144,29 +187,24 @@ void PanTool::update(const QVector2D &viewportPos, const Point &point, const int
     const QVector2D translation = viewportPos - oldViewportPos;
     QMatrix4x4 transform;
     transform.translate(QVector3D(translation));
-    if (editor.transformMode() == TransformMode::View) {
+    if (editor.transformTarget() == TransformTarget::View) {
         editor.setTransform(transform * editor.transform());
     }
     else {
-        for (auto index : editor.editingContext().selectionModel().selectedRows()) {
-            Node *node = static_cast<Node *>(index.internalPointer());
+        for (Node *node : editor.editingContext().selectedNodes()) {
             const Traversal::State &state = editor.editingContext().states().value(node);
-            if (editor.transformMode() == TransformMode::Object) {
+            if (editor.transformTarget() == TransformTarget::Object) {
                 SpatialNode *const spatialNode = dynamic_cast<SpatialNode *>(node);
                 if (spatialNode) {
                     spatialNode->setTransform(state.parentTransform.inverted() * (editor.transform().inverted() * transform * editor.transform()) * state.parentTransform * spatialNode->transform());
                 }
             }
-            else if (editor.transformMode() == TransformMode::Brush) {
+            else if (editor.transformTarget() == TransformTarget::Brush) {
 
             }
         }
     }
     oldViewportPos = viewportPos;
-}
-
-void PanTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
-{
 }
 
 void RotoZoomTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
@@ -180,20 +218,19 @@ void RotoZoomTool::update(const QVector2D &viewportPos, const Point &point, cons
     const bool rotate = (toolMode == Mode::RotoZoom || toolMode == Mode::Rotate);
     const bool zoom = (toolMode == Mode::RotoZoom || toolMode == Mode::Zoom);
     const QMatrix4x4 transform = transformPointToPoint(QVector2D(0.0f, 0.0f), oldViewportPos, viewportPos, rotate, zoom);
-    if (editor.transformMode() == TransformMode::View) {
+    if (editor.transformTarget() == TransformTarget::View) {
         editor.setTransform(transform * editor.transform());
     }
     else {
-        for (auto index : editor.editingContext().selectionModel().selectedRows()) {
-            Node *node = static_cast<Node *>(index.internalPointer());
+        for (Node *node : editor.editingContext().selectedNodes()) {
             const Traversal::State &state = editor.editingContext().states().value(node);
-            if (editor.transformMode() == TransformMode::Object) {
+            if (editor.transformTarget() == TransformTarget::Object) {
                 SpatialNode *const spatialNode = dynamic_cast<SpatialNode *>(node);
                 if (spatialNode) {
                     spatialNode->setTransform(state.parentTransform.inverted() * (editor.transform().inverted() * transform * editor.transform()) * state.parentTransform * spatialNode->transform());
                 }
             }
-            else if (editor.transformMode() == TransformMode::Brush) {
+            else if (editor.transformTarget() == TransformTarget::Brush) {
 
             }
         }
@@ -201,19 +238,14 @@ void RotoZoomTool::update(const QVector2D &viewportPos, const Point &point, cons
     oldViewportPos = viewportPos;
 }
 
-void RotoZoomTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
-{
-
-}
-
 void RotoZoomTool::onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode)
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Model *const markerModel = qApp->renderManager.models["planeMarker"];
     ModelProgram *const markerProgram = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    QMatrix4x4 markerTransform;
-    float markerSize = 32.0f;
-    markerTransform.scale(markerSize / (float)editor.width(), markerSize / (float)editor.height());
+    QMatrix4x4 markerTransform = editor.getViewportTransform();
+    float markerSize = 16.0f;
+    markerTransform.scale(markerSize, markerSize);
     markerProgram->render(markerModel, {}, markerTransform, editor.getWidgetBuffer(), nullptr);
     delete markerProgram;
 }

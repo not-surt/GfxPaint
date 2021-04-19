@@ -5,6 +5,9 @@
 #include <array>
 #include <algorithm>
 #include <iterator>
+#include <QVector2D>
+#include <QVector3D>
+#include <QMatrix4x4>
 
 #include "opengl.h"
 
@@ -41,6 +44,21 @@ struct Colour {
     inline bool operator!=(const Colour &rhs) const = default;
     inline auto operator<=>(const Colour&) const = default;
 };
+
+typedef QVector2D Vector2D;
+typedef QVector3D Vector3D;
+
+class Matrix4x4 : public QMatrix4x4 {
+    using QMatrix4x4::QMatrix4x4;
+public:
+    QVector2D map(const QVector2D &point) const { return QMatrix4x4::map(point.toVector3D()).toVector2D(); }
+    QVector2D mapVector(const QVector2D &point) const { return QMatrix4x4::mapVector(point.toVector3D()).toVector2D(); }
+    void rotate(const float angle) { QMatrix4x4::rotate(angle, QVector3D(0.0f, 0.0f, -1.0f)); }
+    void scale(const QVector2D &vector) { QMatrix4x4::scale(vector.x(), vector.y(), 1.0f); }
+    void translate(const QVector2D &vector) { QMatrix4x4::translate(vector.toVector3D()); }
+};
+inline QVector2D operator*(const QVector2D &vector, const Matrix4x4 &matrix) { return (vector.toVector3D() * matrix).toVector2D(); }
+inline QVector2D operator*(const Matrix4x4 &matrix, const QVector2D &vector) { return (matrix * vector.toVector3D()).toVector2D(); }
 
 inline QDebug operator<<(QDebug debug, const Colour &colour)
 {

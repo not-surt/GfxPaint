@@ -8,6 +8,8 @@
 #include <QItemSelectionModel>
 #include <cmath>
 #include <tuple>
+#include <set>
+#include <deque>
 
 #include "buffer.h"
 #include "brush.h"
@@ -20,7 +22,7 @@
 
 namespace GfxPaint {
 
-enum class TransformMode {
+enum class TransformTarget {
     View,
     Object,
     Brush,
@@ -72,10 +74,11 @@ public:
     EditingContext &editingContext() { return m_editingContext; }
 
     Buffer *getWidgetBuffer() { return RenderedWidget::widgetBuffer; }
+    const QMatrix4x4 &getViewportTransform() const { return viewportTransform; }
 
     Tool &activeTool() {
-        if (!toolStack.isEmpty()) {
-            return *toolStack.top().second.first;
+        if (!toolStack.empty()) {
+            return *toolStack.front().second.first;
         }
         else return strokeTool;
     }
@@ -128,18 +131,19 @@ public:
     StrokeTool strokeTool;
     RectTool rectTool;
     PickTool pickTool;
+    TransformTargetOverrideTool transformTargetOverrideTool;
     PanTool panTool;
     RotoZoomTool rotoZoomTool;
     ZoomTool zoomTool;
     RotateTool rotateTool;
 
-    TransformMode transformMode() const { return m_transformMode; }
+    TransformTarget transformTarget() const { return m_transformMode; }
     QMatrix4x4 transform() const { return cameraTransform; }
 
 public slots:
     void setBrush(const GfxPaint::Brush &brush);
     void setColour(const GfxPaint::Colour &colour);
-    void setTransformMode(const GfxPaint::TransformMode m_transformMode);
+    void setTransformTarget(const GfxPaint::TransformTarget m_transformMode);
     void setTransform(const QMatrix4x4 &transform);
     void updateContext();
 
@@ -147,7 +151,7 @@ signals:
     void brushChanged(const GfxPaint::Brush &brush);
     void colourChanged(const GfxPaint::Colour &colour);
     void paletteChanged(GfxPaint::Buffer *const palette);
-    void transformModeChanged(const GfxPaint::TransformMode m_transformMode);
+    void transformModeChanged(const GfxPaint::TransformTarget m_transformMode);
     void transformChanged(const QMatrix4x4 &transform);
 
 protected:
@@ -157,7 +161,7 @@ protected:
     EditingContext m_editingContext;
 
     QMatrix4x4 cameraTransform;
-    TransformMode m_transformMode;
+    TransformTarget m_transformMode;
 
     InputState inputState;
     QVector2D cursorPos;
@@ -169,8 +173,8 @@ protected:
     QVector2D tilt;
     QQuaternion quaternion;
 
-    QMap<InputState, std::pair<Tool *, int>> toolSet;
-    QStack<std::pair<InputState, std::pair<Tool *, int>>> toolStack;
+    std::map<InputState, std::pair<Tool *, int>> toolSet;
+    std::deque<std::pair<InputState, std::pair<Tool *, int>>> toolStack;
 };
 
 } // namespace GfxPaint

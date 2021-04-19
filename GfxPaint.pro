@@ -15,7 +15,7 @@ TEMPLATE = app
 
 CONFIG += c++2a
 
-QMAKE_CXXFLAGS += -Wno-unused-parameter -Wno-unused-variable
+QMAKE_CXXFLAGS += -pedantic -pedantic-errors -Wno-unused-parameter -Wno-unused-variable
 
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.

@@ -7,7 +7,7 @@ TransformEditorWidget::TransformEditorWidget(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::TransformEditorWidget),
     model(),
-    m_transformMode(TransformMode::View)
+    m_transformMode(TransformTarget::View)
 {
     ui->setupUi(this);
     ui->transformTableView->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -15,7 +15,7 @@ TransformEditorWidget::TransformEditorWidget(QWidget *parent) :
     ui->transformTableView->setModel(&model);
 
     QObject::connect(ui->modeComboBox, qOverload<int>(&QComboBox::activated), this, [this](const int transformMode){
-        setTransformMode(static_cast<TransformMode>(transformMode));
+        setTransformMode(static_cast<TransformTarget>(transformMode));
     });
     QObject::connect(ui->identityButton, &QPushButton::clicked, this, [this](){
         model.setTransform(QMatrix4x4());
@@ -38,12 +38,12 @@ void TransformEditorWidget::setTransform(const QMatrix4x4 &transform)
     model.setTransform(transform);
 }
 
-TransformMode TransformEditorWidget::transformMode() const
+TransformTarget TransformEditorWidget::transformMode() const
 {
     return m_transformMode;
 }
 
-void TransformEditorWidget::setTransformMode(const TransformMode transformMode)
+void TransformEditorWidget::setTransformMode(const TransformTarget transformMode)
 {
     if (m_transformMode != transformMode) {
         m_transformMode = transformMode;

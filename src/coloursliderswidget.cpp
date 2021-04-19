@@ -18,8 +18,8 @@ ColourSlidersWidget::ColourSlidersWidget(QWidget *parent) :
 
     ui->colourSpaceComboBox->blockSignals(true);
     ui->colourSpaceComboBox->clear();
-    auto iterator = std::begin(colourSpaceInfo);
-    while (iterator != std::end(colourSpaceInfo)) {
+    auto iterator = colourSpaceInfo.begin();
+    while (iterator != colourSpaceInfo.end()) {
         ui->colourSpaceComboBox->insertItem(static_cast<int>(iterator.key()), iterator.value().label);
         ++iterator;
     }
