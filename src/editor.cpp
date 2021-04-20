@@ -312,7 +312,7 @@ void Editor::render()
         const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode && bufferNodeContext->workBuffer) {
-            qDebug() << "save to workbuffer";///////////////////////////////
+            qDebug() << "save to workbuffer" << bufferNode->buffer.format();///////////////////////////////
             bufferNodeContext->workBuffer->copy(bufferNode->buffer);
             // Draw on-canvas tool preview
             if (cursorOver) {
@@ -340,7 +340,7 @@ void Editor::render()
             if (cursorOver) {
 //                bufferNodeContext->workBuffer->clear();
                 bufferNode->buffer.copy(*bufferNodeContext->workBuffer);
-                qDebug() << "restore from workbuffer";///////////////////////////////
+                qDebug() << "restore from workbuffer" << bufferNode->buffer.format();///////////////////////////////
             }
         }
     }

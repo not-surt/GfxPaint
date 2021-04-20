@@ -322,6 +322,23 @@ protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 };
 
+class EllipseProgram : public RenderProgram {
+public:
+    EllipseProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode)
+    {
+        updateKey(typeid(this), {});
+    }
+
+    virtual ~EllipseProgram() override {
+    }
+
+    void render(const std::array<QVector2D, 2> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+
+protected:
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+};
+
 class LineProgram : public RenderProgram {
 public:
     struct Point {

@@ -199,6 +199,21 @@ void ModelProgram::render(Model *const model, const Colour &colour, const QMatri
     model->render();
 }
 
+QString EllipseProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+{
+
+}
+
+void EllipseProgram::render(const std::array<QVector2D, 2> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer * const dest, const Buffer * const destPalette)
+{
+    Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
+
+    QOpenGLShaderProgram &program = this->program();
+    program.bind();
+
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
+}
+
 QString LineProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
     QString src;

@@ -137,6 +137,7 @@ FORMS    += \
     paletteeditorwidget.ui
 
 RESOURCES += \
+    thirdparty/fonts/thirdpartyfonts.qrc \
     thirdparty/stylesheets/qdarkstyle/style.qrc \
     thirdparty/stylesheets/darkorange/darkorange.qrc \
     thirdparty/shaders/thirdpartyshaders.qrc \

@@ -78,6 +78,12 @@ void RectTool::update(const QVector2D &viewportPos, const Point &point, const in
 {
     qDebug() << "RectTool::update";
     points[1] = point.pos;
+}
+
+void RectTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    qDebug() << "RectTool::end";
+    update(viewportPos, point);
     for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
@@ -94,26 +100,19 @@ void RectTool::update(const QVector2D &viewportPos, const Point &point, const in
                                            }, {
                                            0, 1, 2, 3,
                                            }, {4,});
-            ModelProgram *const program = new ModelProgram(bufferNode->buffer.format(), false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-            program->render(model, {}, GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, nullptr);
+            ModelProgram *const program = new ModelProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+            program->render(model, {}, GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
             delete program;
             delete model;
         }
     }
 }
 
-void RectTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
-{
-    qDebug() << "RectTool::end";
-    points[1] = point.pos;
-    update(viewportPos, point);
-}
-
 void RectTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode)
 {
+    qDebug() << "RectTool::onCanvasPreview";
     auto savePoints = points;
 
-    begin(viewportPos, point);
     end(viewportPos, point);
 
     points = savePoints;
@@ -132,19 +131,6 @@ void RectTool::onTopPreview(const QVector2D &viewportPos, const Point &point, co
     markerProgram->render(markerModel, {}, markerTransform, editor.getWidgetBuffer(), nullptr);
     delete markerProgram;
 
-//    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-//    Model *const model = new Model(GL_TRIANGLE_STRIP, {2, 4,}, {
-//                                       points[0].x(), points[0].y(), 1.0f, 0.0f, 0.0f, 1.0f,
-//                                       points[1].x(), points[0].y(), 1.0f, 1.0f, 0.0f, 1.0f,
-//                                       points[0].x(), points[1].y(), 1.0f, 0.0f, 0.0f, 1.0f,
-//                                       points[1].x(), points[1].y(), 0.0f, 1.0f, 0.0f, 1.0f,
-//                                       }, {
-//                                       0, 1, 2, 3,
-//                                       }, {4,});
-//    ModelProgram *const program = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-//    program->render(model, {}, editor.getViewportTransform() * editor.transform(), editor.getWidgetBuffer(), nullptr);
-//    delete program;
-//    delete model;
 }
 
 void PickTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)

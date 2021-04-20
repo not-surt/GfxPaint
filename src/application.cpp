@@ -21,6 +21,7 @@
 #include <QCommandLineParser>
 #include <QProgressDialog>
 #include <QCommonStyle>
+#include <QFontDatabase>
 
 #include "mainwindow.h"
 #include "utils.h"
@@ -55,13 +56,14 @@ const QList<Application::NodeInfo> Application::nodeInfo = {
 };
 
 Application::Application(int &argc, char **argv)
-    : QApplication(argc, argv), OpenGL(),
+    : QApplication(argc, argv),
       renderManager(),
       workBufferManager(),
       sessionManager(), documentManager(),
       m_recentSessions(), m_recentFiles(),
       styles(), m_styleActions(this), palettes(), m_paletteActions(this), stylesheets(), m_stylesheetActions(this),
-      m_reopenSessionAtStartup(true), m_saveSessionAtExit(true), timer()
+      m_reopenSessionAtStartup(true), m_saveSessionAtExit(true), timer(),
+      m_iconFont()
 {
     timer.start();
 
@@ -79,6 +81,9 @@ Application::Application(int &argc, char **argv)
 
     QObject::connect(this, &QGuiApplication::commitDataRequest, this, &Application::commitData, Qt::DirectConnection);
     QObject::connect(this, &QGuiApplication::saveStateRequest, this, &Application::saveState, Qt::DirectConnection);
+
+    const int iconFontId = QFontDatabase::addApplicationFont(":/fonts/fontawesome-free-5.15.3-desktop/otfs/Font Awesome 5 Free-Solid-900.otf");
+    m_iconFont = QFont("Font Awesome 5 Free");
 
     const QStringList styleFactoryKeys = QStyleFactory::keys();
     styles["Default"] = style();

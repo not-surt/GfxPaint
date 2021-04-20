@@ -6,6 +6,9 @@
 #include <QAction>
 #include <QWidgetAction>
 #include <QMenu>
+#include <QChar>
+
+#include "application.h"
 
 namespace GfxPaint {
 
@@ -21,6 +24,8 @@ DockWidgetTitlebarWidget::DockWidgetTitlebarWidget(QWidget *const parent) :
     layout->setContentsMargins(0, 0, 0, 0);
 
     m_menuAction->setIcon(style->standardIcon(QStyle::SP_FileDialogDetailedView));
+//    m_menuAction->setFont(qApp->iconFont());
+//    m_menuAction->setText(QChar((int)Application::IconFont::Menu));
     QToolButton *const menuToolButton = new QToolButton();
     menuToolButton->setDefaultAction(m_menuAction);
     menuToolButton->setPopupMode(QToolButton::InstantPopup);

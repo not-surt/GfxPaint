@@ -61,6 +61,22 @@ protected:
     std::array<QVector2D, 2> points;
 };
 
+class EllipseTool : public Tool {
+public:
+    explicit EllipseTool(Editor &editor) :
+        Tool(editor),
+        points()
+    {}
+    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+
+protected:
+    std::array<QVector2D, 2> points;
+};
+
 class PickTool : public Tool {
 public:
     explicit PickTool(Editor &editor) :

@@ -2,14 +2,9 @@
 #define APPLICATION_H
 
 #include <QApplication>
-#include "opengl.h"
 
 #include <QOffscreenSurface>
-#include <QOpenGLContext>
-#include <QOpenGLDebugLogger>
 #include <QMenu>
-#include <QOpenGLBuffer>
-#include <QOpenGLVertexArrayObject>
 #include <QActionGroup>
 #include <QElapsedTimer>
 
@@ -20,8 +15,6 @@
 #include "rendermanager.h"
 
 class QSettings;
-class QOpenGLShader;
-class QOpenGLShaderProgram;
 
 namespace GfxPaint {
 
@@ -31,11 +24,39 @@ class Editor;
 class Image;
 class Node;
 
-class Application : public QApplication, protected OpenGL
+class Application : public QApplication
 {
     Q_OBJECT
 
 public:
+    enum class IconFont {
+        Menu = 0xf0c9,
+        Settings = 0xf013,
+
+        FileNew = 0xf15b,
+        FileOpen = 0xf07c,
+        FileSave = 0xf0c7,
+        FileClose = 0xf00d,
+
+        EditUndo = 0xf0e2,
+        EditRedo = 0xf01e,
+        EditCut = 0xf0c4,
+        EditCopy = 0xf0c5,
+        EditPaste = 0xf0ea,
+
+        ToolPixel = 0xf303,
+        ToolBrush = 0xf1fc,
+        ToolSpray = 0xf5bd,
+        ToolEraser = 0xf12d,
+        ToolRect = 0xf0c8,
+        ToolEllipse = 0xf111,
+        ToolFill = 0xf5aa,
+        ToolReplace = 0xf53f,
+        ToolPick = 0xf1fb,
+        ToolSelect = 0xf065,
+        ToolGrab = 0xf0c4,
+    };
+
     explicit Application(int &argc, char **argv);
     virtual ~Application();
 
@@ -67,6 +88,8 @@ public:
     WorkBufferManager workBufferManager;
     SessionManager sessionManager;
     DocumentManager documentManager;
+
+    const QFont &iconFont() const { return m_iconFont; }
 
     struct NodeInfo {
         QString label;
@@ -101,6 +124,7 @@ protected:
     bool m_reopenSessionAtStartup;
     bool m_saveSessionAtExit;
     QElapsedTimer timer;
+    QFont m_iconFont;
 };
 
 #ifdef qApp
