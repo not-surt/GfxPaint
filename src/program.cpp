@@ -201,7 +201,66 @@ void ModelProgram::render(Model *const model, const Colour &colour, const QMatri
 
 QString EllipseProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
+    QString src;
 
+    switch(stage) {
+    case QOpenGLShader::Vertex: {
+        src += RenderManager::headerShaderPart();
+        src += RenderManager::attributelessShaderPart(AttributelessModel::ClipQuad);
+        src += R"(
+uniform mat4 matrix;
+
+out layout(location = 0) vec2 pos;
+
+void main(void) {
+    vec2 vertexPos = vertices[gl_VertexID];
+    pos = vertexPos;
+    gl_Position = matrix * vec4(vertexPos, 0.0, 1.0);
+}
+)";
+
+    }break;
+    case QOpenGLShader::Fragment: {
+        src += RenderManager::headerShaderPart();
+        src += R"(
+uniform mat4 matrix;
+
+uniform ivec2 destRectPos;
+uniform ivec2 destRectSize;
+
+uniform Rgba rgba;
+uniform Index index;
+
+bool inside(const vec2 pos) {
+    float dist = length(pos);
+    return bool(step(dist, 1.0));
+}
+
+bool pixelInside(const ivec2 pixel) {
+    vec2 pos = (vec2(pixel - destRectPos) + vec2(0.5)) / vec2(destRectSize) * vec2(2.0) - vec2(1.0);
+    return inside(pos);
+}
+
+Colour src(const vec2 pos) {
+//    ivec2 pixel = ivec2(floor(gl_FragCoord.xy));
+    // Is this accurate for both positive and negative offsets?
+    vec2 dx = dFdx(pos);
+    vec2 dy = dFdy(pos);
+    bool isEdge = (inside(pos) && (!inside(pos - dx) || !inside(pos + dx) || !inside(pos - dy) || !inside(pos + dy)));
+    return isEdge ? Colour(rgba, index) : Colour(Rgba(0.0, 0.0, 0.0, 0.0), INDEX_INVALID);
+//    ivec2 pixel = ivec2(floor((pos + vec2(1.0)) / vec2(2.0) * vec2(destRectSize))) + destRectPos;
+//    bool isEdge = (pixelInside(pixel) && (!pixelInside(pixel + ivec2(-1, 0)) || !pixelInside(pixel + ivec2(1, 0)) || !pixelInside(pixel + ivec2(0, -1)) || !pixelInside(pixel + ivec2(0, 1))));
+//    bool isInside = pixelInside(pixel);
+//    return isEdge ? Colour(rgba, index) : (isInside ? Colour(Rgba(0.5, 0.5, 0.5, 0.5), INDEX_INVALID) : Colour(Rgba(0.0, 0.0, 0.0, 0.0), INDEX_INVALID));
+}
+)";
+        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
+        src += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
+    }break;
+    default: break;
+    }
+
+    return src;
 }
 
 void EllipseProgram::render(const std::array<QVector2D, 2> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer * const dest, const Buffer * const destPalette)
@@ -211,7 +270,25 @@ void EllipseProgram::render(const std::array<QVector2D, 2> &points, const Colour
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
+    QMatrix4x4 pointsMatrix;
+    const QVector2D &offset = QVector2D(floor(points[0].x()), floor(points[0].y()));
+    const QVector2D &scale =  QVector2D(floor(points[1].x() - points[0].x()), floor(points[1].y() - points[0].y()));
+    pointsMatrix.translate(offset.x(), offset.y());
+    pointsMatrix.scale(scale.x(), scale.y());
+    pointsMatrix.scale(0.5f, 0.5f);
+    pointsMatrix.translate(1.0f, 1.0f);
+
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, (transform * pointsMatrix).data());
+
+    glUniform2i(program.uniformLocation("destRectPos"), 0, 0);
+    glUniform2i(program.uniformLocation("destRectSize"), dest->width(), dest->height());
+
+    glUniform4fv(program.uniformLocation("rgba"), 1, colour.rgba.data());
+    glUniform1ui(program.uniformLocation("index"), colour.index);
+
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 QString LineProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
@@ -426,7 +503,6 @@ QString DabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
     }break;
     default: break;
     }
-
 
     return src;
 }

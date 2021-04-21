@@ -31,13 +31,14 @@ void Editor::init()
 Editor::Editor(Scene &scene, QWidget *parent) :
     RenderedWidget(parent),
     scene(scene), model(*qApp->documentManager.documentModel(&scene)),
-    strokeTool(*this), rectTool(*this), pickTool(*this), transformTargetOverrideTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
+    strokeTool(*this), rectTool(*this), ellipseTool(*this), pickTool(*this), transformTargetOverrideTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
     m_editingContext(scene),
     cameraTransform(), m_transformMode(),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
     toolSet{
         {{{}, {Qt::LeftButton}, {}}, {&strokeTool, 0}},
         {{{Qt::Key_R}, {Qt::LeftButton}, {}}, {&rectTool, 0}},
+        {{{Qt::Key_E}, {Qt::LeftButton}, {}}, {&ellipseTool, 0}},
         {{{}, {}, {{false, false, true, true}}}, {&zoomTool, 0}},
         {{{Qt::Key_Control}, {Qt::LeftButton}, {}}, {&pickTool, 0}},
         {{{}, {Qt::MiddleButton}, {}}, {&panTool, 0}},
@@ -61,7 +62,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
 Editor::Editor(const Editor &other) :
     RenderedWidget(other.parentWidget()),
     scene(other.scene), model(other.model),
-    strokeTool(other.strokeTool), rectTool(other.rectTool), pickTool(other.pickTool), transformTargetOverrideTool(other.transformTargetOverrideTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
+    strokeTool(other.strokeTool), rectTool(other.rectTool), ellipseTool(other.ellipseTool), pickTool(other.pickTool), transformTargetOverrideTool(other.transformTargetOverrideTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform), m_transformMode(other.m_transformMode),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
@@ -312,7 +313,6 @@ void Editor::render()
         const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode && bufferNodeContext->workBuffer) {
-            qDebug() << "save to workbuffer" << bufferNode->buffer.format();///////////////////////////////
             bufferNodeContext->workBuffer->copy(bufferNode->buffer);
             // Draw on-canvas tool preview
             if (cursorOver) {
@@ -340,7 +340,6 @@ void Editor::render()
             if (cursorOver) {
 //                bufferNodeContext->workBuffer->clear();
                 bufferNode->buffer.copy(*bufferNodeContext->workBuffer);
-                qDebug() << "restore from workbuffer" << bufferNode->buffer.format();///////////////////////////////
             }
         }
     }

@@ -130,6 +130,7 @@ public:
 
     StrokeTool strokeTool;
     RectTool rectTool;
+    EllipseTool ellipseTool;
     PickTool pickTool;
     TransformTargetOverrideTool transformTargetOverrideTool;
     PanTool panTool;

@@ -70,19 +70,16 @@ void StrokeTool::onCanvasPreview(const QVector2D &viewportPos, const Point &poin
 
 void RectTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
 {
-    qDebug() << "RectTool::begin";
     points[0] = point.pos;
 }
 
 void RectTool::update(const QVector2D &viewportPos, const Point &point, const int mode)
 {
-    qDebug() << "RectTool::update";
     points[1] = point.pos;
 }
 
 void RectTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
 {
-    qDebug() << "RectTool::end";
     update(viewportPos, point);
     for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
@@ -104,13 +101,19 @@ void RectTool::end(const QVector2D &viewportPos, const Point &point, const int m
             program->render(model, {}, GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
             delete program;
             delete model;
+
+            QMatrix4x4 ellipseMatrix;
+            ellipseMatrix.rotate(15, {0.0f, 0.0f, 1.0f});
+            ellipseMatrix.scale({1.0f, 0.5f, 1.0f});
+            EllipseProgram *const ellipseProgram = new EllipseProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+            ellipseProgram->render(points, editor.editingContext().colour(), ellipseMatrix * GfxPaint::viewportTransform(bufferNode->buffer.size()), &bufferNode->buffer, state.palette);
+            delete ellipseProgram;
         }
     }
 }
 
 void RectTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode)
 {
-    qDebug() << "RectTool::onCanvasPreview";
     auto savePoints = points;
 
     end(viewportPos, point);
@@ -130,7 +133,60 @@ void RectTool::onTopPreview(const QVector2D &viewportPos, const Point &point, co
     markerTransform.scale(markerSize, markerSize);
     markerProgram->render(markerModel, {}, markerTransform, editor.getWidgetBuffer(), nullptr);
     delete markerProgram;
+}
 
+void EllipseTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    points[0] = point.pos;
+}
+
+void EllipseTool::update(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    points[1] = point.pos;
+}
+
+void EllipseTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    update(viewportPos, point);
+    for (Node *node : editor.editingContext().selectedNodes()) {
+        const Traversal::State &state = editor.editingContext().states().value(node);
+        BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+        const EditingContext::BufferNodeContext *const bufferNodeContext = editor.editingContext().bufferNodeContext(node);
+        if (bufferNode) {
+            ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+            bufferNode->buffer.bindFramebuffer();
+
+            QMatrix4x4 ellipseMatrix;
+            //ellipseMatrix.rotate(15, {0.0f, 0.0f, 1.0f});
+            //ellipseMatrix.scale({1.0f, 0.5f, 1.0f});
+            EllipseProgram *const program = new EllipseProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+            program->render(points, editor.editingContext().colour(), GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
+            delete program;
+        }
+    }
+}
+
+void EllipseTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    auto savePoints = points;
+
+    end(viewportPos, point);
+
+    points = savePoints;
+}
+
+void EllipseTool::onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+    Model *const markerModel = qApp->renderManager.models["planeMarker"];
+    ModelProgram *const markerProgram = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+    QMatrix4x4 markerTransform = editor.getViewportTransform();
+    const QVector2D viewportPoint = editor.worldToViewport(points[0]);
+    markerTransform.translate(viewportPoint.toVector3D());
+    float markerSize = 16.0f;
+    markerTransform.scale(markerSize, markerSize);
+    markerProgram->render(markerModel, {}, markerTransform, editor.getWidgetBuffer(), nullptr);
+    delete markerProgram;
 }
 
 void PickTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
