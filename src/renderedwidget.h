@@ -31,8 +31,8 @@ protected:
 
     virtual void render() {}
 
-    QMatrix4x4 mouseTransform;
-    QMatrix4x4 viewportTransform;
+    Mat4 mouseTransform;
+    Mat4 viewportTransform;
 
     QOpenGLVertexArrayObject vao;
 

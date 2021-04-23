@@ -53,7 +53,7 @@ QString fileToString(const QString &path);
 
 void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements);
 
-QMatrix4x4 viewportTransform(const QSize size);
+Mat4 viewportTransform(const QSize size);
 
 vec4 qColorToVec4(const QColor &qColor);
 QColor qColorFromVec4(const vec4 &colour);
@@ -84,10 +84,10 @@ T clamp(const T min, const T max, const T value) {
 
 float step(const float value, const float size);
 float snap(const float offset, const float size, const float target, const bool relative = false, const float relativeTo = 0.0);
-QVector2D snap(const QVector2D offset, const QVector2D size, const QVector2D target, const bool relative = false, const QVector2D relativeTo = {});
+Vec2 snap(const Vec2 offset, const Vec2 size, const Vec2 target, const bool relative = false, const Vec2 relativeTo = {});
 
-void rotateScaleAtOrigin(QMatrix4x4 &transform, const float rotation, const float scaling, const QVector2D origin);
-QMatrix4x4 transformPointToPoint(const QVector2D origin, const QVector2D from, const QVector2D to, const bool scale = true, const bool rotate = true);
+void rotateScaleAtOrigin(Mat4 &transform, const float rotation, const float scaling, const Vec2 origin);
+Mat4 transformPointToPoint(const Vec2 origin, const Vec2 from, const Vec2 to, const bool scale = true, const bool rotate = true);
 
 } // namespace GfxPaint
 

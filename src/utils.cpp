@@ -40,7 +40,7 @@ QString fileToString(const QString &path)
     else return QString();
 }
 
-QMatrix4x4 viewportTransform(const QSize size)
+Mat4 viewportTransform(const QSize size)
 {
     const float data[] = {
         2.0f / size.width(), 0.0f, 0.0f, 0.0f,
@@ -48,7 +48,7 @@ QMatrix4x4 viewportTransform(const QSize size)
         0.0f, 0.0f, 1.0f, 0.0f,
         -1.0f, -1.0f, 0.0f, 1.0f
     };
-    QMatrix4x4 matrix;
+    Mat4 matrix;
     memcpy(matrix.data(), data, sizeof(data));
     return matrix;
 }
@@ -152,32 +152,32 @@ float snap(const float offset, const float size, const float target, const bool 
     return size != 0.0 ? stairstep(target - shift, size) + shift : target;
 }
 
-QVector2D snap(const QVector2D offset, const QVector2D size, const QVector2D target, const bool relative, const QVector2D relativeTo) {
-    return QVector2D(snap(offset.x(), size.x(), target.x(), relative, relativeTo.x()),
+Vec2 snap(const Vec2 offset, const Vec2 size, const Vec2 target, const bool relative, const Vec2 relativeTo) {
+    return Vec2(snap(offset.x(), size.x(), target.x(), relative, relativeTo.x()),
                    snap(offset.y(), size.y(), target.y(), relative, relativeTo.y()));
 }
 
-void rotateScaleAtOrigin(QMatrix4x4 &transform, const float rotation, const float scaling, const QVector2D origin)
+void rotateScaleAtOrigin(Mat4 &transform, const float rotation, const float scaling, const Vec2 origin)
 {
-    const QVector2D pointBefore = QVector2D((transform.inverted()).map(origin.toPointF()));
-    QMatrix4x4 workMatrix;
+    const Vec2 pointBefore = transform.inverted().map(origin);
+    Mat4 workMatrix;
     workMatrix.scale(scaling, scaling);
     workMatrix.rotate(rotation, {0.0f, 0.0f, 1.0f});
     transform = transform * workMatrix;
-    const QVector2D pointAfter = QVector2D((transform.inverted()).map(origin.toPointF()));
-    const QVector2D offset = pointAfter - pointBefore;
+    const Vec2 pointAfter = transform.inverted().map(origin);
+    const Vec2 offset = pointAfter - pointBefore;
     workMatrix = {};
-    workMatrix.translate(QVector3D(offset));
+    workMatrix.translate(offset);
     transform = transform * workMatrix;
 }
 
-QMatrix4x4 transformPointToPoint(const QVector2D origin, const QVector2D from, const QVector2D to, const bool scale, const bool rotate)
+Mat4 transformPointToPoint(const Vec2 origin, const Vec2 from, const Vec2 to, const bool scale, const bool rotate)
 {
-    const QVector2D fromVector = QVector2D(from - origin);
-    const QVector2D toVector = QVector2D(to - origin);
+    const Vec2 fromVector = from - origin;
+    const Vec2 toVector = to - origin;
     const float scaling = scale ? toVector.length() / fromVector.length() : 1.0f;
     const float rotation = rotate ? qRadiansToDegrees(atan2(toVector.y(), toVector.x()) - atan2(fromVector.y(), fromVector.x())) : 0.0f;
-    QMatrix4x4 transform;
+    Mat4 transform;
     rotateScaleAtOrigin(transform, rotation, scaling, origin);
     return transform;
 }

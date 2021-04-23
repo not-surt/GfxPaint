@@ -4,13 +4,13 @@
 
 namespace GfxPaint {
 
-void StrokeTool::begin(const QVector2D &viewportPos, const Point &point, const int mode) {
+void StrokeTool::begin(const Vec2 &viewportPos, const Point &point, const int mode) {
     strokePoints = {};
     strokeOffset = 0.0;
     strokePoints.add(point);
 }
 
-void StrokeTool::update(const QVector2D &viewportPos, const Point &point, const int mode) {
+void StrokeTool::update(const Vec2 &viewportPos, const Point &point, const int mode) {
     const Stroke::Point &prevWorldPoint = strokePoints.points.last();
     const Stroke::Point worldPoint = strokePoints.add(point);
     for (Node *node : editor.editingContext().selectedNodes()) {
@@ -25,7 +25,7 @@ void StrokeTool::update(const QVector2D &viewportPos, const Point &point, const 
             strokeOffset = editor.strokeSegmentDabs(prevWorldPoint, worldPoint, brush.dab.size, brush.stroke.absoluteSpacing, brush.stroke.proportionalSpacing, strokeOffset, stroke);
             // TODO: instancing?
             for (auto point : stroke.points) {
-                const QVector2D snappedPoint = editor.pixelSnap(point.pos);
+                const Vec2 snappedPoint = editor.pixelSnap(point.pos);
                 Brush::Dab dab(brush.dab);
                 dab.size *= point.pressure;
                 dab.angle += point.quaternion.toEulerAngles().z();
@@ -35,14 +35,14 @@ void StrokeTool::update(const QVector2D &viewportPos, const Point &point, const 
             // Draw to stroke buffer
 //            bufferNodeContext->strokeBuffer->bindFramebuffer();
 //            for (auto pos : points) {
-//                const QPointF snappedPoint = editor.pixelSnap(pos);
+//                const Vector2D snappedPoint = editor.pixelSnap(pos);
 //                editor.drawDab(brush.dab, editor.editingContext().colour(), *bufferNode, snappedPoint);
 //            }
         }
     }
 }
 
-void StrokeTool::end(const QVector2D &viewportPos, const Point &point, const int mode) {
+void StrokeTool::end(const Vec2 &viewportPos, const Point &point, const int mode) {
     if (strokePoints.points.count() == 1) update(viewportPos, point);
 
     // Clear stroke buffer
@@ -56,7 +56,7 @@ void StrokeTool::end(const QVector2D &viewportPos, const Point &point, const int
     }
 }
 
-void StrokeTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+void StrokeTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     auto savePoints = strokePoints;
     auto saveOffset = strokeOffset;
@@ -68,17 +68,17 @@ void StrokeTool::onCanvasPreview(const QVector2D &viewportPos, const Point &poin
     strokeOffset = saveOffset;
 }
 
-void RectTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
+void RectTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     points[0] = point.pos;
 }
 
-void RectTool::update(const QVector2D &viewportPos, const Point &point, const int mode)
+void RectTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     points[1] = point.pos;
 }
 
-void RectTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
+void RectTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     update(viewportPos, point);
     for (Node *node : editor.editingContext().selectedNodes()) {
@@ -96,7 +96,7 @@ void RectTool::end(const QVector2D &viewportPos, const Point &point, const int m
     }
 }
 
-void RectTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+void RectTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     auto savePoints = points;
 
@@ -105,13 +105,13 @@ void RectTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point,
     points = savePoints;
 }
 
-void RectTool::onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+void RectTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Model *const markerModel = qApp->renderManager.models["planeMarker"];
     VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    QMatrix4x4 markerTransform = editor.getViewportTransform();
-    const QVector2D viewportPoint = editor.worldToViewport(points[0]);
+    Mat4 markerTransform = editor.getViewportTransform();
+    const Vec2 viewportPoint = editor.worldToViewport(points[0]);
     markerTransform.translate(viewportPoint.toVector3D());
     float markerSize = 16.0f;
     markerTransform.scale(markerSize, markerSize);
@@ -119,17 +119,17 @@ void RectTool::onTopPreview(const QVector2D &viewportPos, const Point &point, co
     delete markerProgram;
 }
 
-void EllipseTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
+void EllipseTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     points[0] = point.pos;
 }
 
-void EllipseTool::update(const QVector2D &viewportPos, const Point &point, const int mode)
+void EllipseTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     points[1] = point.pos;
 }
 
-void EllipseTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
+void EllipseTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     update(viewportPos, point);
     for (Node *node : editor.editingContext().selectedNodes()) {
@@ -147,7 +147,7 @@ void EllipseTool::end(const QVector2D &viewportPos, const Point &point, const in
     }
 }
 
-void EllipseTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+void EllipseTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     auto savePoints = points;
 
@@ -156,13 +156,13 @@ void EllipseTool::onCanvasPreview(const QVector2D &viewportPos, const Point &poi
     points = savePoints;
 }
 
-void EllipseTool::onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+void EllipseTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Model *const markerModel = qApp->renderManager.models["planeMarker"];
     VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    QMatrix4x4 markerTransform = editor.getViewportTransform();
-    const QVector2D viewportPoint = editor.worldToViewport(points[0]);
+    Mat4 markerTransform = editor.getViewportTransform();
+    const Vec2 viewportPoint = editor.worldToViewport(points[0]);
     markerTransform.translate(viewportPoint.toVector3D());
     float markerSize = 16.0f;
     markerTransform.scale(markerSize, markerSize);
@@ -170,18 +170,18 @@ void EllipseTool::onTopPreview(const QVector2D &viewportPos, const Point &point,
     delete markerProgram;
 }
 
-void ContourTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
+void ContourTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     points.clear();
     points.push_back(point.pos);
 }
 
-void ContourTool::update(const QVector2D &viewportPos, const Point &point, const int mode)
+void ContourTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     points.push_back(point.pos);
 }
 
-void ContourTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
+void ContourTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     update(viewportPos, point);
     for (Node *node : editor.editingContext().selectedNodes()) {
@@ -195,8 +195,8 @@ void ContourTool::end(const QVector2D &viewportPos, const Point &point, const in
             ContourStencilProgram *const stencilProgram = new ContourStencilProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
             stencilProgram->render(points, editor.editingContext().colour(), GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
 
-            QVector2D boundsMin = QVector2D(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
-            QVector2D boundsMax = QVector2D(-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity());
+            Vec2 boundsMin = Vec2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
+            Vec2 boundsMax = Vec2(-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity());
             auto iterator = points.begin();
             while (iterator != points.end()) {
                 boundsMin.setX(std::min(boundsMin.x(), iterator->x()));
@@ -221,7 +221,7 @@ void ContourTool::end(const QVector2D &viewportPos, const Point &point, const in
     }
 }
 
-void ContourTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+void ContourTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     auto savePoints = points;
 
@@ -230,13 +230,13 @@ void ContourTool::onCanvasPreview(const QVector2D &viewportPos, const Point &poi
     points = savePoints;
 }
 
-void ContourTool::onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+void ContourTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Model *const markerModel = qApp->renderManager.models["planeMarker"];
     VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    QMatrix4x4 markerTransform = editor.getViewportTransform();
-    const QVector2D viewportPoint = editor.worldToViewport(points.front());
+    Mat4 markerTransform = editor.getViewportTransform();
+    const Vec2 viewportPoint = editor.worldToViewport(points.front());
     markerTransform.translate(viewportPoint.toVector3D());
     float markerSize = 16.0f;
     markerTransform.scale(markerSize, markerSize);
@@ -244,46 +244,46 @@ void ContourTool::onTopPreview(const QVector2D &viewportPos, const Point &point,
     delete markerProgram;
 }
 
-void PickTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
+void PickTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     update(viewportPos, point);
 }
 
-void PickTool::update(const QVector2D &viewportPos, const Point &point, const int mode)
+void PickTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
         EditingContext::BufferNodeContext *const bufferNodeContext = editor.editingContext().bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
-            const QVector2D bufferPoint = QVector2D(state.transform.inverted().map(point.pos.toPointF()));
+            const Vec2 bufferPoint = state.transform.inverted().map(point.pos);
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             editor.setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, bufferPoint));
         }
     }
 }
 
-void TransformTargetOverrideTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
+void TransformTargetOverrideTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     oldTransformMode = static_cast<int>(editor.transformTarget());
     editor.setTransformTarget(static_cast<TransformTarget>(mode));
 }
 
-void TransformTargetOverrideTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
+void TransformTargetOverrideTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     editor.setTransformTarget(static_cast<TransformTarget>(oldTransformMode));
 }
 
-void PanTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
+void PanTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     oldViewportPos = viewportPos;
 }
 
-void PanTool::update(const QVector2D &viewportPos, const Point &point, const int mode)
+void PanTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
 {
-    const QVector2D translation = viewportPos - oldViewportPos;
-    QMatrix4x4 transform;
-    transform.translate(QVector3D(translation));
+    const Vec2 translation = viewportPos - oldViewportPos;
+    Mat4 transform;
+    transform.translate(translation);
     if (editor.transformTarget() == TransformTarget::View) {
         editor.setTransform(transform * editor.transform());
     }
@@ -304,17 +304,17 @@ void PanTool::update(const QVector2D &viewportPos, const Point &point, const int
     oldViewportPos = viewportPos;
 }
 
-void RotoZoomTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
+void RotoZoomTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     oldViewportPos = viewportPos;
 }
 
-void RotoZoomTool::update(const QVector2D &viewportPos, const Point &point, const int mode)
+void RotoZoomTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     const Mode toolMode = static_cast<Mode>(mode);
     const bool rotate = (toolMode == Mode::RotoZoom || toolMode == Mode::Rotate);
     const bool zoom = (toolMode == Mode::RotoZoom || toolMode == Mode::Zoom);
-    const QMatrix4x4 transform = transformPointToPoint(QVector2D(0.0f, 0.0f), oldViewportPos, viewportPos, rotate, zoom);
+    const Mat4 transform = transformPointToPoint(Vec2(0.0f, 0.0f), oldViewportPos, viewportPos, rotate, zoom);
     if (editor.transformTarget() == TransformTarget::View) {
         editor.setTransform(transform * editor.transform());
     }
@@ -335,30 +335,30 @@ void RotoZoomTool::update(const QVector2D &viewportPos, const Point &point, cons
     oldViewportPos = viewportPos;
 }
 
-void RotoZoomTool::onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+void RotoZoomTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode)
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Model *const markerModel = qApp->renderManager.models["planeMarker"];
     VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    QMatrix4x4 markerTransform = editor.getViewportTransform();
+    Mat4 markerTransform = editor.getViewportTransform();
     float markerSize = 16.0f;
     markerTransform.scale(markerSize, markerSize);
     markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
     delete markerProgram;
 }
 
-void ZoomTool::wheel(const QVector2D &viewportPos, const QVector2D &delta, const int mode)
+void ZoomTool::wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode)
 {
     const float scaling = std::pow(2.0f, delta.y());
-    QMatrix4x4 transform = editor.transform();
+    Mat4 transform = editor.transform();
     rotateScaleAtOrigin(transform, 0.0, scaling, viewportPos);
     editor.setTransform(transform);
 }
 
-void RotateTool::wheel(const QVector2D &viewportPos, const QVector2D &delta, const int mode)
+void RotateTool::wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode)
 {
     const float rotation = -15.0f * delta.y();
-    QMatrix4x4 transform = editor.transform();
+    Mat4 transform = editor.transform();
     rotateScaleAtOrigin(transform, rotation, 1.0f, viewportPos);
     editor.setTransform(transform);
 }

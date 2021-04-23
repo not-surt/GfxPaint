@@ -126,7 +126,7 @@ bool Editor::event(QEvent *const event)
         tilt = {0.0f, 0.0f};
         quaternion = QQuaternion(0.0f, 0.0f, 0.0f, 1.0f);
         if (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) {
-            cursorPos = QVector2D(mapFromGlobal(QCursor::pos()));
+            cursorPos = Vec2(mapFromGlobal(QCursor::pos()));
             pressure = 1.0f;
             inputState.keys.insert(static_cast<Qt::Key>(keyEvent->key()));
         }
@@ -138,27 +138,27 @@ bool Editor::event(QEvent *const event)
         else if (event->type() == QEvent::Wheel) {
             inputState.wheelDirections = {{wheelEvent->angleDelta().x() < 0, wheelEvent->angleDelta().x() > 0, wheelEvent->angleDelta().y() < 0, wheelEvent->angleDelta().y() > 0}};
             static const float stepSize = 8 * 15;
-            wheelDelta = QVector2D(wheelEvent->angleDelta()) / stepSize;
+            wheelDelta = Vec2(wheelEvent->angleDelta()) / stepSize;
         }
         if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove || event->type() == QEvent::NonClientAreaMouseMove) {
-            cursorDelta = QVector2D(mouseEvent->localPos()) - cursorPos;
+            cursorDelta = Vec2(mouseEvent->localPos()) - cursorPos;
         }
         if (event->type() == QEvent::TabletRelease || event->type() == QEvent::TabletMove) {
-            cursorDelta = QVector2D(tabletEvent->posF()) - cursorPos;
+            cursorDelta = Vec2(tabletEvent->posF()) - cursorPos;
         }
         if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::NonClientAreaMouseButtonRelease || event->type() == QEvent::MouseMove || event->type() == QEvent::NonClientAreaMouseMove) {
-            cursorPos = QVector2D(mouseEvent->localPos());
+            cursorPos = Vec2(mouseEvent->localPos());
             pressure = 1.0f;
         }
         if (event->type() == QEvent::TabletPress || event->type() == QEvent::TabletRelease || event->type() == QEvent::TabletMove) {
-            cursorPos = QVector2D(tabletEvent->posF());
+            cursorPos = Vec2(tabletEvent->posF());
             pressure = static_cast<float>(tabletEvent->pressure());
             rotation = static_cast<float>(tabletEvent->rotation());
             tilt = {qDegreesToRadians(static_cast<float>(tabletEvent->xTilt())), qDegreesToRadians(static_cast<float>(tabletEvent->yTilt()))};
             rotation = qRadiansToDegrees(std::atan2(std::sin(tilt.y()), std::sin(tilt.x())) + (tau<float> / 4.0f));
             quaternion = QQuaternion::fromEulerAngles(tilt.y(), tilt.x(), rotation);
         }
-        Point point{QVector2D(mouseToWorld(cursorPos)), static_cast<float>(pressure), quaternion};
+        Point point{Vec2(mouseToWorld(cursorPos)), static_cast<float>(pressure), quaternion};
 
         // Remove non-matching tools
         auto iterator = toolStack.begin();
@@ -324,8 +324,8 @@ void Editor::render()
                 glDisable(GL_DEPTH_TEST);
                 glDisable(GL_BLEND);
 
-                const QVector2D point = QVector2D(mouseToWorld(cursorPos));
-                const QVector2D snappedPoint = pixelSnap(point);
+                const Vec2 point = mouseToWorld(cursorPos);
+                const Vec2 snappedPoint = pixelSnap(point);
                 activeTool().onCanvasPreview(mouseToViewport(cursorPos), {mouseToWorld(cursorPos), 1.0, quaternion});
             }
         }
@@ -363,12 +363,12 @@ void Editor::render()
     activeTool().onTopPreview(mouseToViewport(cursorPos), {mouseToWorld(cursorPos), 1.0, quaternion});
 }
 
-float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const QVector2D dabSize, const QVector2D absoluteSpacing, const QVector2D proportionalSpacing, const float offset, Stroke &output) {
+float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 dabSize, const Vec2 absoluteSpacing, const Vec2 proportionalSpacing, const float offset, Stroke &output) {
     auto ellipsePolar = [](const float a, const float b, const float theta){
         return (a * b) / std::sqrt(std::pow(a, 2.0f) * std::pow(std::sin(theta), 2.0f) + std::pow(b, 2.0f) * std::pow(std::cos(theta), 2.0f));
     };
 
-    const QVector2D spacing{absoluteSpacing + proportionalSpacing * dabSize};
+    const Vec2 spacing{absoluteSpacing + proportionalSpacing * dabSize};
 
     const float a = spacing.x() / 2.0f;
     const float b = spacing.y() / 2.0f;
@@ -381,7 +381,7 @@ float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point 
         output.add(start);
         pos += increment;
     }
-    const QVector2D delta = end.pos - start.pos;
+    const Vec2 delta = end.pos - start.pos;
     const float length = delta.length();
     while (pos < length) {
         output.add(Stroke::interpolate(start, end, pos / length));
@@ -392,20 +392,20 @@ float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point 
     return (pos - length) / increment;
 }
 
-void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const QVector2D worldPos)
+void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 worldPos)
 {
     Q_ASSERT( m_editingContext.bufferNodeContext(&node));
 
     const Traversal::State &state = m_editingContext.states().value(&node);
 
-    QMatrix4x4 worldTransform;
+    Mat4 worldTransform;
     worldTransform.translate(worldPos.x(), worldPos.y());
 
-    const QMatrix4x4 &transform = QMatrix4x4(state.transform);
-    QMatrix4x4 spaceTransform;
+    const Mat4 &transform = Mat4(state.transform);
+    Mat4 spaceTransform;
     switch (dab.space) {
     case Space::Object: {
-        spaceTransform = QMatrix4x4();
+        spaceTransform = Mat4();
     } break;
     case Space::ObjectAspectCorrected: {
         spaceTransform = node.pixelAspectRatioTransform().inverted();
@@ -417,13 +417,13 @@ void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &no
         spaceTransform = (cameraTransform * transform).inverted();
     } break;
     }
-    const QVector2D spaceOffset = QVector2D(spaceTransform.map(QVector3D(QVector2D(0.0f, 0.0f))));
-    QMatrix4x4 spaceOffsetTransform;
-    spaceOffsetTransform.translate(QVector3D(-spaceOffset));
+    const Vec2 spaceOffset = spaceTransform.map(Vec2(0.0f, 0.0f));
+    Mat4 spaceOffsetTransform;
+    spaceOffsetTransform.translate(-spaceOffset);
     spaceTransform = spaceOffsetTransform * spaceTransform;
-    const QVector2D objectSpacePos = QVector2D(transform.inverted().map(worldPos.toPointF()));
-    QMatrix4x4 objectSpaceTransform;
-    objectSpaceTransform.translate(QVector3D(objectSpacePos));
+    const Vec2 objectSpacePos = transform.inverted().map(worldPos);
+    Mat4 objectSpaceTransform;
+    objectSpaceTransform.translate(objectSpacePos);
 
     const Buffer *const palette = m_editingContext.states()[&node].palette;
     EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(&node);
@@ -438,7 +438,7 @@ void Editor::setTransformTarget(const TransformTarget transformMode)
     }
 }
 
-void Editor::setTransform(const QMatrix4x4 &transform)
+void Editor::setTransform(const Mat4 &transform)
 {
     if (this->cameraTransform != transform) {
         this->cameraTransform = transform;

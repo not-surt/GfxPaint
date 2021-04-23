@@ -63,7 +63,7 @@ QString RenderedWidgetProgram::generateSource(QOpenGLShader::ShaderTypeBit stage
     return src;
 }
 
-void RenderedWidgetProgram::render(Buffer *const src, const QMatrix4x4 &transform)
+void RenderedWidgetProgram::render(Buffer *const src, const Mat4 &transform)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
@@ -102,12 +102,12 @@ QString BufferProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
     return src;
 }
 
-void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, const Colour &srcTransparent, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette, const Colour &destTransparent)
+void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, const Colour &srcTransparent, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette, const Colour &destTransparent)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    QMatrix4x4 matrix;
+    Mat4 matrix;
     matrix.scale(src->width(), src->height());
     matrix = transform * matrix;
 
@@ -187,7 +187,7 @@ Colour src(const vec2 pos) {
     return src;
 }
 
-void SingleColourModelProgram::render(Model *const model, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette) {
+void SingleColourModelProgram::render(Model *const model, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette) {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
     QOpenGLShaderProgram &program = this->program();
@@ -245,7 +245,7 @@ Colour src(const vec2 pos) {
     return src;
 }
 
-void VertexColourModelProgram::render(Model *const model, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette) {
+void VertexColourModelProgram::render(Model *const model, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette) {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
     QOpenGLShaderProgram &program = this->program();
@@ -316,16 +316,16 @@ Colour src(const vec2 pos) {
     return src;
 }
 
-void RectProgram::render(const std::array<QVector2D, 2> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer * const dest, const Buffer * const destPalette)
+void RectProgram::render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &transform, Buffer * const dest, const Buffer * const destPalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    QMatrix4x4 pointsMatrix;
-    const QVector2D &offset = QVector2D(floor(points[0].x()), floor(points[0].y()));
-    const QVector2D &scale =  QVector2D(floor(points[1].x() - points[0].x()), floor(points[1].y() - points[0].y()));
+    Mat4 pointsMatrix;
+    const Vec2 &offset = Vec2(floor(points[0].x()), floor(points[0].y()));
+    const Vec2 &scale =  Vec2(floor(points[1].x() - points[0].x()), floor(points[1].y() - points[0].y()));
     pointsMatrix.translate(offset.x(), offset.y());
     pointsMatrix.scale(scale.x(), scale.y());
     pointsMatrix.scale(0.5f, 0.5f);
@@ -399,16 +399,16 @@ Colour src(const vec2 pos) {
     return src;
 }
 
-void EllipseProgram::render(const std::array<QVector2D, 2> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer * const dest, const Buffer * const destPalette)
+void EllipseProgram::render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &transform, Buffer * const dest, const Buffer * const destPalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    QMatrix4x4 pointsMatrix;
-    const QVector2D &offset = QVector2D(std::floor(points[0].x()), std::floor(points[0].y()));
-    const QVector2D &scale =  QVector2D(std::floor(points[1].x() - points[0].x()), std::floor(points[1].y() - points[0].y()));
+    Mat4 pointsMatrix;
+    const Vec2 &offset = Vec2(std::floor(points[0].x()), std::floor(points[0].y()));
+    const Vec2 &scale =  Vec2(std::floor(points[1].x() - points[0].x()), std::floor(points[1].y() - points[0].y()));
     pointsMatrix.translate(offset.x(), offset.y());
     pointsMatrix.scale(scale.x(), scale.y());
     pointsMatrix.scale(0.5f, 0.5f);
@@ -494,7 +494,7 @@ Colour src(const vec2 pos) {
     return src;
 }
 
-void ContourStencilProgram::render(const std::vector<QVector2D> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer * const destPalette)
+void ContourStencilProgram::render(const std::vector<Vec2> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer * const destPalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
@@ -512,7 +512,7 @@ void ContourStencilProgram::render(const std::vector<QVector2D> &points, const C
     glClear(GL_STENCIL_BUFFER_BIT);
     // Draw stencil
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(QVector2D), points.data(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(Vec2), points.data(), GL_STATIC_DRAW);
 
     QOpenGLShaderProgram &program = this->program();
     program.bind();
@@ -711,7 +711,7 @@ Colour src(const vec2 pos) {
     return src;
 }
 
-void LineProgram::render(const std::vector<LineProgram::Point> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette)
+void LineProgram::render(const std::vector<LineProgram::Point> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
@@ -750,14 +750,14 @@ QString DabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
     return src;
 }
 
-void DabProgram::render(const Brush::Dab &dab, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette)
+void DabProgram::render(const Brush::Dab &dab, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    QMatrix4x4 matrix = transform * dab.transform();
+    Mat4 matrix = transform * dab.transform();
 
     memcpy(&uniformData.matrix, matrix.data(), sizeof(uniformData.matrix));
     uniformData.colour = colour;
@@ -810,7 +810,7 @@ QString PatternProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
     return src;
 }
 
-void PatternProgram::render(const QMatrix4x4 &transform)
+void PatternProgram::render(const Mat4 &transform)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
@@ -841,7 +841,7 @@ QString ColourPlaneProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) c
     return src;
 }
 
-void ColourPlaneProgram::render(const Colour &colour, const int xComponent, const int yComponent, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const quantisePalette)
+void ColourPlaneProgram::render(const Colour &colour, const int xComponent, const int yComponent, const Mat4 &transform, Buffer *const dest, const Buffer *const quantisePalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
@@ -904,7 +904,7 @@ void main(void) {
     return src;
 }
 
-void ColourPaletteProgram::render(const Buffer *const palette, const QSize &cells, const QMatrix4x4 &transform, Buffer *const dest)
+void ColourPaletteProgram::render(const Buffer *const palette, const QSize &cells, const Mat4 &transform, Buffer *const dest)
 {
     if (palette) {
         Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
@@ -952,7 +952,7 @@ void main() {
     return src;
 }
 
-Colour ColourPalettePickProgram::pick(const Buffer *const palette, const QSize &cells, const QVector2D &pos)
+Colour ColourPalettePickProgram::pick(const Buffer *const palette, const QSize &cells, const Vec2 &pos)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
@@ -1060,7 +1060,7 @@ void main() {
     return src;
 }
 
-Colour ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcPalette, const QVector2D &pos)
+Colour ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcPalette, const Vec2 &pos)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();

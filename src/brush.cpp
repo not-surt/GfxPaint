@@ -26,12 +26,12 @@ Brush::Dab::Dab(const Dab &other) :
 {
 }
 
-QMatrix4x4 Brush::Dab::transform() const
+Mat4 Brush::Dab::transform() const
 {
-    QMatrix4x4 matrix;
-    matrix.rotate(angle, {0.0f, 0.0f, 1.0f});
-    matrix.translate(-origin.x(), -origin.y());
-    matrix.scale(size.x() / 2.0f, size.y() / 2.0f);
+    Mat4 matrix;
+    matrix.rotate(angle);
+    matrix.translate(-origin);
+    matrix.scale(size / 2.0f);
     return matrix;
 }
 

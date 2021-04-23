@@ -3,7 +3,7 @@
 
 #include <QAbstractTableModel>
 
-#include <QMatrix4x4>
+#include "types.h"
 
 namespace GfxPaint {
 
@@ -21,16 +21,16 @@ public:
     Qt::ItemFlags flags(const QModelIndex& index) const override;
     virtual QVariant headerData(const int section, const Qt::Orientation orientation, const int role) const override;
 
-    const QMatrix4x4 &transform() const;
+    const Mat4 &transform() const;
 
 signals:
-    void transformChanged(const QMatrix4x4 &transform);
+    void transformChanged(const Mat4 &transform);
 
 public slots:
-    void setTransform(const QMatrix4x4 &transform);
+    void setTransform(const Mat4 &transform);
 
 protected:
-    QMatrix4x4 m_transform;
+    Mat4 m_transform;
 };
 
 } // namespace GfxPaint

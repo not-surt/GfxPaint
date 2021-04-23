@@ -74,7 +74,7 @@ public:
     EditingContext &editingContext() { return m_editingContext; }
 
     Buffer *getWidgetBuffer() { return RenderedWidget::widgetBuffer; }
-    const QMatrix4x4 &getViewportTransform() const { return viewportTransform; }
+    const Mat4 &getViewportTransform() const { return viewportTransform; }
 
     Tool &activeTool() {
         if (!toolStack.empty()) {
@@ -89,22 +89,22 @@ public:
     void removeSelectedNodes();
     void duplicateSelectedNodes();
 
-    QVector2D mouseToViewport(const QVector2D &point) {
-        return QVector2D(mouseTransform.map(point.toPointF()));
+    Vec2 mouseToViewport(const Vec2 &point) {
+        return mouseTransform.map(point);
     }
-    QVector2D viewportToWorld(const QVector2D &point) {
-        return QVector2D(cameraTransform.inverted().map(point.toPointF()));
+    Vec2 viewportToWorld(const Vec2 &point) {
+        return cameraTransform.inverted().map(point);
     }
-    QVector2D mouseToWorld(const QVector2D &point) {
+    Vec2 mouseToWorld(const Vec2 &point) {
         return viewportToWorld(mouseToViewport(point));
     }
-    QVector2D viewportToMouse(const QVector2D &point) {
-        return QVector2D(mouseTransform.inverted().map(point.toPointF()));
+    Vec2 viewportToMouse(const Vec2 &point) {
+        return mouseTransform.inverted().map(point);
     }
-    QVector2D worldToViewport(const QVector2D &point) {
-        return QVector2D(cameraTransform.map(point.toPointF()));
+    Vec2 worldToViewport(const Vec2 &point) {
+        return cameraTransform.map(point);
     }
-    QVector2D worldToMouse(const QVector2D &point) {
+    Vec2 worldToMouse(const Vec2 &point) {
         return viewportToMouse(worldToViewport(point));
     }
     float pixelSnapOffset(const PixelSnap pixelSnap, const float target, const float size) {
@@ -116,14 +116,14 @@ public:
         default: return target;
         }
     }
-    QVector2D pixelSnap(const QVector2D target) {
+    Vec2 pixelSnap(const Vec2 target) {
         const Brush::Dab &dab = m_editingContext.brush().dab;
         const float offsetX = pixelSnapOffset(dab.pixelSnapX, target.x(), dab.size.x());
         const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.y());
         return snap({offsetX, offsetY}, {1.0f, 1.0f}, target);
     }
-    float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const QVector2D brushSize, const QVector2D absoluteSpacing, const QVector2D proportionalSpacing, const float offset, Stroke &output);
-    void drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const QVector2D worldPos);
+    float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 brushSize, const Vec2 absoluteSpacing, const Vec2 proportionalSpacing, const float offset, Stroke &output);
+    void drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 worldPos);
 
     Scene &scene;
     SceneModel &model;
@@ -140,13 +140,13 @@ public:
     RotateTool rotateTool;
 
     TransformTarget transformTarget() const { return m_transformMode; }
-    QMatrix4x4 transform() const { return cameraTransform; }
+    Mat4 transform() const { return cameraTransform; }
 
 public slots:
     void setBrush(const GfxPaint::Brush &brush);
     void setColour(const GfxPaint::Colour &colour);
     void setTransformTarget(const GfxPaint::TransformTarget m_transformMode);
-    void setTransform(const QMatrix4x4 &transform);
+    void setTransform(const Mat4 &transform);
     void updateContext();
 
 signals:
@@ -154,7 +154,7 @@ signals:
     void colourChanged(const GfxPaint::Colour &colour);
     void paletteChanged(GfxPaint::Buffer *const palette);
     void transformModeChanged(const GfxPaint::TransformTarget m_transformMode);
-    void transformChanged(const QMatrix4x4 &transform);
+    void transformChanged(const Mat4 &transform);
 
 protected:
     void init();
@@ -162,17 +162,17 @@ protected:
 
     EditingContext m_editingContext;
 
-    QMatrix4x4 cameraTransform;
+    Mat4 cameraTransform;
     TransformTarget m_transformMode;
 
     InputState inputState;
-    QVector2D cursorPos;
-    QVector2D cursorDelta;
+    Vec2 cursorPos;
+    Vec2 cursorDelta;
     bool cursorOver;
-    QVector2D wheelDelta;
+    Vec2 wheelDelta;
     float pressure;
     float rotation;
-    QVector2D tilt;
+    Vec2 tilt;
     QQuaternion quaternion;
 
     std::map<InputState, std::pair<Tool *, int>> toolSet;

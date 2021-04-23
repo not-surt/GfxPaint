@@ -91,15 +91,15 @@ void ColourPlaneWidget::updateWidgetPositions()
 
     Colour spaceColour = colourSpace != ColourSpace::RGB ? fromRGBConversionProgram->convert(m_colour) : m_colour;
     plane->blockSignals(true);
-    plane->setPos(QVector2D(spaceColour.rgba[xComponent], spaceColour.rgba[yComponent]));
+    plane->setPos(Vec2(spaceColour.rgba[xComponent], spaceColour.rgba[yComponent]));
     plane->blockSignals(false);
     zComponentSlider->blockSignals(true);
-    zComponentSlider->setPos(QVector2D(spaceColour.rgba[zComponent], 0.0f));
+    zComponentSlider->setPos(Vec2(spaceColour.rgba[zComponent], 0.0f));
     zComponentSlider->blockSignals(false);
     if (ui->alphaCheckBox->isChecked()) {
         int alphaComponent = colourSpaceInfo[colourSpace].componentCount;
         alphaSlider->blockSignals(true);
-        alphaSlider->setPos(QVector2D(clamp(0.0f, 1.0f, spaceColour.rgba[alphaComponent]), 0.0f));
+        alphaSlider->setPos(Vec2(clamp(0.0f, 1.0f, spaceColour.rgba[alphaComponent]), 0.0f));
         alphaSlider->blockSignals(false);
     }
 }

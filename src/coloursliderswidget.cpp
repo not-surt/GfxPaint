@@ -90,7 +90,7 @@ void ColourSlidersWidget::updateSliderPositions()
     for (int i = 0; i < componentCount; ++i) {
         ColourComponentsPlaneWidget *const colourSlider = static_cast<ColourComponentsPlaneWidget *>(ui->colourSliderLayout->itemAt(i)->widget());
         colourSlider->blockSignals(true);
-        colourSlider->setPos(QVector2D(clamp(0.0f, 1.0f, spaceColour.rgba[i]), 0.0f));
+        colourSlider->setPos(Vec2(clamp(0.0f, 1.0f, spaceColour.rgba[i]), 0.0f));
         colourSlider->blockSignals(false);
     }
 }

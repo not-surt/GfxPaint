@@ -31,7 +31,7 @@ ColourComponentsPlaneWidget::~ColourComponentsPlaneWidget()
 void ColourComponentsPlaneWidget::mouseEvent(QMouseEvent *event)
 {
     if (event->buttons() & Qt::LeftButton) {
-        m_pos = QVector2D(xComponent >= 0 ? clamp(0.0f, 1.0f, static_cast<float>(event->pos().x()) / static_cast<float>(width() - 1)) : 0.5f,
+        m_pos = Vec2(xComponent >= 0 ? clamp(0.0f, 1.0f, static_cast<float>(event->pos().x()) / static_cast<float>(width() - 1)) : 0.5f,
                           yComponent >= 0 ? clamp(0.0f, 1.0f, static_cast<float>(event->pos().y()) / static_cast<float>(height() - 1)) : 0.5f);
         emit posChanged(m_pos);
         event->accept();
@@ -59,10 +59,10 @@ void ColourComponentsPlaneWidget::setPalette(const Buffer *const palette)
     }
 }
 
-void ColourComponentsPlaneWidget::setPos(const QVector2D &pos)
+void ColourComponentsPlaneWidget::setPos(const Vec2 &pos)
 {
     if (m_pos != pos) {
-        m_pos = QVector2D(xComponent >= 0 ? pos.x() : 0.5f, yComponent >= 0 ? pos.y() : 0.5f);
+        m_pos = Vec2(xComponent >= 0 ? pos.x() : 0.5f, yComponent >= 0 ? pos.y() : 0.5f);
         emit posChanged(m_pos);
         update();
     }
@@ -84,7 +84,7 @@ void ColourComponentsPlaneWidget::initializeGL()
 void ColourComponentsPlaneWidget::render()
 {
     program->render(m_colour, xComponent, yComponent, RenderManager::unitToClipTransform, widgetBuffer, m_palette);
-    QMatrix4x4 markerTransform;
+    Mat4 markerTransform;
     markerTransform.translate(m_pos.x() * 2.0f - 1.0f, m_pos.y() * 2.0f - 1.0f);
     float markerSize = std::min((float)sizeHint().width(), (float)sizeHint().height());
     if (xComponent >= 0 && yComponent >= 0) markerSize /= 4;
@@ -96,7 +96,7 @@ void ColourComponentsPlaneWidget::render()
     else {
         markerModel = qApp->renderManager.models["sliderMarker"];
         if (yComponent >= 0) {
-            markerTransform.rotate(90.0f, QVector3D(0.0f, 0.0f, 1.0f));
+            markerTransform.rotate(90.0f);
         }
     }
     markerProgram->render(markerModel, markerTransform, widgetBuffer, nullptr);

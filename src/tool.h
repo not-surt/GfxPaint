@@ -2,9 +2,9 @@
 #define TOOL_H
 
 #include <QList>
-#include <QVector2D>
 #include <deque>
 
+#include "types.h"
 #include "stroke.h"
 
 namespace GfxPaint {
@@ -16,13 +16,13 @@ public:
     explicit Tool(Editor &editor) :
         editor(editor), active(false)
     {}
-    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) {}
-    virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) {}
-    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) {}
-    virtual void onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) {}
-    virtual void onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) {}
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
     virtual void abort(const int mode = 0) {}
-    virtual void wheel(const QVector2D &viewportPos, const QVector2D &delta, const int mode = 0) {}
+    virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode = 0) {}
     virtual bool isExclusive() const { return true; }
 
 protected:
@@ -36,10 +36,10 @@ public:
         Tool(editor),
         strokeOffset(0.0), strokePoints()
     {}
-    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
 
 protected:
     float strokeOffset;
@@ -52,14 +52,14 @@ public:
         Tool(editor),
         points()
     {}
-    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
 
 protected:
-    std::array<QVector2D, 2> points;
+    std::array<Vec2, 2> points;
 };
 
 class EllipseTool : public Tool {
@@ -68,14 +68,14 @@ public:
         Tool(editor),
         points()
     {}
-    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
 
 protected:
-    std::array<QVector2D, 2> points;
+    std::array<Vec2, 2> points;
 };
 
 class ContourTool : public Tool {
@@ -84,14 +84,14 @@ public:
         Tool(editor),
         points()
     {}
-    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
 
 protected:
-    std::vector<QVector2D> points;
+    std::vector<Vec2> points;
 };
 
 class PickTool : public Tool {
@@ -99,8 +99,8 @@ public:
     explicit PickTool(Editor &editor) :
         Tool(editor)
     {}
-    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
 
 protected:
 };
@@ -111,8 +111,8 @@ public:
         Tool(editor),
         oldTransformMode()
     {}
-    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
     virtual bool isExclusive() const override { return false; }
 
 protected:
@@ -125,11 +125,11 @@ public:
         Tool(editor),
         oldViewportPos()
     {}
-    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
 
 protected:
-    QVector2D oldViewportPos;
+    Vec2 oldViewportPos;
 };
 
 class RotoZoomTool : public Tool {
@@ -143,12 +143,12 @@ public:
         Tool(editor),
         oldViewportPos()
     {}
-    virtual void begin(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
 
 protected:
-    QVector2D oldViewportPos;
+    Vec2 oldViewportPos;
 };
 
 class ZoomTool : public Tool {
@@ -156,7 +156,7 @@ public:
     explicit ZoomTool(Editor &editor) :
         Tool(editor)
     {}
-    virtual void wheel(const QVector2D &viewportPos, const QVector2D &delta, const int mode = 0) override;
+    virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode = 0) override;
 };
 
 class RotateTool : public Tool {
@@ -164,7 +164,7 @@ public:
     explicit RotateTool(Editor &editor) :
         Tool(editor)
     {}
-    virtual void wheel(const QVector2D &viewportPos, const QVector2D &delta, const int mode = 0) override;
+    virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode = 0) override;
 };
 
 } // namespace GfxPaint

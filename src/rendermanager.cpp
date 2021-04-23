@@ -7,28 +7,28 @@
 
 namespace GfxPaint {
 
-const QMatrix4x4 RenderManager::unitToClipTransform = ([](){
+const Mat4 RenderManager::unitToClipTransform = ([](){
         static const GLfloat data[] = {
             2.0f, 0.0f, 0.0f, 0.0f,
             0.0f, 2.0f, 0.0f, 0.0f,
             0.0f, 0.0f, 1.0f, 0.0f,
             -1.0f, -1.0f, 0.0f, 1.0f,
         };
-        QMatrix4x4 matrix;
+        Mat4 matrix;
         std::memcpy(matrix.data(), data, sizeof(data));
         return matrix;
     })();
 
-const QMatrix4x4 RenderManager::clipToUnitTransform(RenderManager::unitToClipTransform.inverted());
+const Mat4 RenderManager::clipToUnitTransform(RenderManager::unitToClipTransform.inverted());
 
-const QMatrix4x4 RenderManager::flipTransform = ([](){
+const Mat4 RenderManager::flipTransform = ([](){
     static const GLfloat data[] = {
         1.0f, 0.0f, 0.0f, 0.0f,
         0.0f, -1.0f, 0.0f, 0.0f,
         0.0f, 0.0f, 1.0f, 0.0f,
         0.0f, 0.0f, 0.0f, 1.0f,
     };
-    QMatrix4x4 matrix;
+    Mat4 matrix;
     std::memcpy(matrix.data(), data, sizeof(data));
     return matrix;
     })();

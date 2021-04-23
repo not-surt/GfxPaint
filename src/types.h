@@ -45,20 +45,31 @@ struct Colour {
     inline auto operator<=>(const Colour&) const = default;
 };
 
-typedef QVector2D Vector2D;
-typedef QVector3D Vector3D;
+typedef QVector2D Vec2;
+typedef QVector3D Vec3;
+typedef QVector4D Vec4;
 
-class Matrix4x4 : public QMatrix4x4 {
-    using QMatrix4x4::QMatrix4x4;
+class Mat4 : public QMatrix4x4 {
 public:
+    using QMatrix4x4::QMatrix4x4;
+    Mat4(const QMatrix4x4 &other) : QMatrix4x4(other) {}
+    Mat4 inverted(bool *invertible = nullptr) const { return QMatrix4x4::inverted(invertible); }
+    using QMatrix4x4::map;
     QVector2D map(const QVector2D &point) const { return QMatrix4x4::map(point.toVector3D()).toVector2D(); }
+    using QMatrix4x4::mapVector;
     QVector2D mapVector(const QVector2D &point) const { return QMatrix4x4::mapVector(point.toVector3D()).toVector2D(); }
+    using QMatrix4x4::rotate;
     void rotate(const float angle) { QMatrix4x4::rotate(angle, QVector3D(0.0f, 0.0f, -1.0f)); }
+    using QMatrix4x4::scale;
     void scale(const QVector2D &vector) { QMatrix4x4::scale(vector.x(), vector.y(), 1.0f); }
+    using QMatrix4x4::translate;
     void translate(const QVector2D &vector) { QMatrix4x4::translate(vector.toVector3D()); }
+private:
+    QPoint map(const QPoint &point) const;
+    QPointF map(const QPointF &point) const;
 };
-inline QVector2D operator*(const QVector2D &vector, const Matrix4x4 &matrix) { return (vector.toVector3D() * matrix).toVector2D(); }
-inline QVector2D operator*(const Matrix4x4 &matrix, const QVector2D &vector) { return (matrix * vector.toVector3D()).toVector2D(); }
+inline QVector2D operator*(const QVector2D &vector, const Mat4 &matrix) { return (vector.toVector3D() * matrix).toVector2D(); }
+inline QVector2D operator*(const Mat4 &matrix, const QVector2D &vector) { return (matrix * vector.toVector3D()).toVector2D(); }
 
 inline QDebug operator<<(QDebug debug, const Colour &colour)
 {

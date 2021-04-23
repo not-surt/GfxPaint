@@ -20,15 +20,15 @@ public:
     virtual QSize minimumSizeHint() const override { return QSize(xComponent >= 0 ? 64 : 16, yComponent >= 0 ? 64 : 16); }
 
     const Colour &colour() const { return m_colour; }
-    const QVector2D &pos() const { return m_pos; }
+    const Vec2 &pos() const { return m_pos; }
 
 public slots:
     void setColour(const GfxPaint::Colour &colour);
     void setPalette(const GfxPaint::Buffer *const palette);
-    void setPos(const QVector2D &pos);
+    void setPos(const Vec2 &pos);
 
 signals:
-    void posChanged(const QVector2D &pos);
+    void posChanged(const Vec2 &pos);
 
 protected:
     virtual void mousePressEvent(QMouseEvent *event) override { mouseEvent(event); }
@@ -47,7 +47,7 @@ protected:
     ColourPlaneProgram *program;
     VertexColourModelProgram *markerProgram;
 
-    QVector2D m_pos;
+    Vec2 m_pos;
     Colour m_colour;
     const Buffer *m_palette;
 };

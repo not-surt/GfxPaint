@@ -71,10 +71,10 @@ void RenderedWidget::resizeGL(int w, int h)
         0.0f, 0.0f, 1.0f, 0.0f,
         std::floor(w / 2.0f), std::floor(h / 2.0f), 0.0f, 1.0f
     };
-    QMatrix4x4 originTransform;
+    Mat4 originTransform;
     memcpy(originTransform.data(), data, sizeof(data));
     mouseTransform = originTransform.inverted();
-    viewportTransform = QMatrix4x4(GfxPaint::viewportTransform({w, h})) * originTransform;
+    viewportTransform = Mat4(GfxPaint::viewportTransform({w, h})) * originTransform;
 
     {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
@@ -105,7 +105,7 @@ void RenderedWidget::paintGL()
 //    const float time = timer.elapsed() / 1000.0f;
     const float time = qApp->time();
     const float degreesPerSecond = 45.0f;
-    QMatrix4x4 backgroundTransform;
+    Mat4 backgroundTransform;
     backgroundTransform.scale(16.0f, 16.0f);
     backgroundTransform.rotate(time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
     backgroundTransform.translate(0.0f, 1.0f);
@@ -115,7 +115,7 @@ void RenderedWidget::paintGL()
     // Draw buffer
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     glEnable(GL_BLEND);
-    QMatrix4x4 matrix;
+    Mat4 matrix;
     matrix.scale(width(), height());
     widgetProgram->render(widgetBuffer, viewportTransform);
 }

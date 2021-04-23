@@ -56,12 +56,12 @@ QVariant TransformModel::headerData(const int section, const Qt::Orientation ori
     else return QVariant();
 }
 
-const QMatrix4x4 &TransformModel::transform() const
+const Mat4 &TransformModel::transform() const
 {
     return m_transform;
 }
 
-void TransformModel::setTransform(const QMatrix4x4 &transform)
+void TransformModel::setTransform(const Mat4 &transform)
 {
     if (this->m_transform != transform) {
         beginResetModel();

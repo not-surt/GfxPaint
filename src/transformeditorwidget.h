@@ -21,14 +21,14 @@ public:
     explicit TransformEditorWidget(QWidget *parent = nullptr);
     ~TransformEditorWidget();
 
-    const QMatrix4x4 &transform() const;
-    void setTransform(const QMatrix4x4 &transform);
+    const Mat4 &transform() const;
+    void setTransform(const Mat4 &transform);
 
     TransformTarget transformMode() const;
     void setTransformMode(const TransformTarget transformMode);
 
 signals:
-    void transformChanged(const QMatrix4x4 &transform);
+    void transformChanged(const Mat4 &transform);
     void transformModeChanged(const GfxPaint::TransformTarget transformMode);
 
 private:

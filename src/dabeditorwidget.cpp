@@ -1,9 +1,7 @@
 #include "dabeditorwidget.h"
 #include "ui_dabeditorwidget.h"
 
-#include <QVector2D>
-#include <QtMath>
-
+#include "types.h"
 #include "rendermanager.h"
 
 namespace GfxPaint {

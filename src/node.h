@@ -118,12 +118,12 @@ public:
     virtual void beforeChildren(Traversal &traversal) override;
     virtual void afterChildren(Traversal &traversal) override;
 
-    QMatrix4x4 transform() const;
-    void setTransform(const QMatrix4x4 &transform);
-    virtual QMatrix4x4 combinedTransform() const;
+    Mat4 transform() const;
+    void setTransform(const Mat4 &transform);
+    virtual Mat4 combinedTransform() const;
 
 protected:
-    QMatrix4x4 m_transform;
+    Mat4 m_transform;
 };
 
 class AbstractBufferNode {
@@ -167,13 +167,13 @@ public:
         return info;
     }
 
-    virtual QMatrix4x4 combinedTransform() const override;
+    virtual Mat4 combinedTransform() const override;
 
     virtual void beforeChildren(Traversal &traversal) override;
     virtual void afterChildren(Traversal &traversal) override;
 
-    QMatrix4x4 pixelAspectRatioTransform() const {
-        QMatrix4x4 transform;
+    Mat4 pixelAspectRatioTransform() const {
+        Mat4 transform;
         transform.scale(pixelAspectRatio.width(), pixelAspectRatio.height());
         return transform;
     }

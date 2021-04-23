@@ -260,7 +260,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed)});
     }
 
-    void render(Buffer *const src, const QMatrix4x4 &transform);
+    void render(Buffer *const src, const Mat4 &transform);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -279,7 +279,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed), static_cast<int>(srcPaletteFormat.componentType), srcPaletteFormat.componentSize, srcPaletteFormat.componentCount});
     }
 
-    void render(Buffer *const src, const Buffer *const srcPalette, const Colour &srcTransparent, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette, const Colour &destTransparent);
+    void render(Buffer *const src, const Buffer *const srcPalette, const Colour &srcTransparent, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette, const Colour &destTransparent);
 
 protected:
     struct UniformData {
@@ -318,7 +318,7 @@ public:
         updateKey(typeid(this), {});
     }
 
-    void render(Model *const model, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(Model *const model, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -332,7 +332,7 @@ public:
         updateKey(typeid(this), {});
     }
 
-    void render(Model *const model, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(Model *const model, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -347,7 +347,7 @@ public:
         updateKey(typeid(this), {filled});
     }
 
-    void render(const std::array<QVector2D, 2> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     const bool filled;
@@ -364,7 +364,7 @@ public:
         updateKey(typeid(this), {filled});
     }
 
-    void render(const std::array<QVector2D, 2> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     const bool filled;
@@ -386,7 +386,7 @@ public:
     virtual ~ContourStencilProgram() override {
         glDeleteBuffers(1, &storageBuffer);
     }
-    void render(const std::vector<QVector2D> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::vector<Vec2> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
     void postRender();
 
 protected:
@@ -399,7 +399,7 @@ protected:
 class LineProgram : public RenderProgram {
 public:
     struct Point {
-        QVector2D pos alignas(8);
+        Vec2 pos alignas(8);
         GLfloat width alignas(4);
         GLfloat lineAbsPos alignas(4);
         Colour colour alignas(16);
@@ -418,7 +418,7 @@ public:
         glDeleteBuffers(1, &storageBuffer);
     }
 
-    void render(const std::vector<Point> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::vector<Point> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     GLuint storageBuffer;
@@ -435,7 +435,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(pattern), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode});
     }
 
-    void render(const QMatrix4x4 &transform);
+    void render(const Mat4 &transform);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -462,7 +462,7 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void render(const Brush::Dab &dab, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const Brush::Dab &dab, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     struct UniformData {
@@ -500,7 +500,7 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void render(const Colour &colour, const int xComponent, const int yComponent, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const quantisePalette);
+    void render(const Colour &colour, const int xComponent, const int yComponent, const Mat4 &transform, Buffer *const dest, const Buffer *const quantisePalette);
 
 protected:
     struct UniformData {
@@ -532,7 +532,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
 
-    void render(const Buffer *const palette, const QSize &cells, const QMatrix4x4 &transform, Buffer *const dest);
+    void render(const Buffer *const palette, const QSize &cells, const Mat4 &transform, Buffer *const dest);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -558,7 +558,7 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    Colour pick(const Buffer *const palette, const QSize &cells, const QVector2D &pos);
+    Colour pick(const Buffer *const palette, const QSize &cells, const Vec2 &pos);
 
 protected:
     struct StorageData {
@@ -603,7 +603,7 @@ public:
         updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount, indexed, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
 
-    Colour pick(const Buffer *const src, const Buffer *const srcPalette, const QVector2D &pos);
+    Colour pick(const Buffer *const src, const Buffer *const srcPalette, const Vec2 &pos);
 
 protected:
     struct StorageData {

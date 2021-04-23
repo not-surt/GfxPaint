@@ -56,9 +56,9 @@ public:
     static constexpr std::tuple<int, int> openGLVersion = {4, 3};
     static constexpr std::tuple<int, int> openGLESVersion = {3, 2};
 
-    static const QMatrix4x4 unitToClipTransform;
-    static const QMatrix4x4 clipToUnitTransform;
-    static const QMatrix4x4 flipTransform;
+    static const Mat4 unitToClipTransform;
+    static const Mat4 clipToUnitTransform;
+    static const Mat4 flipTransform;
     static const QMap<ColourSpaceConversion, QString> colourSpaceConversionShaderFunctionNames;
     static const QList<DistanceMetricInfo> distanceMetrics;
     static const QList<BlendModeInfo> blendModes;

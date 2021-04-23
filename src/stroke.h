@@ -1,20 +1,20 @@
 #ifndef STROKE_H
 #define STROKE_H
 
-#include <QVector2D>
 #include <QQuaternion>
 #include <chrono>
 
+#include "types.h"
 #include "utils.h"
 
 namespace GfxPaint {
 
 struct Point {
-    QVector2D pos;
+    Vec2 pos;
     float pressure;
     QQuaternion quaternion;
 
-    Point(const QVector2D pos, const float pressure, const QQuaternion &quaternion) :
+    Point(const Vec2 pos, const float pressure, const QQuaternion &quaternion) :
         pos(pos), pressure(pressure), quaternion(quaternion)
     {}
 };
@@ -24,7 +24,7 @@ struct Stroke {
         float age;
         float distance;
 
-        Point(const QVector2D pos, const float pressure, const QQuaternion &quaternion, const float age, const float distance) :
+        Point(const Vec2 pos, const float pressure, const QQuaternion &quaternion, const float age, const float distance) :
             GfxPaint::Point(pos, pressure, quaternion),
             age(age), distance(distance)
         {
@@ -39,14 +39,14 @@ struct Stroke {
         points.append(point);
         return point;
     }
-    const Point &add(const QVector2D &pos, const float pressure, const QQuaternion &quaternion) {
+    const Point &add(const Vec2 &pos, const float pressure, const QQuaternion &quaternion) {
         Point point = {pos, pressure, quaternion, {}, 0.0};
         const auto now = std::chrono::high_resolution_clock::now();
         if (points.isEmpty()) {
             startTime = now;
         }
         else {
-            point.distance += std::sqrt(QVector2D::dotProduct(points.last().pos, pos));
+            point.distance += std::sqrt(Vec2::dotProduct(points.last().pos, pos));
         }
         point.age = std::chrono::duration_cast<std::chrono::duration<float/*, std::milli*/>>(now - startTime).count();
         points.append(point);

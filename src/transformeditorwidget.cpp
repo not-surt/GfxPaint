@@ -18,7 +18,7 @@ TransformEditorWidget::TransformEditorWidget(QWidget *parent) :
         setTransformMode(static_cast<TransformTarget>(transformMode));
     });
     QObject::connect(ui->identityButton, &QPushButton::clicked, this, [this](){
-        model.setTransform(QMatrix4x4());
+        model.setTransform(Mat4());
     });
     QObject::connect(&model, &TransformModel::transformChanged, this, &TransformEditorWidget::transformChanged);
 }
@@ -28,12 +28,12 @@ TransformEditorWidget::~TransformEditorWidget()
     delete ui;
 }
 
-const QMatrix4x4 &TransformEditorWidget::transform() const
+const Mat4 &TransformEditorWidget::transform() const
 {
     return model.transform();
 }
 
-void TransformEditorWidget::setTransform(const QMatrix4x4 &transform)
+void TransformEditorWidget::setTransform(const Mat4 &transform)
 {
     model.setTransform(transform);
 }

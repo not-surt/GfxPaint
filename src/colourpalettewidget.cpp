@@ -40,7 +40,7 @@ bool ColourPaletteWidget::event(QEvent *const event)
         const Index oldDragStartIndex = dragStartIndex;
         const Index oldDragEndIndex = dragEndIndex;
         const QMouseEvent *const mouseEvent = static_cast<QMouseEvent *>(event);
-        const QVector2D pos = QVector2D((float)clamp(0.0f, 1.0f, (float)mouseEvent->pos().x() / (float)width()),
+        const Vec2 pos = Vec2((float)clamp(0.0f, 1.0f, (float)mouseEvent->pos().x() / (float)width()),
                                         (float)clamp(0.0f, 1.0f, (float)mouseEvent->pos().y() / (float)height()));
         const int cellX = floor(cells().width() * pos.x());
         const int cellY = floor(cells().height() * pos.y());
@@ -159,8 +159,8 @@ void ColourPaletteWidget::render()
 {
     if (m_palette) {
         const QSize cells = this->cells();
-        const QVector2D cellSize = QVector2D(1.0f / (float)cells.width(), 1.0f / (float)cells.height());
-        QMatrix4x4 markerTransform;
+        const Vec2 cellSize = Vec2(1.0f / (float)cells.width(), 1.0f / (float)cells.height());
+        Mat4 markerTransform;
 
         program->render(m_palette, cells, RenderManager::unitToClipTransform, widgetBuffer);
 
@@ -174,7 +174,7 @@ void ColourPaletteWidget::render()
         const QPoint rightCell = QPoint(rightIndex % cells.width(), rightIndex / cells.width());
         markerTransform = RenderManager::unitToClipTransform;
         markerTransform.translate((float)(rightCell.x() + 1) * cellSize.x(), (float)(rightCell.y() + 1) * cellSize.y());
-        markerTransform.rotate(180.0f, QVector3D(0.0f, 0.0f, 1.0f));
+        markerTransform.rotate(180.0f);
         markerTransform.scale(cellSize.x(), cellSize.y());
         markerProgram->render(markerModel, markerTransform, widgetBuffer, nullptr);
     }

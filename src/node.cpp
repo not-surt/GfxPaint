@@ -43,17 +43,17 @@ void SpatialNode::afterChildren(Traversal &traversal)
     traversal.transformStack.pop();
 }
 
-QMatrix4x4 SpatialNode::transform() const
+Mat4 SpatialNode::transform() const
 {
     return m_transform;
 }
 
-void SpatialNode::setTransform(const QMatrix4x4 &transform)
+void SpatialNode::setTransform(const Mat4 &transform)
 {
     m_transform = transform;
 }
 
-QMatrix4x4 SpatialNode::combinedTransform() const
+Mat4 SpatialNode::combinedTransform() const
 {
     return transform();
 }
@@ -118,7 +118,7 @@ BufferNode *BufferNode::clone() const
     return new BufferNode(*this);
 }
 
-QMatrix4x4 BufferNode::combinedTransform() const
+Mat4 BufferNode::combinedTransform() const
 {
     return this->transform() * pixelAspectRatioTransform();
 }
@@ -139,7 +139,7 @@ void BufferNode::render(Traversal &traversal)
 {
     if (!traversal.renderTargetStack.isEmpty()) {
         const Traversal::RenderTarget &renderTarget = traversal.renderTargetStack.top();
-        QMatrix4x4 transform = traversal.transformStack.top();
+        Mat4 transform = traversal.transformStack.top();
         const Buffer *palette = nullptr;
         Buffer::Format paletteFormat;
         if (!traversal.paletteStack.isEmpty()) {

@@ -44,7 +44,7 @@ void EditingContext::update()
         m_selectedNodes.append(node);
     }
     // Update node states (non render)
-    scene.render(nullptr, false, nullptr, QMatrix4x4(), &m_states);
+    scene.render(nullptr, false, nullptr, Mat4(), &m_states);
 
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     QHash<Node *, BufferNodeContext *> oldNodeContexts = m_bufferNodeContexts;

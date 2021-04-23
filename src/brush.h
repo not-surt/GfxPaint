@@ -1,8 +1,6 @@
 #ifndef BRUSH_H
 #define BRUSH_H
 
-#include <QMatrix4x4>
-#include <QVector2D>
 #include "buffer.h"
 #include "types.h"
 
@@ -40,16 +38,16 @@ struct Brush
         inline bool operator==(const Dab &rhs) const = default;
         inline bool operator!=(const Dab &rhs) const = default;
 
-        QMatrix4x4 transform() const;
+        Mat4 transform() const;
 
         Space space;
         Type type;
         int metric;
-        QVector2D size;
+        Vec2 size;
         bool fixedRatio;
         float ratio;
         float angle;
-        QVector2D origin;
+        Vec2 origin;
         PixelSnap pixelSnapX;
         PixelSnap pixelSnapY;
         float hardness;
@@ -70,8 +68,8 @@ struct Brush
         Space space;
         int metric;
         bool continuous;
-        QVector2D absoluteSpacing;
-        QVector2D proportionalSpacing;
+        Vec2 absoluteSpacing;
+        Vec2 proportionalSpacing;
         int dabCount;
     };
 
