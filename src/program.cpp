@@ -142,7 +142,66 @@ void BufferProgram::render(Buffer *const src, const Buffer *const srcPalette, co
     //glTextureBarrier();
 }
 
-QString ModelProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+QString SingleColourModelProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+{
+    QString src;
+
+    switch(stage) {
+    case QOpenGLShader::Vertex: {
+        src += RenderManager::headerShaderPart();
+        src +=
+            R"(
+uniform Rgba colour;
+uniform mat4 matrix;
+
+in layout(location = 0) vec2 pos;
+
+out VertexOut {
+    vec4 colour;
+} vOut;
+
+void main(void) {
+    vOut.colour = colour;
+    gl_Position = matrix * vec4(pos, 0.0, 1.0);
+}
+)";
+    }break;
+    case QOpenGLShader::Fragment: {
+        src += RenderManager::headerShaderPart();
+        src +=
+            R"(
+in VertexOut {
+    vec4 colour;
+} fIn;
+
+Colour src(const vec2 pos) {
+    return Colour(fIn.colour, INDEX_INVALID);
+}
+)";
+        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
+        src += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
+    }break;
+    default: break;
+    }
+
+    return src;
+}
+
+void SingleColourModelProgram::render(Model *const model, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette) {
+    Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
+
+    QOpenGLShaderProgram &program = this->program();
+    program.bind();
+
+    glUniform4fv(program.uniformLocation("colour"), 1, colour.rgba.data());
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
+
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
+
+    model->render();
+}
+
+QString VertexColourModelProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
     QString src;
 
@@ -169,7 +228,7 @@ void main(void) {
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
         src +=
-        R"(
+            R"(
 //in layout(location = 0) vec2 pos;
 in layout(location = 1) vec4 colour;
 
@@ -186,7 +245,7 @@ Colour src(const vec2 pos) {
     return src;
 }
 
-void ModelProgram::render(Model *const model, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette) {
+void VertexColourModelProgram::render(Model *const model, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette) {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
     QOpenGLShaderProgram &program = this->program();
@@ -197,6 +256,89 @@ void ModelProgram::render(Model *const model, const Colour &colour, const QMatri
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
 
     model->render();
+}
+
+QString RectProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+{
+    QString src;
+
+    switch(stage) {
+    case QOpenGLShader::Vertex: {
+        src += RenderManager::headerShaderPart();
+        src += RenderManager::attributelessShaderPart(AttributelessModel::ClipQuad);
+        src += R"(
+uniform mat4 matrix;
+
+out layout(location = 0) vec2 pos;
+
+void main(void) {
+    vec2 vertexPos = vertices[gl_VertexID];
+    pos = vertexPos;
+    gl_Position = matrix * vec4(vertexPos, 0.0, 1.0);
+}
+)";
+
+    }break;
+    case QOpenGLShader::Fragment: {
+        src += RenderManager::headerShaderPart();
+        src += R"(
+uniform mat4 matrix;
+
+uniform Rgba rgba;
+uniform Index index;
+
+bool inside(const vec2 pos) {
+    float dist = max(abs(pos.x), abs(pos.y));
+    return bool(step(dist, 1.0));
+}
+
+Colour src(const vec2 pos) {
+)";
+        if (filled) src += R"(
+    return inside(pos) ? Colour(rgba, index) : Colour(Rgba(0.0, 0.0, 0.0, 0.0), INDEX_INVALID);
+)";
+        else src += R"(
+    // Is this accurate for both positive and negative offsets?
+    vec2 dx = dFdx(pos);
+    vec2 dy = dFdy(pos);
+    bool isEdge = (inside(pos) && (!inside(pos - dx) || !inside(pos + dx) || !inside(pos - dy) || !inside(pos + dy)));
+    return isEdge ? Colour(rgba, index) : Colour(Rgba(0.0, 0.0, 0.0, 0.0), INDEX_INVALID);
+)";
+        src += R"(
+}
+)";
+        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
+        src += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
+    }break;
+    default: break;
+    }
+
+    return src;
+}
+
+void RectProgram::render(const std::array<QVector2D, 2> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer * const dest, const Buffer * const destPalette)
+{
+    Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
+
+    QOpenGLShaderProgram &program = this->program();
+    program.bind();
+
+    QMatrix4x4 pointsMatrix;
+    const QVector2D &offset = QVector2D(floor(points[0].x()), floor(points[0].y()));
+    const QVector2D &scale =  QVector2D(floor(points[1].x() - points[0].x()), floor(points[1].y() - points[0].y()));
+    pointsMatrix.translate(offset.x(), offset.y());
+    pointsMatrix.scale(scale.x(), scale.y());
+    pointsMatrix.scale(0.5f, 0.5f);
+    pointsMatrix.translate(1.0f, 1.0f);
+
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, (transform * pointsMatrix).data());
+
+    glUniform4fv(program.uniformLocation("rgba"), 1, colour.rgba.data());
+    glUniform1ui(program.uniformLocation("index"), colour.index);
+
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
+
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
 }
 
 QString EllipseProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
@@ -225,9 +367,6 @@ void main(void) {
         src += R"(
 uniform mat4 matrix;
 
-uniform ivec2 destRectPos;
-uniform ivec2 destRectSize;
-
 uniform Rgba rgba;
 uniform Index index;
 
@@ -236,22 +375,19 @@ bool inside(const vec2 pos) {
     return bool(step(dist, 1.0));
 }
 
-bool pixelInside(const ivec2 pixel) {
-    vec2 pos = (vec2(pixel - destRectPos) + vec2(0.5)) / vec2(destRectSize) * vec2(2.0) - vec2(1.0);
-    return inside(pos);
-}
-
 Colour src(const vec2 pos) {
-//    ivec2 pixel = ivec2(floor(gl_FragCoord.xy));
+)";
+        if (filled) src += R"(
+    return inside(pos) ? Colour(rgba, index) : Colour(Rgba(0.0, 0.0, 0.0, 0.0), INDEX_INVALID);
+)";
+        else src += R"(
     // Is this accurate for both positive and negative offsets?
     vec2 dx = dFdx(pos);
     vec2 dy = dFdy(pos);
     bool isEdge = (inside(pos) && (!inside(pos - dx) || !inside(pos + dx) || !inside(pos - dy) || !inside(pos + dy)));
     return isEdge ? Colour(rgba, index) : Colour(Rgba(0.0, 0.0, 0.0, 0.0), INDEX_INVALID);
-//    ivec2 pixel = ivec2(floor((pos + vec2(1.0)) / vec2(2.0) * vec2(destRectSize))) + destRectPos;
-//    bool isEdge = (pixelInside(pixel) && (!pixelInside(pixel + ivec2(-1, 0)) || !pixelInside(pixel + ivec2(1, 0)) || !pixelInside(pixel + ivec2(0, -1)) || !pixelInside(pixel + ivec2(0, 1))));
-//    bool isInside = pixelInside(pixel);
-//    return isEdge ? Colour(rgba, index) : (isInside ? Colour(Rgba(0.5, 0.5, 0.5, 0.5), INDEX_INVALID) : Colour(Rgba(0.0, 0.0, 0.0, 0.0), INDEX_INVALID));
+)";
+        src += R"(
 }
 )";
         src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
@@ -271,8 +407,8 @@ void EllipseProgram::render(const std::array<QVector2D, 2> &points, const Colour
     program.bind();
 
     QMatrix4x4 pointsMatrix;
-    const QVector2D &offset = QVector2D(floor(points[0].x()), floor(points[0].y()));
-    const QVector2D &scale =  QVector2D(floor(points[1].x() - points[0].x()), floor(points[1].y() - points[0].y()));
+    const QVector2D &offset = QVector2D(std::floor(points[0].x()), std::floor(points[0].y()));
+    const QVector2D &scale =  QVector2D(std::floor(points[1].x() - points[0].x()), std::floor(points[1].y() - points[0].y()));
     pointsMatrix.translate(offset.x(), offset.y());
     pointsMatrix.scale(scale.x(), scale.y());
     pointsMatrix.scale(0.5f, 0.5f);
@@ -280,15 +416,124 @@ void EllipseProgram::render(const std::array<QVector2D, 2> &points, const Colour
 
     glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, (transform * pointsMatrix).data());
 
-    glUniform2i(program.uniformLocation("destRectPos"), 0, 0);
-    glUniform2i(program.uniformLocation("destRectSize"), dest->width(), dest->height());
-
     glUniform4fv(program.uniformLocation("rgba"), 1, colour.rgba.data());
     glUniform1ui(program.uniformLocation("index"), colour.index);
 
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
 
     glDrawArrays(GL_TRIANGLE_FAN, 0, 4);
+}
+
+QString ContourStencilProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+{
+    QString src;
+
+    switch(stage) {
+    case QOpenGLShader::Vertex: {
+        src += RenderManager::headerShaderPart();
+        src += R"(
+layout(std430, binding = 0) buffer StorageData
+{
+    vec2 points[];
+} storageData;
+
+out VertexOut {
+    vec2 pos;
+} vOut;
+
+void main(void)
+{
+    vOut.pos = storageData.points[gl_InstanceID + gl_VertexID];
+}
+)";
+    }break;
+    case QOpenGLShader::Geometry: {
+        src += RenderManager::headerShaderPart();
+        src += R"(
+layout (lines) in;
+layout (triangle_strip, max_vertices = 3) out;
+
+layout(std430, binding = 0) buffer StorageData {
+    vec2 points[];
+} storageData;
+
+in VertexOut {
+    vec2 pos;
+} gIn[];
+
+uniform mat4 matrix;
+
+void main(void)
+{
+    gl_Position = matrix * vec4(storageData.points[0], 0.0, 1.0);
+    EmitVertex();
+    gl_Position = matrix * vec4(gIn[0].pos, 0.0, 1.0);
+    EmitVertex();
+    gl_Position = matrix * vec4(gIn[1].pos, 0.0, 1.0);
+    EmitVertex();
+    EndPrimitive();
+}
+)";
+    }break;
+    case QOpenGLShader::Fragment: {
+        src += RenderManager::headerShaderPart();
+        src += R"(
+uniform Rgba rgba;
+uniform Index index;
+
+Colour src(const vec2 pos) {
+    return Colour(rgba, index);
+}
+)";
+        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
+        src += RenderManager::fragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
+    }break;
+    default: break;
+    }
+
+    return src;
+}
+
+void ContourStencilProgram::render(const std::vector<QVector2D> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer * const destPalette)
+{
+    Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
+
+    glGenTextures(1, &stencilTexture);
+    glBindTexture(GL_TEXTURE_2D, stencilTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, dest->width(), dest->height(), 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, nullptr);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, stencilTexture, 0);
+
+    glEnable(GL_STENCIL_TEST);
+    glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+    glStencilFunc(GL_ALWAYS, 0, 0x1u);
+    glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
+
+    glStencilMask(0xffu);
+    glClear(GL_STENCIL_BUFFER_BIT);
+    // Draw stencil
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(QVector2D), points.data(), GL_STATIC_DRAW);
+
+    QOpenGLShaderProgram &program = this->program();
+    program.bind();
+
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
+
+    glDrawArraysInstanced(GL_LINES, 1, 2, points.size() - 2);
+
+    glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+    glStencilMask(0x00u);
+    glStencilFunc(GL_EQUAL, 1, 0x1u);
+    glStencilOp(GL_KEEP, GL_KEEP, GL_KEEP);
+}
+
+void ContourStencilProgram::postRender()
+{
+    glDisable(GL_STENCIL_TEST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+    glDeleteTextures(1, &stencilTexture);
+    stencilTexture = 0;
 }
 
 QString LineProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
@@ -476,8 +721,6 @@ void LineProgram::render(const std::vector<LineProgram::Point> &points, const Co
     glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.data());
 
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
-
-    glBindVertexArray(vao);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(LineProgram::Point), points.data(), GL_STATIC_DRAW);

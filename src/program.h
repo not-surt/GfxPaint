@@ -5,6 +5,8 @@
 
 #include <typeindex>
 #include <QOpenGLShaderProgram>
+#include <deque>
+
 #include "types.h"
 #include "buffer.h"
 #include "brush.h"
@@ -308,9 +310,9 @@ layout(std140, binding = $BINDING) uniform $NAMEBufferUniformData {
     const Buffer::Format srcPaletteFormat;
 };
 
-class ModelProgram : public RenderProgram {
+class SingleColourModelProgram : public RenderProgram {
 public:
-    ModelProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+    SingleColourModelProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
         RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode)
     {
         updateKey(typeid(this), {});
@@ -322,20 +324,75 @@ protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 };
 
-class EllipseProgram : public RenderProgram {
+class VertexColourModelProgram : public RenderProgram {
 public:
-    EllipseProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+    VertexColourModelProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
         RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode)
     {
         updateKey(typeid(this), {});
     }
 
-    virtual ~EllipseProgram() override {
+    void render(Model *const model, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+
+protected:
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+};
+
+class RectProgram : public RenderProgram {
+public:
+    RectProgram(const bool filled, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
+        filled(filled)
+    {
+        updateKey(typeid(this), {filled});
     }
 
     void render(const std::array<QVector2D, 2> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
+    const bool filled;
+
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+};
+
+class EllipseProgram : public RenderProgram {
+public:
+    EllipseProgram(const bool filled, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
+        filled(filled)
+    {
+        updateKey(typeid(this), {filled});
+    }
+
+    void render(const std::array<QVector2D, 2> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+
+protected:
+    const bool filled;
+
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+};
+
+class ContourStencilProgram : public RenderProgram {
+public:
+    ContourStencilProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
+        storageBuffer(0), stencilTexture(0)
+    {
+        updateKey(typeid(this), {});
+
+        glGenBuffers(1, &storageBuffer);
+    }
+
+    virtual ~ContourStencilProgram() override {
+        glDeleteBuffers(1, &storageBuffer);
+    }
+    void render(const std::vector<QVector2D> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void postRender();
+
+protected:
+    GLuint storageBuffer;
+    GLuint stencilTexture;
+
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 };
 
@@ -350,23 +407,20 @@ public:
 
     LineProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
         RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
-        vao(0), storageBuffer(0)
+        storageBuffer(0)
     {
         updateKey(typeid(this), {});
 
-        glGenVertexArrays(1, &vao);
         glGenBuffers(1, &storageBuffer);
     }
 
     virtual ~LineProgram() override {
         glDeleteBuffers(1, &storageBuffer);
-        glDeleteVertexArrays(1, &vao);
     }
 
     void render(const std::vector<Point> &points, const Colour &colour, const QMatrix4x4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
-    GLuint vao;
     GLuint storageBuffer;
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;

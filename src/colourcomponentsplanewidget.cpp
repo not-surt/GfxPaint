@@ -75,7 +75,7 @@ void ColourComponentsPlaneWidget::initializeGL()
     {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
         QList<Program *> oldPrograms = {markerProgram};
-        markerProgram = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
         qDeleteAll(oldPrograms);
     }
     setPalette(m_palette);
@@ -99,7 +99,7 @@ void ColourComponentsPlaneWidget::render()
             markerTransform.rotate(90.0f, QVector3D(0.0f, 0.0f, 1.0f));
         }
     }
-    markerProgram->render(markerModel, {}, markerTransform, widgetBuffer, nullptr);
+    markerProgram->render(markerModel, markerTransform, widgetBuffer, nullptr);
 }
 
 } // namespace GfxPaint

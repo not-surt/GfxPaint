@@ -149,7 +149,7 @@ void ColourPaletteWidget::initializeGL()
     {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
         QList<Program *> oldPrograms = {markerProgram};
-        markerProgram = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
         qDeleteAll(oldPrograms);
     }
     setPalette(m_palette);
@@ -169,14 +169,14 @@ void ColourPaletteWidget::render()
         markerTransform.translate((float)leftCell.x() * cellSize.x(), (float)leftCell.y() * cellSize.y());
         markerTransform.scale(cellSize.x(), cellSize.y());
         Model *const markerModel = qApp->renderManager.models["paletteMouseMarker"];
-        markerProgram->render(markerModel, {}, markerTransform, widgetBuffer, nullptr);
+        markerProgram->render(markerModel, markerTransform, widgetBuffer, nullptr);
 
         const QPoint rightCell = QPoint(rightIndex % cells.width(), rightIndex / cells.width());
         markerTransform = RenderManager::unitToClipTransform;
         markerTransform.translate((float)(rightCell.x() + 1) * cellSize.x(), (float)(rightCell.y() + 1) * cellSize.y());
         markerTransform.rotate(180.0f, QVector3D(0.0f, 0.0f, 1.0f));
         markerTransform.scale(cellSize.x(), cellSize.y());
-        markerProgram->render(markerModel, {}, markerTransform, widgetBuffer, nullptr);
+        markerProgram->render(markerModel, markerTransform, widgetBuffer, nullptr);
     }
 }
 

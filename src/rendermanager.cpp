@@ -196,6 +196,24 @@ RenderManager::RenderManager() :
     vao.create();
     vao.bind();
 
+    models["clipQuad"] = new Model(GL_TRIANGLE_STRIP, {2,}, {
+            -1.0f, -1.0f,
+            1.0f, -1.0f,
+            -1.0f, 1.0f,
+            1.0f, 1.0f,
+        }, {
+            0, 1, 2, 3,
+        }, {4,});
+
+    models["unitQuad"] = new Model(GL_TRIANGLE_STRIP, {2,}, {
+            0.0f, 0.0f,
+            1.0f, 0.0f,
+            0.0f, 1.0f,
+            1.0f, 1.0f,
+        }, {
+            0, 1, 2, 3,
+        }, {4,});
+
     models["sliderMarker"] = new Model(GL_TRIANGLES, {2, 4,}, {
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
             0.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,

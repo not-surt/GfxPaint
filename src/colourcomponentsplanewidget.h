@@ -45,7 +45,7 @@ protected:
     Buffer::Format quantisePaletteFormat;
 
     ColourPlaneProgram *program;
-    ModelProgram *markerProgram;
+    VertexColourModelProgram *markerProgram;
 
     QVector2D m_pos;
     Colour m_colour;

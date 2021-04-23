@@ -31,7 +31,7 @@ void Editor::init()
 Editor::Editor(Scene &scene, QWidget *parent) :
     RenderedWidget(parent),
     scene(scene), model(*qApp->documentManager.documentModel(&scene)),
-    strokeTool(*this), rectTool(*this), ellipseTool(*this), pickTool(*this), transformTargetOverrideTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
+    strokeTool(*this), rectTool(*this), ellipseTool(*this), contourTool(*this), pickTool(*this), transformTargetOverrideTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
     m_editingContext(scene),
     cameraTransform(), m_transformMode(),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
@@ -39,6 +39,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
         {{{}, {Qt::LeftButton}, {}}, {&strokeTool, 0}},
         {{{Qt::Key_R}, {Qt::LeftButton}, {}}, {&rectTool, 0}},
         {{{Qt::Key_E}, {Qt::LeftButton}, {}}, {&ellipseTool, 0}},
+        {{{Qt::Key_C}, {Qt::LeftButton}, {}}, {&contourTool, 0}},
         {{{}, {}, {{false, false, true, true}}}, {&zoomTool, 0}},
         {{{Qt::Key_Control}, {Qt::LeftButton}, {}}, {&pickTool, 0}},
         {{{}, {Qt::MiddleButton}, {}}, {&panTool, 0}},
@@ -62,7 +63,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
 Editor::Editor(const Editor &other) :
     RenderedWidget(other.parentWidget()),
     scene(other.scene), model(other.model),
-    strokeTool(other.strokeTool), rectTool(other.rectTool), ellipseTool(other.ellipseTool), pickTool(other.pickTool), transformTargetOverrideTool(other.transformTargetOverrideTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
+    strokeTool(other.strokeTool), rectTool(other.rectTool), ellipseTool(other.ellipseTool), contourTool(other.contourTool), pickTool(other.pickTool), transformTargetOverrideTool(other.transformTargetOverrideTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform), m_transformMode(other.m_transformMode),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
@@ -168,6 +169,7 @@ bool Editor::event(QEvent *const event)
                 tool->end(mouseToViewport(cursorPos), point, mode);
                 iterator = toolStack.erase(iterator);
                 releaseMouse();
+                releaseKeyboard();
                 consume = true;
             }
             else
@@ -184,6 +186,7 @@ bool Editor::event(QEvent *const event)
                     tool->begin(mouseToViewport(cursorPos), point, mode);
                 }
                 grabMouse();
+                grabKeyboard();
                 consume = true;
             }
         }

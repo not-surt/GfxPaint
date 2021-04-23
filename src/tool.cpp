@@ -89,25 +89,9 @@ void RectTool::end(const QVector2D &viewportPos, const Point &point, const int m
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
-            Model *const model = new Model(GL_TRIANGLE_STRIP, {2, 4,}, {
-                                           points[0].x(), points[0].y(), 1.0f, 0.0f, 0.0f, 1.0f,
-                                           points[1].x(), points[0].y(), 1.0f, 1.0f, 0.0f, 1.0f,
-                                           points[0].x(), points[1].y(), 1.0f, 0.0f, 0.0f, 1.0f,
-                                           points[1].x(), points[1].y(), 0.0f, 1.0f, 0.0f, 1.0f,
-                                           }, {
-                                           0, 1, 2, 3,
-                                           }, {4,});
-            ModelProgram *const program = new ModelProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
-            program->render(model, {}, GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
+            RectProgram *const program = new RectProgram(false, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+            program->render(points, editor.editingContext().colour(), GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
             delete program;
-            delete model;
-
-            QMatrix4x4 ellipseMatrix;
-            ellipseMatrix.rotate(15, {0.0f, 0.0f, 1.0f});
-            ellipseMatrix.scale({1.0f, 0.5f, 1.0f});
-            EllipseProgram *const ellipseProgram = new EllipseProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
-            ellipseProgram->render(points, editor.editingContext().colour(), ellipseMatrix * GfxPaint::viewportTransform(bufferNode->buffer.size()), &bufferNode->buffer, state.palette);
-            delete ellipseProgram;
         }
     }
 }
@@ -125,13 +109,13 @@ void RectTool::onTopPreview(const QVector2D &viewportPos, const Point &point, co
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Model *const markerModel = qApp->renderManager.models["planeMarker"];
-    ModelProgram *const markerProgram = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+    VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
     QMatrix4x4 markerTransform = editor.getViewportTransform();
     const QVector2D viewportPoint = editor.worldToViewport(points[0]);
     markerTransform.translate(viewportPoint.toVector3D());
     float markerSize = 16.0f;
     markerTransform.scale(markerSize, markerSize);
-    markerProgram->render(markerModel, {}, markerTransform, editor.getWidgetBuffer(), nullptr);
+    markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
     delete markerProgram;
 }
 
@@ -156,10 +140,7 @@ void EllipseTool::end(const QVector2D &viewportPos, const Point &point, const in
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
-            QMatrix4x4 ellipseMatrix;
-            //ellipseMatrix.rotate(15, {0.0f, 0.0f, 1.0f});
-            //ellipseMatrix.scale({1.0f, 0.5f, 1.0f});
-            EllipseProgram *const program = new EllipseProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+            EllipseProgram *const program = new EllipseProgram(true, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
             program->render(points, editor.editingContext().colour(), GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
             delete program;
         }
@@ -179,13 +160,87 @@ void EllipseTool::onTopPreview(const QVector2D &viewportPos, const Point &point,
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Model *const markerModel = qApp->renderManager.models["planeMarker"];
-    ModelProgram *const markerProgram = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+    VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
     QMatrix4x4 markerTransform = editor.getViewportTransform();
     const QVector2D viewportPoint = editor.worldToViewport(points[0]);
     markerTransform.translate(viewportPoint.toVector3D());
     float markerSize = 16.0f;
     markerTransform.scale(markerSize, markerSize);
-    markerProgram->render(markerModel, {}, markerTransform, editor.getWidgetBuffer(), nullptr);
+    markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
+    delete markerProgram;
+}
+
+void ContourTool::begin(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    points.clear();
+    points.push_back(point.pos);
+}
+
+void ContourTool::update(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    points.push_back(point.pos);
+}
+
+void ContourTool::end(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    update(viewportPos, point);
+    for (Node *node : editor.editingContext().selectedNodes()) {
+        const Traversal::State &state = editor.editingContext().states().value(node);
+        BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+        const EditingContext::BufferNodeContext *const bufferNodeContext = editor.editingContext().bufferNodeContext(node);
+        if (bufferNode) {
+            ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+            bufferNode->buffer.bindFramebuffer();
+
+            ContourStencilProgram *const stencilProgram = new ContourStencilProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+            stencilProgram->render(points, editor.editingContext().colour(), GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
+
+            QVector2D boundsMin = QVector2D(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
+            QVector2D boundsMax = QVector2D(-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity());
+            auto iterator = points.begin();
+            while (iterator != points.end()) {
+                boundsMin.setX(std::min(boundsMin.x(), iterator->x()));
+                boundsMin.setY(std::min(boundsMin.y(), iterator->y()));
+                boundsMax.setX(std::max(boundsMax.x(), iterator->x()));
+                boundsMax.setY(std::max(boundsMax.y(), iterator->y()));
+                ++iterator;
+            }
+            Model *const model = new Model(GL_TRIANGLE_STRIP, {2}, {
+                                                                       boundsMin.x(), boundsMin.y(),
+                                                                       boundsMax.x(), boundsMin.y(),
+                                                                       boundsMin.x(), boundsMax.y(),
+                                                                       boundsMax.x(), boundsMax.y()},
+                                           {{0, 1, 2, 3}}, {4});
+            SingleColourModelProgram *const modelProgram = new SingleColourModelProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+            modelProgram->render(model, editor.editingContext().colour(), GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
+            delete modelProgram;
+
+            stencilProgram->postRender();
+            delete stencilProgram;
+        }
+    }
+}
+
+void ContourTool::onCanvasPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    auto savePoints = points;
+
+    end(viewportPos, point);
+
+    points = savePoints;
+}
+
+void ContourTool::onTopPreview(const QVector2D &viewportPos, const Point &point, const int mode)
+{
+    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+    Model *const markerModel = qApp->renderManager.models["planeMarker"];
+    VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+    QMatrix4x4 markerTransform = editor.getViewportTransform();
+    const QVector2D viewportPoint = editor.worldToViewport(points.front());
+    markerTransform.translate(viewportPoint.toVector3D());
+    float markerSize = 16.0f;
+    markerTransform.scale(markerSize, markerSize);
+    markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
     delete markerProgram;
 }
 
@@ -284,11 +339,11 @@ void RotoZoomTool::onTopPreview(const QVector2D &viewportPos, const Point &point
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     Model *const markerModel = qApp->renderManager.models["planeMarker"];
-    ModelProgram *const markerProgram = new ModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+    VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
     QMatrix4x4 markerTransform = editor.getViewportTransform();
     float markerSize = 16.0f;
     markerTransform.scale(markerSize, markerSize);
-    markerProgram->render(markerModel, {}, markerTransform, editor.getWidgetBuffer(), nullptr);
+    markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
     delete markerProgram;
 }
 
