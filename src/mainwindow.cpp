@@ -26,7 +26,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       ui(new Ui::MainWindow),
       pixelRatiosGroup(this), toolsGroup(this), blendModesGroup(this), tabPositionsGroup(this),
-      activeDocument(nullptr), activeEditor(nullptr), activeEditorConnections(), editorSubWindows()
+    activeDocument(nullptr), activeEditor(nullptr), activeEditorConnections(), editorSubWindows()
 {
 #ifdef Q_OS_WIN
     winId(); // Allocate window handle
@@ -152,32 +152,6 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     }
     mainMenuToolButton->setMenu(mainMenu);
     ui->mainToolBar->insertWidget(ui->mainToolBar->actions().at(0), centringWidget(mainMenuToolButton));
-
-    const QVector<std::pair<QVector<QAction *>, QAction *>> toolGroups = {
-        {{ui->actionDot, ui->actionDottedFreehand, ui->actionContinuousFreehand}, ui->actionContinuousFreehand},
-        {{ui->actionLineSingle, ui->actionLineMulti}, ui->actionLineSingle},
-        {{ui->actionCurveSingle, ui->actionCurveDouble}, ui->actionCurveSingle},
-        {{ui->actionRectangleStroked, ui->actionRectangleFilled, ui->actionSquareStroked, ui->actionSquareFilled}, ui->actionRectangleFilled},
-        {{ui->actionEllipseStroked, ui->actionEllipseFilled, ui->actionCircleStroked, ui->actionCircleFilled}, ui->actionEllipseFilled},
-        {{ui->actionPolygonStroked, ui->actionPolygonFilled, ui->actionPolyformStroked, ui->actionPolyformFilled}, ui->actionPolygonFilled},
-        {{ui->actionFloodFill, ui->actionReplaceMatching}, ui->actionFloodFill},
-        {{ui->actionSprayCan, ui->actionAirBrush}, ui->actionSprayCan},
-        {{ui->actionGrabBrush}, ui->actionGrabBrush},
-    };
-    toolsGroup.setExclusive(true);
-    ui->actionContinuousFreehand->setChecked(true);
-    for (const auto &pair : toolGroups) {
-        auto group = pair.first;
-        auto defaultAction = pair.second;
-        MultiToolButton *const toolButton = new MultiToolButton();
-        for (auto action : group) {
-            toolButton->addAction(action);
-            toolsGroup.addAction(action);
-        }
-        toolButton->setDefaultAction(defaultAction);
-        ui->toolsToolBar->addWidget(centringWidget(toolButton));
-    }
-    ui->actionContinuousFreehand->setChecked(true);
 }
 
 MainWindow::~MainWindow()
@@ -566,6 +540,13 @@ void MainWindow::activateEditor(Editor *const editor)
     }
     activeEditorConnections.clear();
     removeEventFilter(activeEditor);
+    for (auto action : toolsGroup.actions()) {
+        toolsGroup.removeAction(action);
+    }
+    auto actions = ui->toolsToolBar->actions();
+    ui->menuTool->clear();
+    ui->toolsToolBar->clear();
+    qDeleteAll(actions);
     activeEditor = editor;
     if (activeEditor) {
         ui->sessionEditorWidget->selectionModel()->select(qApp->documentManager.documentModelIndex(&activeEditor->scene), QItemSelectionModel::ClearAndSelect);
@@ -584,7 +565,6 @@ void MainWindow::activateEditor(Editor *const editor)
             activeEditor->editingContext().setBrush(brush);
             ui->dabEditorWidget->setDab(brush.dab);
             ui->strokeEditorWidget->setStroke(brush.stroke);
-
         });
         activeEditorConnections << QObject::connect(activeEditor, &Editor::brushChanged, ui->brushViewWidget, &BrushViewWidget::setBrush);
 
@@ -605,7 +585,44 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(activeEditor, &Editor::transformChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransform);
         activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformChanged, activeEditor, &Editor::setTransform);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::transformModeChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransformMode);
-        activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformTarget);
+        activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformTarget);        
+
+        toolsGroup.setExclusive(true);
+        ui->menuTool->addMenu(ui->menuToolSpace);
+        toolIdToAction.clear();
+        actionToToolId.clear();
+        for (const auto &group : activeEditor->toolGroups) {
+            MultiToolButton *const toolButton = new MultiToolButton();
+            QAction *defaultAction = nullptr;
+            ui->menuTool->addSeparator();
+            for (const Editor::ToolId id : group.first) {
+                const Editor::ToolInfo &info = activeEditor->toolInfo.at(id);
+                QAction *action = new QAction();
+                action->setText(info.name);
+                action->setCheckable(true);
+                action->setData(static_cast<int>(id));
+                ui->menuTool->addAction(action);
+                toolButton->addAction(action);
+                toolsGroup.addAction(action);
+                if (id == group.second) {
+                    defaultAction = action;
+                }
+                if (id == activeEditor->defaultTool) {
+                    action->setChecked(true);
+                }
+                toolIdToAction.emplace(id, action);
+                actionToToolId.emplace(action, id);
+            }
+            toolButton->setDefaultAction(defaultAction);
+            ui->toolsToolBar->addWidget(centringWidget(toolButton));
+        }
+        ui->actionContinuousFreehand->setChecked(true);
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::selectedToolIdChanged, this, [this](const Editor::ToolId toolId){
+            toolIdToAction.at(toolId)->setChecked(true);
+        });
+        activeEditorConnections << QObject::connect(&toolsGroup, &QActionGroup::triggered, this, [this](QAction *const action){
+            activeEditor->setSelectedToolId(actionToToolId.at(action));
+        });
 
         installEventFilter(activeEditor);
 

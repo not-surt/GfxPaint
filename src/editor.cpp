@@ -35,27 +35,9 @@ Editor::Editor(Scene &scene, QWidget *parent) :
     m_editingContext(scene),
     cameraTransform(), m_transformMode(),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
-    toolSet{
-        {{{}, {Qt::LeftButton}, {}}, {&strokeTool, 0}},
-        {{{Qt::Key_R}, {Qt::LeftButton}, {}}, {&rectTool, 0}},
-        {{{Qt::Key_E}, {Qt::LeftButton}, {}}, {&ellipseTool, 0}},
-        {{{Qt::Key_C}, {Qt::LeftButton}, {}}, {&contourTool, 0}},
-        {{{}, {}, {{false, false, true, true}}}, {&zoomTool, 0}},
-        {{{Qt::Key_Control}, {Qt::LeftButton}, {}}, {&pickTool, 0}},
-        {{{}, {Qt::MiddleButton}, {}}, {&panTool, 0}},
-        {{{Qt::Key_Control}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
-        {{{Qt::Key_Shift}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},
-        {{{Qt::Key_Control, Qt::Key_Shift}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::RotoZoom)}},
-        {{{Qt::Key_Space}, {}, {}}, {&panTool, 0}},
-        {{{Qt::Key_Control, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
-        {{{Qt::Key_Shift, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},
-        {{{Qt::Key_Control, Qt::Key_Shift, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::RotoZoom)}},
-        {{{Qt::Key_Shift}, {}, {{false, false, true, true}}}, {&rotateTool, 0}},
-        {{{Qt::Key_V}, {}, {}}, {&transformTargetOverrideTool, static_cast<int>(TransformTarget::View)}},
-        {{{Qt::Key_O}, {}, {}}, {&transformTargetOverrideTool, static_cast<int>(TransformTarget::Object)}},
-        {{{Qt::Key_B}, {}, {}}, {&transformTargetOverrideTool, static_cast<int>(TransformTarget::Brush)}},
-    },
-    toolStack{}
+    m_selectedToolId(ToolId::Invalid),
+    selectedToolStack{},
+    activatedToolStack{}
 {
     init();
 }
@@ -67,7 +49,8 @@ Editor::Editor(const Editor &other) :
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform), m_transformMode(other.m_transformMode),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
-    toolSet(other.toolSet), toolStack{}
+    toolSelectors(other.toolSelectors), selectedToolActivators(other.selectedToolActivators), toolActivators(other.toolActivators),
+    selectedToolStack(other.selectedToolStack), activatedToolStack(other.activatedToolStack), toolModeModifiers(other.toolModeModifiers)
 {
     init();
 }
@@ -88,9 +71,8 @@ bool Editor::eventFilter(QObject *const watched, QEvent *const event)
         const QWheelEvent *const wheelEvent = static_cast<QWheelEvent *>(event);
         // TODO: wheel wierdness!
         qDebug() << "Window Wheel" << wheelEvent->angleDelta();//////////////////
-//        QWheelEvent *eventCopy = new QWheelEvent(wheelEvent->pos(), wheelEvent->globalPos(), wheelEvent->pixelDelta(), wheelEvent->angleDelta(), wheelEvent->delta(), wheelEvent->orientation(), wheelEvent->buttons(), wheelEvent->modifiers(), wheelEvent->phase(), wheelEvent->source());
-//        QApplication::postEvent(this, eventCopy);
-//        return true;
+        QWheelEvent *eventCopy = new QWheelEvent(wheelEvent->position(), wheelEvent->globalPosition(), wheelEvent->pixelDelta(), wheelEvent->angleDelta(), wheelEvent->buttons(), wheelEvent->modifiers(), wheelEvent->phase(), wheelEvent->inverted(), wheelEvent->source());
+        QApplication::postEvent(this, eventCopy);
     }
     else return RenderedWidget::eventFilter(watched, event);
 
@@ -100,6 +82,7 @@ bool Editor::eventFilter(QObject *const watched, QEvent *const event)
 bool Editor::event(QEvent *const event)
 {
     bool consume = false;
+    bool inputStateChanged = false;
 
     // Handle input event
     const QKeyEvent *const keyEvent = static_cast<QKeyEvent *>(event);
@@ -125,21 +108,40 @@ bool Editor::event(QEvent *const event)
         rotation = 0.0f;
         tilt = {0.0f, 0.0f};
         quaternion = QQuaternion(0.0f, 0.0f, 0.0f, 1.0f);
+
         if (event->type() == QEvent::KeyPress && !keyEvent->isAutoRepeat()) {
             cursorPos = Vec2(mapFromGlobal(QCursor::pos()));
             pressure = 1.0f;
             inputState.keys.insert(static_cast<Qt::Key>(keyEvent->key()));
+            inputStateChanged = true;
         }
-        else if (event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) inputState.keys.remove(static_cast<Qt::Key>(keyEvent->key()));
-        else if (event->type() == QEvent::MouseButtonPress) inputState.mouseButtons.insert(mouseEvent->button());
-        else if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::NonClientAreaMouseButtonRelease) inputState.mouseButtons.remove(mouseEvent->button());
-        else if (event->type() == QEvent::TabletPress) inputState.mouseButtons.insert(tabletEvent->button());
-        else if (event->type() == QEvent::TabletRelease) inputState.mouseButtons.remove(tabletEvent->button());
+        else if (event->type() == QEvent::KeyRelease && !keyEvent->isAutoRepeat()) {
+            inputState.keys.remove(static_cast<Qt::Key>(keyEvent->key()));
+            inputStateChanged = true;
+        }
+        else if (event->type() == QEvent::MouseButtonPress) {
+            inputState.mouseButtons.insert(mouseEvent->button());
+            inputStateChanged = true;
+        }
+        else if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::NonClientAreaMouseButtonRelease) {
+            inputState.mouseButtons.remove(mouseEvent->button());
+            inputStateChanged = true;
+        }
+        else if (event->type() == QEvent::TabletPress) {
+            inputState.mouseButtons.insert(tabletEvent->button());
+            inputStateChanged = true;
+        }
+        else if (event->type() == QEvent::TabletRelease) {
+            inputState.mouseButtons.remove(tabletEvent->button());
+            inputStateChanged = true;
+        }
         else if (event->type() == QEvent::Wheel) {
             inputState.wheelDirections = {{wheelEvent->angleDelta().x() < 0, wheelEvent->angleDelta().x() > 0, wheelEvent->angleDelta().y() < 0, wheelEvent->angleDelta().y() > 0}};
-            static const float stepSize = 8 * 15;
+            inputStateChanged = true;
+            static const float stepSize = 8.0f * 15.0f;
             wheelDelta = Vec2(wheelEvent->angleDelta()) / stepSize;
         }
+
         if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove || event->type() == QEvent::NonClientAreaMouseMove) {
             cursorDelta = Vec2(mouseEvent->localPos()) - cursorPos;
         }
@@ -158,54 +160,82 @@ bool Editor::event(QEvent *const event)
             rotation = qRadiansToDegrees(std::atan2(std::sin(tilt.y()), std::sin(tilt.x())) + (tau<float> / 4.0f));
             quaternion = QQuaternion::fromEulerAngles(tilt.y(), tilt.x(), rotation);
         }
-        Point point{Vec2(mouseToWorld(cursorPos)), static_cast<float>(pressure), quaternion};
 
-        // Remove non-matching tools
-        auto iterator = toolStack.begin();
-        while (iterator != toolStack.end()) {
-            const InputState &trigger = iterator->first;
-            if (!trigger.test(inputState)) {
-                auto &[tool, mode] = iterator->second;
-                tool->end(mouseToViewport(cursorPos), point, mode);
-                iterator = toolStack.erase(iterator);
-                releaseMouse();
-                releaseKeyboard();
-                consume = true;
-            }
-            else
-                ++iterator;
-        }
+        const Point point{cameraTransform.inverted() * mouseTransform * cursorPos, static_cast<float>(pressure), quaternion};
+        const Vec2 cursorViewportPos = mouseTransform * cursorPos;
 
-        // Add matching tools
-        for (auto &[trigger, value] : toolSet) {
-            if (trigger.test(inputState)) {
-                auto &[tool, mode] = value;
-                auto pair = std::make_pair(trigger, std::make_pair(tool, mode));
-                if (std::find(toolStack.begin(), toolStack.end(), pair) == toolStack.end()) {
-                    toolStack.push_front(pair);
-                    tool->begin(mouseToViewport(cursorPos), point, mode);
+        if (inputStateChanged) {
+            selectedToolStack.clear();
+            auto pair = std::make_pair(InputState(), std::make_pair(&strokeTool, -1));
+            selectedToolStack.push_front(pair);
+            for (auto &[trigger, id] : toolSelectors) {
+                if (trigger.testSubset(inputState)) {
+                    const ToolInfo &info = toolInfo.at(id);
+                    auto pair = std::make_pair(trigger, std::make_pair(info.tool, info.operationMode));
+                    selectedToolStack.push_front(pair);
                 }
-                grabMouse();
-                grabKeyboard();
-                consume = true;
+            }
+
+            // Build toolset
+            auto toolSet = toolActivators;
+            for (auto [activatorTrigger, mode] : selectedToolActivators) {
+                if (activatorTrigger.testSubset(inputState)) {
+                    for (auto [selectorTrigger, value] : selectedToolStack) {
+                        InputState combinedTrigger = activatorTrigger;
+                        combinedTrigger.combine(selectorTrigger);
+                        if (combinedTrigger.testExact(inputState)) {
+                            toolSet.insert(std::make_pair(combinedTrigger, value));
+                        }
+                    }
+                }
+            }
+
+            // Remove non-matching tools
+            auto iterator = activatedToolStack.begin();
+            while (iterator != activatedToolStack.end()) {
+                const InputState &trigger = iterator->first;
+                if (!trigger.testExact(inputState)) {
+                    auto &[tool, mode] = iterator->second;
+                    tool->end(cursorViewportPos, point, mode);
+                    iterator = activatedToolStack.erase(iterator);
+                    releaseMouse();
+                    releaseKeyboard();
+                    consume = true;
+                }
+                else
+                    ++iterator;
+            }
+
+            // Activate matching tools
+            for (auto [trigger, value] : toolSet) {
+                auto [tool, mode] = value;
+                if (trigger.testExact(inputState)) {
+                    auto pair = std::make_pair(trigger, std::make_pair(tool, mode));
+                    if (std::find(activatedToolStack.begin(), activatedToolStack.end(), pair) == activatedToolStack.end()) {
+                        activatedToolStack.push_front(pair);
+                        tool->begin(cursorViewportPos, point, mode);
+                        grabMouse();
+                        grabKeyboard();
+                        consume = true;
+                    }
+                }
             }
         }
 
         {
-            auto iterator = toolStack.begin();
-            while (iterator != toolStack.end()) {
+            auto iterator = activatedToolStack.begin();
+            while (iterator != activatedToolStack.end()) {
                 auto &[tool, mode] = iterator->second;
                 // Handle mouse wheel
                 if (event->type() == QEvent::Wheel) {
-                    auto &[tool, mode] = toolStack.front().second;
-                    tool->wheel(mouseToViewport(cursorPos), wheelDelta, mode);
+                    tool->wheel(cursorViewportPos, wheelDelta, mode);
                     consume = true;
                 }
                 // Update current tools
                 else if (event->type() == QEvent::MouseMove ||
                          event->type() == QEvent::NonClientAreaMouseMove ||
                          event->type() == QEvent::TabletMove) {
-                    tool->update(mouseToViewport(cursorPos), point, mode);
+                    tool->update(cursorViewportPos, point, mode);
                     consume = true;
                 }
                 if (tool->isExclusive()) break;
@@ -223,9 +253,10 @@ bool Editor::event(QEvent *const event)
         consume = true;
     }
     else if (event->type() == QEvent::FocusOut ||
-        event->type() == QEvent::WindowDeactivate) {
+             event->type() == QEvent::WindowDeactivate) {
         inputState = {};
-        toolStack = {};
+        activatedToolStack = {};
+        selectedToolStack = {};
         releaseMouse();
         cursorOver = false;
         consume = true;
@@ -312,6 +343,16 @@ void Editor::setColour(const Colour &colour)
 
 void Editor::render()
 {
+    Tool *onCanvasPreviewTool = nullptr;
+    bool onCanvasPreviewIsActive = false;
+    if (activatedToolStack.size() > 0) {
+        onCanvasPreviewTool = activatedToolStack.front().second.first;
+        onCanvasPreviewIsActive = true;
+    }
+    else if (selectedToolStack.size() > 0) {
+        onCanvasPreviewTool = selectedToolStack.front().second.first;
+    }
+
     for (Node *node : m_editingContext.selectedNodes()) {
         const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
@@ -324,9 +365,9 @@ void Editor::render()
                 glDisable(GL_DEPTH_TEST);
                 glDisable(GL_BLEND);
 
-                const Vec2 point = mouseToWorld(cursorPos);
+                const Vec2 point = cameraTransform.inverted() * mouseTransform * cursorPos;
                 const Vec2 snappedPoint = pixelSnap(point);
-                activeTool().onCanvasPreview(mouseToViewport(cursorPos), {mouseToWorld(cursorPos), 1.0, quaternion});
+                if (onCanvasPreviewTool) onCanvasPreviewTool->onCanvasPreview(mouseTransform * cursorPos, {cameraTransform.inverted() * mouseTransform * cursorPos, 1.0, quaternion}, onCanvasPreviewIsActive);
             }
         }
     }
@@ -360,10 +401,19 @@ void Editor::render()
     };
     lineProgram->render(points, {{1.0f, 0.0f, 0.0f, 1.0f}, INDEX_INVALID}, viewportTransform * cameraTransform, widgetBuffer, nullptr);
 
-    activeTool().onTopPreview(mouseToViewport(cursorPos), {mouseToWorld(cursorPos), 1.0, quaternion});
+    Tool *onTopPreviewTool = nullptr;
+    bool onTopPreviewIsActive = false;
+    if (activatedToolStack.size() > 0) {
+        onTopPreviewTool = activatedToolStack.front().second.first;
+        onTopPreviewIsActive = true;
+    }
+    else if (selectedToolStack.size() > 0) {
+        onTopPreviewTool = selectedToolStack.front().second.first;
+    }
+    if (onTopPreviewTool) onTopPreviewTool->onTopPreview(mouseTransform * cursorPos, {cameraTransform.inverted() * mouseTransform * cursorPos, 1.0, quaternion}, onTopPreviewIsActive);
 }
 
-float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 dabSize, const Vec2 absoluteSpacing, const Vec2 proportionalSpacing, const float offset, Stroke &output) {
+float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 &dabSize, const Vec2 &absoluteSpacing, const Vec2 &proportionalSpacing, const float offset, Stroke &output) {
     auto ellipsePolar = [](const float a, const float b, const float theta){
         return (a * b) / std::sqrt(std::pow(a, 2.0f) * std::pow(std::sin(theta), 2.0f) + std::pow(b, 2.0f) * std::pow(std::cos(theta), 2.0f));
     };
@@ -392,18 +442,12 @@ float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point 
     return (pos - length) / increment;
 }
 
-void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 worldPos)
+Mat4 Editor::toolSpace(BufferNode &node, const Space space)
 {
-    Q_ASSERT( m_editingContext.bufferNodeContext(&node));
-
     const Traversal::State &state = m_editingContext.states().value(&node);
 
-    Mat4 worldTransform;
-    worldTransform.translate(worldPos.x(), worldPos.y());
-
-    const Mat4 &transform = Mat4(state.transform);
     Mat4 spaceTransform;
-    switch (dab.space) {
+    switch (space) {
     case Space::Object: {
         spaceTransform = Mat4();
     } break;
@@ -411,23 +455,34 @@ void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &no
         spaceTransform = node.pixelAspectRatioTransform().inverted();
     } break;
     case Space::World: {
-        spaceTransform = transform.inverted();
+        spaceTransform = state.transform.inverted();
     } break;
     case Space::View: {
-        spaceTransform = (cameraTransform * transform).inverted();
+        spaceTransform = (cameraTransform * state.transform).inverted();
     } break;
     }
-    const Vec2 spaceOffset = spaceTransform.map(Vec2(0.0f, 0.0f));
+    return spaceTransform;
+}
+
+void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 &worldPos)
+{
+    Q_ASSERT( m_editingContext.bufferNodeContext(&node));
+
+    const Traversal::State &state = m_editingContext.states().value(&node);
+
+    const Vec2 offset = state.transform.inverted() * worldPos;
+    Mat4 offsetTransform;
+    offsetTransform.translate(offset);
+
+    const Mat4 spaceTransform = toolSpace(node, dab.space);
+
+    const Vec2 spaceOffset = spaceTransform * Vec2(0.0f, 0.0f);
     Mat4 spaceOffsetTransform;
     spaceOffsetTransform.translate(-spaceOffset);
-    spaceTransform = spaceOffsetTransform * spaceTransform;
-    const Vec2 objectSpacePos = transform.inverted().map(worldPos);
-    Mat4 objectSpaceTransform;
-    objectSpaceTransform.translate(objectSpacePos);
 
-    const Buffer *const palette = m_editingContext.states()[&node].palette;
+    const Buffer *const palette = state.palette;
     EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(&node);
-    bufferNodeContext->dabProgram->render(dab, colour, GfxPaint::viewportTransform(node.buffer.size()) * objectSpaceTransform * spaceTransform, &node.buffer, palette);
+    bufferNodeContext->dabProgram->render(dab, colour, node.viewportTransform() * offsetTransform * spaceOffsetTransform * spaceTransform, &node.buffer, palette);
 }
 
 void Editor::setTransformTarget(const TransformTarget transformMode)
@@ -457,6 +512,15 @@ void Editor::updateContext()
         if (state.palette) palette = state.palette;
     }
     emit paletteChanged(palette);
+}
+
+void Editor::setSelectedToolId(const Editor::ToolId tool)
+{
+    qDebug() << "tool changed!" << (int)tool;
+    if (m_selectedToolId != tool) {
+        m_selectedToolId = tool;
+        emit selectedToolIdChanged(m_selectedToolId);
+    }
 }
 
 } // namespace GfxPaint

@@ -178,6 +178,10 @@ public:
         return transform;
     }
 
+    Mat4 viewportTransform() const {
+        return GfxPaint::viewportTransform(buffer.size());
+    }
+
 private:
     void render(Traversal &traversal);
 };

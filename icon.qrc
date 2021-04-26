@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>GfxPaint.ico</file>
+        <file>GfxPaint.png</file>
+    </qresource>
+</RCC>

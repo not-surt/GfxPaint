@@ -68,8 +68,8 @@ private:
     QPoint map(const QPoint &point) const;
     QPointF map(const QPointF &point) const;
 };
-inline QVector2D operator*(const QVector2D &vector, const Mat4 &matrix) { return (vector.toVector3D() * matrix).toVector2D(); }
-inline QVector2D operator*(const Mat4 &matrix, const QVector2D &vector) { return (matrix * vector.toVector3D()).toVector2D(); }
+inline QVector2D operator*(const QVector2D &vector, const QMatrix4x4 &matrix) { return (vector.toVector3D() * matrix).toVector2D(); }
+inline QVector2D operator*(const QMatrix4x4 &matrix, const QVector2D &vector) { return (matrix * vector.toVector3D()).toVector2D(); }
 
 inline QDebug operator<<(QDebug debug, const Colour &colour)
 {

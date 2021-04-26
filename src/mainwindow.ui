@@ -10,6 +10,10 @@
     <height>754</height>
    </rect>
   </property>
+  <property name="windowIcon">
+   <iconset resource="../icon.qrc">
+    <normaloff>:/GfxPaint.png</normaloff>:/GfxPaint.png</iconset>
+  </property>
   <property name="documentMode">
    <bool>false</bool>
   </property>
@@ -493,12 +497,29 @@
      <string>&amp;Node</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuTool">
+    <property name="title">
+     <string>&amp;Tool</string>
+    </property>
+    <widget class="QMenu" name="menuToolSpace">
+     <property name="title">
+      <string>&amp;Space</string>
+     </property>
+     <addaction name="actionToolSpaceNode"/>
+     <addaction name="actionToolSpaceNodeAspectCorrected"/>
+     <addaction name="actionToolSpaceScene"/>
+     <addaction name="actionToolSpaceView"/>
+    </widget>
+    <addaction name="menuToolSpace"/>
+    <addaction name="separator"/>
+   </widget>
    <addaction name="menuApplication"/>
    <addaction name="menuWindow"/>
    <addaction name="menuFile"/>
    <addaction name="menuEdit"/>
    <addaction name="menuView"/>
    <addaction name="menuNode"/>
+   <addaction name="menuTool"/>
   </widget>
   <widget class="DockWidget" name="paletteEditorDockWidget">
    <property name="windowTitle">
@@ -1462,6 +1483,68 @@
     <string>Context &amp;Application Scope</string>
    </property>
   </action>
+  <action name="actionPickColour">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Pick Colour</string>
+   </property>
+  </action>
+  <action name="actionPickNode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Pick Node</string>
+   </property>
+  </action>
+  <action name="actionToolSpaceNode">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Node Space</string>
+   </property>
+  </action>
+  <action name="actionToolSpaceNodeAspectCorrected">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Aspect-corrected Node Space</string>
+   </property>
+   <property name="toolTip">
+    <string>Aspect-corrected Node Space</string>
+   </property>
+  </action>
+  <action name="actionToolSpaceScene">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;Scene Space</string>
+   </property>
+   <property name="toolTip">
+    <string>Scene Space</string>
+   </property>
+  </action>
+  <action name="actionToolSpaceView">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>&amp;View Space</string>
+   </property>
+   <property name="toolTip">
+    <string>View Space</string>
+   </property>
+  </action>
+  <action name="actionNode">
+   <property name="text">
+    <string>Node</string>
+   </property>
+  </action>
  </widget>
  <layoutdefault spacing="6" margin="11"/>
  <customwidgets>
@@ -1531,6 +1614,8 @@
    <container>1</container>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../icon.qrc"/>
+ </resources>
  <connections/>
 </ui>

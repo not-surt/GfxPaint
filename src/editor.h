@@ -10,6 +10,7 @@
 #include <tuple>
 #include <set>
 #include <deque>
+#include <valarray>
 
 #include "buffer.h"
 #include "brush.h"
@@ -46,13 +47,30 @@ public:
             return std::make_tuple(keys.values(), mouseButtons.values(), wheelDirections) < std::make_tuple(rhs.keys.values(), rhs.mouseButtons.values(), rhs.wheelDirections);
         }
 
-        bool test(const InputState &other) const {
+        bool testExact(const InputState &other) const {
             return (keys == other.keys) && (mouseButtons == other.mouseButtons) &&
-                    ((wheelDirections == std::array<bool, 4>{{false, false, false, false}}) ||
+                   ((wheelDirections == std::array<bool, 4>{{false, false, false, false}}) ||
                     ((wheelDirections[0] && other.wheelDirections[0]) ||
                      (wheelDirections[1] && other.wheelDirections[1]) ||
                      (wheelDirections[2] && other.wheelDirections[2]) ||
                      (wheelDirections[3] && other.wheelDirections[3])));
+        }
+        bool testSubset(const InputState &other) const {
+            return (other.keys.contains(keys)) && (other.mouseButtons.contains(mouseButtons)) &&
+                   ((wheelDirections == std::array<bool, 4>{{false, false, false, false}}) ||
+                    ((wheelDirections[0] && other.wheelDirections[0]) ||
+                     (wheelDirections[1] && other.wheelDirections[1]) ||
+                     (wheelDirections[2] && other.wheelDirections[2]) ||
+                     (wheelDirections[3] && other.wheelDirections[3])));
+        }
+
+        void combine(const InputState &other) {
+            keys.unite(other.keys);
+            mouseButtons.unite(other.mouseButtons);
+            wheelDirections[0] = (wheelDirections[0] || other.wheelDirections[0]);
+            wheelDirections[1] = (wheelDirections[1] || other.wheelDirections[1]);
+            wheelDirections[2] = (wheelDirections[2] || other.wheelDirections[2]);
+            wheelDirections[3] = (wheelDirections[3] || other.wheelDirections[3]);
         }
     };
 
@@ -76,37 +94,12 @@ public:
     Buffer *getWidgetBuffer() { return RenderedWidget::widgetBuffer; }
     const Mat4 &getViewportTransform() const { return viewportTransform; }
 
-    Tool &activeTool() {
-        if (!toolStack.empty()) {
-            return *toolStack.front().second.first;
-        }
-        else return strokeTool;
-    }
-
     void activate();
 
     void insertNodes(const QList<Node *> &nodes);
     void removeSelectedNodes();
     void duplicateSelectedNodes();
 
-    Vec2 mouseToViewport(const Vec2 &point) {
-        return mouseTransform.map(point);
-    }
-    Vec2 viewportToWorld(const Vec2 &point) {
-        return cameraTransform.inverted().map(point);
-    }
-    Vec2 mouseToWorld(const Vec2 &point) {
-        return viewportToWorld(mouseToViewport(point));
-    }
-    Vec2 viewportToMouse(const Vec2 &point) {
-        return mouseTransform.inverted().map(point);
-    }
-    Vec2 worldToViewport(const Vec2 &point) {
-        return cameraTransform.map(point);
-    }
-    Vec2 worldToMouse(const Vec2 &point) {
-        return viewportToMouse(worldToViewport(point));
-    }
     float pixelSnapOffset(const PixelSnap pixelSnap, const float target, const float size) {
         switch (pixelSnap) {
         case PixelSnap::Centre: return 0.5f;
@@ -122,8 +115,9 @@ public:
         const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.y());
         return snap({offsetX, offsetY}, {1.0f, 1.0f}, target);
     }
-    float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 brushSize, const Vec2 absoluteSpacing, const Vec2 proportionalSpacing, const float offset, Stroke &output);
-    void drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 worldPos);
+    float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 &brushSize, const Vec2 &absoluteSpacing, const Vec2 &proportionalSpacing, const float offset, Stroke &output);
+    Mat4 toolSpace(BufferNode &node, const Space space);
+    void drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 &worldPos);
 
     Scene &scene;
     SceneModel &model;
@@ -139,6 +133,102 @@ public:
     ZoomTool zoomTool;
     RotateTool rotateTool;
 
+    enum class ToolId {
+        Invalid = -1,
+        Stroke,
+        RectLined,
+        RectFilled,
+        EllipseLined,
+        EllipseFilled,
+        Contour,
+        FillPour,
+        FillFlood,
+        FillReplace,
+        PickColourNode,
+        PickColourScene,
+        PickNode,
+        TransformPan,
+        TransformZoom,
+        TransformRotate,
+        TransformRotoZoom,
+    };
+
+    enum class PrimitiveToolMode {
+        Lined,
+        Filled,
+    };
+    enum class PickToolMode {
+        NodeColour,
+        SceneColour,
+    };
+
+    struct ToolInfo {
+        QString name;
+        Tool *const tool = nullptr;
+        int operationMode;
+    };
+    const std::map<ToolId, ToolInfo> toolInfo{
+        {ToolId::Stroke, {"Stroke", &strokeTool, 0}},
+        {ToolId::RectLined, {"Rectangle", &rectTool,  static_cast<int>(PrimitiveToolMode::Lined)}},
+        {ToolId::RectFilled, {"Filled Rectangle", &rectTool, static_cast<int>(PrimitiveToolMode::Filled)}},
+        {ToolId::EllipseLined, {"Ellipse", &ellipseTool, static_cast<int>(PrimitiveToolMode::Lined)}},
+        {ToolId::EllipseFilled, {"Filled Ellipse", &ellipseTool, static_cast<int>(PrimitiveToolMode::Filled)}},
+        {ToolId::Contour, {"Contour", &contourTool, 0}},
+        {ToolId::PickColourNode, {"Pick Colour From Node", &pickTool, static_cast<int>(PickToolMode::NodeColour)}},
+        {ToolId::PickColourScene, {"Pick Colour From Scene", &pickTool, static_cast<int>(PickToolMode::SceneColour)}},
+    };
+    const std::vector<std::pair<std::vector<ToolId>, ToolId>> toolGroups{
+        {{ToolId::Stroke}, ToolId::Stroke},
+        {{ToolId::RectLined, ToolId::RectFilled}, ToolId::RectLined},
+        {{ToolId::EllipseLined, ToolId::EllipseFilled}, ToolId::EllipseLined},
+        {{ToolId::Contour}, ToolId::Contour},
+        {{ToolId::PickColourNode, ToolId::PickColourScene}, ToolId::PickColourNode},
+    };
+    const ToolId defaultTool = ToolId::Stroke;
+    const std::map<InputState, ToolId> toolSelectors{
+        {{{Qt::Key_Control}, {}, {}}, ToolId::PickColourNode},
+//        {{{Qt::Key_Control, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
+//        {{{Qt::Key_Shift, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},
+//        {{{Qt::Key_Control, Qt::Key_Shift, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::RotoZoom)}},
+        {{{Qt::Key_R}, {}, {}}, ToolId::RectLined},
+        {{{Qt::Key_Shift, Qt::Key_R}, {}, {}}, ToolId::RectFilled},
+        {{{Qt::Key_E}, {}, {}}, ToolId::EllipseLined},
+        {{{Qt::Key_Shift, Qt::Key_E}, {}, {}}, ToolId::EllipseFilled},
+        {{{Qt::Key_C}, {}, {}}, ToolId::Contour},
+    };
+    enum class ToolActivationMode {
+        Primary,
+        Secondary,
+    };
+    const std::map<InputState, ToolActivationMode> selectedToolActivators{
+        {{{}, {Qt::LeftButton}, {}}, ToolActivationMode::Primary}, // Selected tool primary activator
+        {{{}, {Qt::RightButton}, {}}, ToolActivationMode::Secondary}, // Selected tool secondary activator
+    };
+    const std::map<InputState, std::pair<Tool *, int>> toolActivators{
+        {{{}, {Qt::MiddleButton}, {}}, {&panTool, 0}},
+        {{{Qt::Key_Control}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
+        {{{Qt::Key_Shift}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},
+        {{{Qt::Key_Control, Qt::Key_Shift}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::RotoZoom)}},
+        {{{Qt::Key_Space}, {}, {}}, {&panTool, 0}},
+        {{{}, {}, {{false, false, true, true}}}, {&zoomTool, 0}},
+        {{{Qt::Key_Shift}, {}, {{false, false, true, true}}}, {&rotateTool, 0}},
+        {{{Qt::Key_V}, {}, {}}, {&transformTargetOverrideTool, static_cast<int>(TransformTarget::View)}},
+        {{{Qt::Key_O}, {}, {}}, {&transformTargetOverrideTool, static_cast<int>(TransformTarget::Object)}},
+        {{{Qt::Key_B}, {}, {}}, {&transformTargetOverrideTool, static_cast<int>(TransformTarget::Brush)}},
+        };
+    const std::map<Tool *, std::map<InputState, int>> toolModeModifiers{
+        {&rectTool, {
+                        {{{Qt::Key_Control}, {}, {}}, 1},
+                        {{{Qt::Key_Shift}, {}, {}}, 2},
+                        {{{Qt::Key_Control, Qt::Key_Shift}, {}, {}}, 3}
+                    }},
+        {&panTool, {
+                       {{{Qt::Key_Control}, {}, {}}, 1},
+                       {{{Qt::Key_Shift}, {}, {}}, 2},
+                       {{{Qt::Key_Control, Qt::Key_Shift}, {}, {}}, 3}
+                   }},
+    };
+
     TransformTarget transformTarget() const { return m_transformMode; }
     Mat4 transform() const { return cameraTransform; }
 
@@ -148,6 +238,7 @@ public slots:
     void setTransformTarget(const GfxPaint::TransformTarget m_transformMode);
     void setTransform(const Mat4 &transform);
     void updateContext();
+    void setSelectedToolId(const ToolId tool);
 
 signals:
     void brushChanged(const GfxPaint::Brush &brush);
@@ -155,6 +246,7 @@ signals:
     void paletteChanged(GfxPaint::Buffer *const palette);
     void transformModeChanged(const GfxPaint::TransformTarget m_transformMode);
     void transformChanged(const Mat4 &transform);
+    void selectedToolIdChanged(const ToolId tool);
 
 protected:
     void init();
@@ -175,8 +267,9 @@ protected:
     Vec2 tilt;
     QQuaternion quaternion;
 
-    std::map<InputState, std::pair<Tool *, int>> toolSet;
-    std::deque<std::pair<InputState, std::pair<Tool *, int>>> toolStack;
+    ToolId m_selectedToolId;
+    std::deque<std::pair<InputState, std::pair<Tool *, int>>> selectedToolStack;
+    std::deque<std::pair<InputState, std::pair<Tool *, int>>> activatedToolStack;
 };
 
 } // namespace GfxPaint

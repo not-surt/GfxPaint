@@ -49,6 +49,7 @@ SOURCES +=\
     rendermanager.cpp \
     scene.cpp \
     sessionmanager.cpp \
+    src/tileseticonmanager.cpp \
     strokeeditorwidget.cpp \
     transformeditorwidget.cpp \
     transformmodel.cpp \
@@ -90,6 +91,7 @@ HEADERS  += \
     rendermanager.h \
     scene.h \
     sessionmanager.h \
+    src/tileseticonmanager.h \
     strokeeditorwidget.h \
     frozen/algorithm.h \
     frozen/bits/algorithms.h \
@@ -137,6 +139,7 @@ FORMS    += \
     paletteeditorwidget.ui
 
 RESOURCES += \
+    icon.qrc \
     thirdparty/fonts/thirdpartyfonts.qrc \
     thirdparty/stylesheets/qdarkstyle/style.qrc \
     thirdparty/stylesheets/darkorange/darkorange.qrc \
@@ -144,6 +147,9 @@ RESOURCES += \
     shaders/shaders.qrc
 
 DISTFILES += \
+    GfxPaint.ico \
     LICENSE \
     README.md \
     TODO
+
+RC_ICONS = GfxPaint.ico

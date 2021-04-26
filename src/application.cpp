@@ -379,8 +379,10 @@ void Application::writeSettings(QSettings &settings)
 int main(int argc, char *argv[])
 {
     QSurfaceFormat::setDefaultFormat(GfxPaint::RenderManager::defaultFormat());
-    QGuiApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
-//    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QGuiApplication::setAttribute(Qt::AA_ShareOpenGLContexts, true);
+    QGuiApplication::setAttribute(Qt::AA_CompressHighFrequencyEvents, false);
+    QGuiApplication::setAttribute(Qt::AA_CompressTabletEvents, false);
+//    QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling, true);
 
     GfxPaint::Application app(argc, argv);
 

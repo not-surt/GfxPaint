@@ -6,6 +6,8 @@
 #include <QActionGroup>
 #include <QList>
 
+#include "editor.h"
+
 class QMdiSubWindow;
 class QItemSelection;
 class QSettings;
@@ -13,7 +15,6 @@ class QSettings;
 namespace GfxPaint {
 
 class Application;
-class Editor;
 class Scene;
 
 namespace Ui {
@@ -98,6 +99,8 @@ protected:
     Ui::MainWindow *const ui;
     QActionGroup pixelRatiosGroup;
     QActionGroup toolsGroup;
+    std::map<Editor::ToolId, QAction *> toolIdToAction;
+    std::map<QAction *, Editor::ToolId> actionToToolId;
     QActionGroup blendModesGroup;
     QActionGroup tabPositionsGroup;
     Scene *activeDocument;

@@ -56,7 +56,7 @@ void StrokeTool::end(const Vec2 &viewportPos, const Point &point, const int mode
     }
 }
 
-void StrokeTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode)
+void StrokeTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
 {
     auto savePoints = strokePoints;
     auto saveOffset = strokeOffset;
@@ -89,34 +89,46 @@ void RectTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
+//            Vec2 offset = bufferNode->transform() * Vec2(0.0f, 0.0f);
+//            Mat4 offsetTransform;
+//            offsetTransform.translate(-offset);
+//            Mat4 offsetTransform = bufferNode->transform().inverted();
+
+            const Mat4 toolSpaceTransform = editor.toolSpace(*bufferNode, editor.editingContext().brush().dab.space);
+
+            const Traversal::State &state = editor.editingContext().states().value(node);
             RectProgram *const program = new RectProgram(false, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
-            program->render(points, editor.editingContext().colour(), GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
+            program->render(points, editor.editingContext().colour(), bufferNode->viewportTransform() * toolSpaceTransform, &bufferNode->buffer, state.palette);
             delete program;
         }
     }
 }
 
-void RectTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode)
+void RectTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
 {
-    auto savePoints = points;
+    if (isActive) {
+        auto savePoints = points;
 
-    end(viewportPos, point);
+        end(viewportPos, point);
 
-    points = savePoints;
+        points = savePoints;
+    }
 }
 
-void RectTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode)
+void RectTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
 {
-    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    Model *const markerModel = qApp->renderManager.models["planeMarker"];
-    VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    Mat4 markerTransform = editor.getViewportTransform();
-    const Vec2 viewportPoint = editor.worldToViewport(points[0]);
-    markerTransform.translate(viewportPoint.toVector3D());
-    float markerSize = 16.0f;
-    markerTransform.scale(markerSize, markerSize);
-    markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
-    delete markerProgram;
+    if (isActive) {
+        ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+        Model *const markerModel = qApp->renderManager.models["planeMarker"];
+        VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        Mat4 markerTransform = editor.getViewportTransform();
+        const Vec2 viewportPoint = editor.transform() * points[0];
+        markerTransform.translate(viewportPoint.toVector3D());
+        float markerSize = 16.0f;
+        markerTransform.scale(markerSize, markerSize);
+        markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
+        delete markerProgram;
+    }
 }
 
 void EllipseTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
@@ -140,34 +152,39 @@ void EllipseTool::end(const Vec2 &viewportPos, const Point &point, const int mod
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
+            const Traversal::State &state = editor.editingContext().states().value(node);
             EllipseProgram *const program = new EllipseProgram(true, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
-            program->render(points, editor.editingContext().colour(), GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
+            program->render(points, editor.editingContext().colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
             delete program;
         }
     }
 }
 
-void EllipseTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode)
+void EllipseTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
 {
-    auto savePoints = points;
+    if (isActive) {
+        auto savePoints = points;
 
-    end(viewportPos, point);
+        end(viewportPos, point);
 
-    points = savePoints;
+        points = savePoints;
+    }
 }
 
-void EllipseTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode)
+void EllipseTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
 {
-    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    Model *const markerModel = qApp->renderManager.models["planeMarker"];
-    VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    Mat4 markerTransform = editor.getViewportTransform();
-    const Vec2 viewportPoint = editor.worldToViewport(points[0]);
-    markerTransform.translate(viewportPoint.toVector3D());
-    float markerSize = 16.0f;
-    markerTransform.scale(markerSize, markerSize);
-    markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
-    delete markerProgram;
+    if (isActive) {
+        ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+        Model *const markerModel = qApp->renderManager.models["planeMarker"];
+        VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        Mat4 markerTransform = editor.getViewportTransform();
+        const Vec2 viewportPoint = editor.transform() * points[0];
+        markerTransform.translate(viewportPoint.toVector3D());
+        float markerSize = 16.0f;
+        markerTransform.scale(markerSize, markerSize);
+        markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
+        delete markerProgram;
+    }
 }
 
 void ContourTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
@@ -192,8 +209,9 @@ void ContourTool::end(const Vec2 &viewportPos, const Point &point, const int mod
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
+            const Traversal::State &state = editor.editingContext().states().value(node);
             ContourStencilProgram *const stencilProgram = new ContourStencilProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
-            stencilProgram->render(points, editor.editingContext().colour(), GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
+            stencilProgram->render(points, editor.editingContext().colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
 
             Vec2 boundsMin = Vec2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
             Vec2 boundsMax = Vec2(-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity());
@@ -212,7 +230,7 @@ void ContourTool::end(const Vec2 &viewportPos, const Point &point, const int mod
                                                                        boundsMax.x(), boundsMax.y()},
                                            {{0, 1, 2, 3}}, {4});
             SingleColourModelProgram *const modelProgram = new SingleColourModelProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
-            modelProgram->render(model, editor.editingContext().colour(), GfxPaint::viewportTransform(bufferNode->buffer.size()) * bufferNode->transform().inverted(), &bufferNode->buffer, state.palette);
+            modelProgram->render(model, editor.editingContext().colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
             delete modelProgram;
 
             stencilProgram->postRender();
@@ -221,27 +239,31 @@ void ContourTool::end(const Vec2 &viewportPos, const Point &point, const int mod
     }
 }
 
-void ContourTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode)
+void ContourTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
 {
-    auto savePoints = points;
+    if (isActive) {
+        auto savePoints = points;
 
-    end(viewportPos, point);
+        end(viewportPos, point);
 
-    points = savePoints;
+        points = savePoints;
+    }
 }
 
-void ContourTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode)
+void ContourTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
 {
-    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    Model *const markerModel = qApp->renderManager.models["planeMarker"];
-    VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    Mat4 markerTransform = editor.getViewportTransform();
-    const Vec2 viewportPoint = editor.worldToViewport(points.front());
-    markerTransform.translate(viewportPoint.toVector3D());
-    float markerSize = 16.0f;
-    markerTransform.scale(markerSize, markerSize);
-    markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
-    delete markerProgram;
+    if (isActive) {
+        ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+        Model *const markerModel = qApp->renderManager.models["planeMarker"];
+        VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        Mat4 markerTransform = editor.getViewportTransform();
+        const Vec2 viewportPoint = editor.transform() * points.front();
+        markerTransform.translate(viewportPoint.toVector3D());
+        float markerSize = 16.0f;
+        markerTransform.scale(markerSize, markerSize);
+        markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
+        delete markerProgram;
+    }
 }
 
 void PickTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
@@ -256,7 +278,7 @@ void PickTool::update(const Vec2 &viewportPos, const Point &point, const int mod
         EditingContext::BufferNodeContext *const bufferNodeContext = editor.editingContext().bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
-            const Vec2 bufferPoint = state.transform.inverted().map(point.pos);
+            const Vec2 bufferPoint = state.transform.inverted() * point.pos;
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             editor.setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, bufferPoint));
         }
@@ -335,16 +357,18 @@ void RotoZoomTool::update(const Vec2 &viewportPos, const Point &point, const int
     oldViewportPos = viewportPos;
 }
 
-void RotoZoomTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode)
+void RotoZoomTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
 {
-    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    Model *const markerModel = qApp->renderManager.models["planeMarker"];
-    VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    Mat4 markerTransform = editor.getViewportTransform();
-    float markerSize = 16.0f;
-    markerTransform.scale(markerSize, markerSize);
-    markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
-    delete markerProgram;
+    if (isActive) {
+        ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+        Model *const markerModel = qApp->renderManager.models["planeMarker"];
+        VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        Mat4 markerTransform = editor.getViewportTransform();
+        float markerSize = 16.0f;
+        markerTransform.scale(markerSize, markerSize);
+        markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
+        delete markerProgram;
+    }
 }
 
 void ZoomTool::wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode)

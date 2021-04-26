@@ -19,8 +19,8 @@ public:
     virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
     virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
     virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
-    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
-    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) {}
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) {}
     virtual void abort(const int mode = 0) {}
     virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode = 0) {}
     virtual bool isExclusive() const { return true; }
@@ -39,7 +39,7 @@ public:
     virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
     virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
     virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
 
 protected:
     float strokeOffset;
@@ -55,8 +55,8 @@ public:
     virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
     virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
     virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
 
 protected:
     std::array<Vec2, 2> points;
@@ -71,8 +71,8 @@ public:
     virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
     virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
     virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
 
 protected:
     std::array<Vec2, 2> points;
@@ -87,8 +87,8 @@ public:
     virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
     virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
     virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
 
 protected:
     std::vector<Vec2> points;
@@ -145,7 +145,7 @@ public:
     {}
     virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
     virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
 
 protected:
     Vec2 oldViewportPos;
