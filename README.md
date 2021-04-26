@@ -6,7 +6,10 @@ Description
 Qt + OpenGL + scenegraph based indexed image editor with a focus on pixelart.
 
 >   **WARNING: nowhere near usable state!**
+>
 >   Badly broken, sporadically abandoned, unusable.
+
+![Screenshot](./screenshot.png "Screenshot of GfxPaint")
 
 Contents
 --------

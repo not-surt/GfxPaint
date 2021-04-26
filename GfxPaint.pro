@@ -150,6 +150,7 @@ DISTFILES += \
     GfxPaint.ico \
     LICENSE \
     README.md \
-    TODO
+    TODO \
+    screenshot.png
 
 RC_ICONS = GfxPaint.ico
