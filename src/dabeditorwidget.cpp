@@ -17,7 +17,6 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     validator->setDecimals(3);
     ui->ratioLineEdit->setValidator(validator);
 
-    QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->typeComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->widthSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
@@ -61,7 +60,7 @@ void DabEditorWidget::setDab(const Brush::Dab &dab)
 void DabEditorWidget::updateWidgets()
 {
     const QWidgetList widgets = {
-        ui->spaceComboBox, ui->typeComboBox, ui->metricComboBox,
+        ui->typeComboBox, ui->metricComboBox,
         ui->widthSpinBox, ui->heightSpinBox, ui->fixedRatioCheckBox, ui->ratioLineEdit,
         ui->angleSpinBox,
         ui->originXSpinBox, ui->originYSpinBox,
@@ -70,7 +69,6 @@ void DabEditorWidget::updateWidgets()
         ui->blendModeComboBox, ui->composeModeComboBox,
     };
     for (auto widget : widgets) widget->blockSignals(true);
-    ui->spaceComboBox->setCurrentIndex(static_cast<int>(dab.space));
     ui->typeComboBox->setCurrentIndex(static_cast<int>(dab.type));
     ui->metricComboBox->setCurrentIndex(dab.metric);
     ui->widthSpinBox->setValue(dab.size.x());
@@ -91,7 +89,6 @@ void DabEditorWidget::updateWidgets()
 
 void DabEditorWidget::updateDab()
 {
-    dab.space = static_cast<Space>(ui->spaceComboBox->currentIndex());
     dab.type = static_cast<Brush::Dab::Type>(ui->typeComboBox->currentIndex());
     dab.metric = ui->metricComboBox->currentIndex();
 

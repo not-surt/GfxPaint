@@ -1,14 +1,42 @@
-# GfxPaint
-Qt + OpenGL + scenegraph based indexed image editor.
+GfxPaint ![Icon](./GfxPaint.png "GfxPaint's icon")
+========
 
-Badly broken, sporadically abandoned, unusable.
+Description
+-----------
+Qt + OpenGL + scenegraph based indexed image editor with a focus on pixelart.
 
+>   **WARNING: nowhere near usable state!**
+>   Badly broken, sporadically abandoned, unusable.
+
+Contents
+--------
+1.  [Building](#building)
+2.  [Philosophy](#philosophy)
+3.  [License](#license)
+
+Building
+--------
 Build requirements:
-* Qt 5.15/6.0
-* C++20
-* GCC/CLANG (maybe other compilers)
+-   Qt 5.15/6.0
+-   C++20
+-   GCC/CLANG (maybe other compilers)
 
 Build with Qt Creator/qmake for Linux and maybe Windows if you have a c++20 compiler.
 No unbundled external dependencies.
 
+Philosophy
+----------
+-   All image editing performed on GPU.
+-   Modeless tool invocation as well as regular modal tool selection.
+    eg. hold P key to draw with single pixel brush and release to return to previous tool.
+    eg. hold S and R keys when you want to draw a single grid aligned rectangle.
+-   Mixed image format scenes. Can have different image formats for each buffer. Can mix and match indexed and truecolour buffers.
+-   Palettes are discrete nodes. There may be many in a scene and can be shared by multiple buffers.
+-   Palettes not limited to 256 colours.
+-   Tool transformation spaces. Tools can operate in various transformation spaces: object, aspect-corected object space, world space, view space.
+    eg. Rotate view and draw rectangle in view space for a rotate rectangle.
+    eg. For non-square aspect ratios draw a circle in aspect-corected object space for correct proportions.
+
+License
+-------
 Licensed under LGPL3 with the exception of the contents of the thirdparty directory.

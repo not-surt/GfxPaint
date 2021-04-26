@@ -116,7 +116,7 @@ public:
         return snap({offsetX, offsetY}, {1.0f, 1.0f}, target);
     }
     float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 &brushSize, const Vec2 &absoluteSpacing, const Vec2 &proportionalSpacing, const float offset, Stroke &output);
-    Mat4 toolSpace(BufferNode &node, const Space space);
+    Mat4 toolSpace(BufferNode &node, const EditingContext::Space space);
     void drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 &worldPos);
 
     Scene &scene;
@@ -126,11 +126,11 @@ public:
     RectTool rectTool;
     EllipseTool ellipseTool;
     ContourTool contourTool;
-    PickTool pickTool;
+    ColourPickTool pickTool;
     TransformTargetOverrideTool transformTargetOverrideTool;
     PanTool panTool;
     RotoZoomTool rotoZoomTool;
-    ZoomTool zoomTool;
+    WheelZoomTool zoomTool;
     RotateTool rotateTool;
 
     enum class ToolId {
@@ -151,11 +151,25 @@ public:
         TransformZoom,
         TransformRotate,
         TransformRotoZoom,
+        // Modeless tools
+        WheelZoom,
+        WheelRotate,
+        TransformOverrideView,
+        TransformOverrideObject,
+        TransformOverrideBrush,
+        SnappingOverrideOn,
+        SnappingOverrideOff,
     };
 
     enum class PrimitiveToolMode {
         Lined,
         Filled,
+    };
+    enum class PrimitiveToolModifierMode {
+        Bounded,
+        Centred,
+        BoundedFixedAspectRatio,
+        CentredFixedAspectRatio,
     };
     enum class PickToolMode {
         NodeColour,
@@ -184,6 +198,19 @@ public:
         {{ToolId::Contour}, ToolId::Contour},
         {{ToolId::PickColourNode, ToolId::PickColourScene}, ToolId::PickColourNode},
     };
+    const std::map<ToolId, ToolInfo> modelessToolInfo{
+        {ToolId::TransformPan, {"Pan", &panTool, 0}},
+        {ToolId::TransformZoom, {"Zoom", &panTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
+        {ToolId::TransformRotate, {"Rotate", &rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},
+        {ToolId::TransformRotoZoom, {"RotoZoom", &rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::RotoZoom)}},
+        {ToolId::WheelZoom, {"Wheel Zoom", &zoomTool, 0}},
+        {ToolId::WheelRotate, {"Wheel Rotate", &rotateTool, 0}},
+        {ToolId::TransformOverrideView, {"Transform Override View", &transformTargetOverrideTool, static_cast<int>(TransformTarget::View)}},
+        {ToolId::TransformOverrideObject, {"Transform Override Object", &transformTargetOverrideTool, static_cast<int>(TransformTarget::Object)}},
+        {ToolId::TransformOverrideBrush, {"Transform Override Brush", &transformTargetOverrideTool, static_cast<int>(TransformTarget::Brush)}},
+        {ToolId::SnappingOverrideOn, {"Snapping Override On", nullptr, 1}},
+        {ToolId::SnappingOverrideOff, {"Snapping Override Off", nullptr, 0}},
+    };
     const ToolId defaultTool = ToolId::Stroke;
     const std::map<InputState, ToolId> toolSelectors{
         {{{Qt::Key_Control}, {}, {}}, ToolId::PickColourNode},
@@ -204,7 +231,7 @@ public:
         {{{}, {Qt::LeftButton}, {}}, ToolActivationMode::Primary}, // Selected tool primary activator
         {{{}, {Qt::RightButton}, {}}, ToolActivationMode::Secondary}, // Selected tool secondary activator
     };
-    const std::map<InputState, std::pair<Tool *, int>> toolActivators{
+    const std::map<InputState, std::pair<Tool *, int>> modelessToolActivators{
         {{{}, {Qt::MiddleButton}, {}}, {&panTool, 0}},
         {{{Qt::Key_Control}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
         {{{Qt::Key_Shift}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},

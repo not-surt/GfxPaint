@@ -12,6 +12,14 @@ namespace GfxPaint {
 
 class EditingContext {
 public:
+    enum class Space {
+        Object,
+        ObjectAspectCorrected,
+        World,
+        View,
+    };
+    static const std::map<Space,QString> spaceNames;
+
     struct BufferNodeContext {
         DabProgram *const dabProgram;
         ColourPickProgram *const colourPickProgram;
@@ -37,10 +45,15 @@ public:
 
     void update();
 
-    void setBrush(const Brush &brush);
-    void setColour(const Colour &colour);
-    void setPalette(Buffer *const palette);
+    void setSpace(const Space space) { m_space = space; }
+    void setBrush(const Brush &brush) {
+        this->m_brush = brush;
+        update();
+    }
+    void setColour(const Colour &colour) { this->m_colour = colour; }
+    void setPalette(Buffer *const palette) { this->m_palette = palette; }
 
+    const Space &space() const { return m_space; }
     const Brush &brush() const { return m_brush; }
     const Colour colour() const { return m_colour; }
     Buffer *palette() const { return m_palette; }
@@ -53,6 +66,7 @@ public:
 
 private:
     Scene &scene;
+    Space m_space;
     Brush m_brush;
     Colour m_colour;
     Buffer *m_palette;

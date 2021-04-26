@@ -25,7 +25,7 @@ namespace GfxPaint {
 MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       ui(new Ui::MainWindow),
-      pixelRatiosGroup(this), toolsGroup(this), blendModesGroup(this), tabPositionsGroup(this),
+    pixelRatiosGroup(this), toolsGroup(this), menuToolSpace(nullptr), toolSpaceGroup(this), tabPositionsGroup(this),
     activeDocument(nullptr), activeEditor(nullptr), activeEditorConnections(), editorSubWindows()
 {
 #ifdef Q_OS_WIN
@@ -135,13 +135,6 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     for (auto action : pixelRatiosActions) pixelRatiosGroup.addAction(action);
     ui->actionActualPixelRatio->setChecked(true);
 
-    const QList<QAction *> blendModesActions = {
-        ui->actionPaint, ui->actionSmear, ui->actionShade, ui->actionCycle, ui->actionSmooth
-    };
-    blendModesGroup.setExclusive(true);
-    for (auto action : blendModesActions) blendModesGroup.addAction(action);
-    ui->actionPaint->setChecked(true);
-
     QToolButton *const mainMenuToolButton = new QToolButton();
     mainMenuToolButton->setText("Menu");
     mainMenuToolButton->setPopupMode(QToolButton::InstantPopup);
@@ -152,6 +145,18 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     }
     mainMenuToolButton->setMenu(mainMenu);
     ui->mainToolBar->insertWidget(ui->mainToolBar->actions().at(0), centringWidget(mainMenuToolButton));
+
+    menuToolSpace = new QMenu(this);
+    menuToolSpace->setTitle("Tool Space");
+    toolSpaceGroup.setExclusive(true);
+    for (auto &[space, name] : EditingContext::spaceNames) {
+        QAction *const action = new QAction(this);
+        action->setText(name);
+        action->setData(static_cast<int>(space));
+        action->setCheckable(true);
+        toolSpaceGroup.addAction(action);
+        menuToolSpace->addAction(action);
+    }
 }
 
 MainWindow::~MainWindow()
@@ -588,7 +593,7 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformTarget);        
 
         toolsGroup.setExclusive(true);
-        ui->menuTool->addMenu(ui->menuToolSpace);
+        ui->menuTool->addMenu(menuToolSpace);
         toolIdToAction.clear();
         actionToToolId.clear();
         for (const auto &group : activeEditor->toolGroups) {
@@ -616,13 +621,20 @@ void MainWindow::activateEditor(Editor *const editor)
             toolButton->setDefaultAction(defaultAction);
             ui->toolsToolBar->addWidget(centringWidget(toolButton));
         }
-        ui->actionContinuousFreehand->setChecked(true);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::selectedToolIdChanged, this, [this](const Editor::ToolId toolId){
             toolIdToAction.at(toolId)->setChecked(true);
         });
         activeEditorConnections << QObject::connect(&toolsGroup, &QActionGroup::triggered, this, [this](QAction *const action){
             activeEditor->setSelectedToolId(actionToToolId.at(action));
         });
+
+//        activeEditorConnections << QObject::connect(activeEditor, &Editor::spaceChanged, this, [this](const EditingContext::Space space){
+//            toolSpaceGroup.actions()[static_cast<int>(space)]->setChecked(true);
+//        });
+        activeEditorConnections << QObject::connect(&toolSpaceGroup, &QActionGroup::triggered, this, [this](QAction *const action){
+            activeEditor->editingContext().setSpace(static_cast<EditingContext::Space>(action->data().toInt()));
+        });
+        toolSpaceGroup.actions()[static_cast<int>(activeEditor->editingContext().space())]->setChecked(true);
 
         installEventFilter(activeEditor);
 

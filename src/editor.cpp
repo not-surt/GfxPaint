@@ -35,7 +35,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
     m_editingContext(scene),
     cameraTransform(), m_transformMode(),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
-    m_selectedToolId(ToolId::Invalid),
+    m_selectedToolId(defaultTool),
     selectedToolStack{},
     activatedToolStack{}
 {
@@ -49,7 +49,7 @@ Editor::Editor(const Editor &other) :
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform), m_transformMode(other.m_transformMode),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
-    toolSelectors(other.toolSelectors), selectedToolActivators(other.selectedToolActivators), toolActivators(other.toolActivators),
+    toolSelectors(other.toolSelectors), selectedToolActivators(other.selectedToolActivators), modelessToolActivators(other.modelessToolActivators),
     selectedToolStack(other.selectedToolStack), activatedToolStack(other.activatedToolStack), toolModeModifiers(other.toolModeModifiers)
 {
     init();
@@ -166,8 +166,11 @@ bool Editor::event(QEvent *const event)
 
         if (inputStateChanged) {
             selectedToolStack.clear();
-            auto pair = std::make_pair(InputState(), std::make_pair(&strokeTool, -1));
-            selectedToolStack.push_front(pair);
+            if (m_selectedToolId != ToolId::Invalid) {
+                const ToolInfo &info = toolInfo.at(m_selectedToolId);
+                auto pair = std::make_pair(InputState(), std::make_pair(info.tool, info.operationMode));
+                selectedToolStack.push_front(pair);
+            }
             for (auto &[trigger, id] : toolSelectors) {
                 if (trigger.testSubset(inputState)) {
                     const ToolInfo &info = toolInfo.at(id);
@@ -177,7 +180,7 @@ bool Editor::event(QEvent *const event)
             }
 
             // Build toolset
-            auto toolSet = toolActivators;
+            auto toolSet = modelessToolActivators;
             for (auto [activatorTrigger, mode] : selectedToolActivators) {
                 if (activatorTrigger.testSubset(inputState)) {
                     for (auto [selectorTrigger, value] : selectedToolStack) {
@@ -345,12 +348,15 @@ void Editor::render()
 {
     Tool *onCanvasPreviewTool = nullptr;
     bool onCanvasPreviewIsActive = false;
+    int onCanvasPreviewMode = 0;
     if (activatedToolStack.size() > 0) {
         onCanvasPreviewTool = activatedToolStack.front().second.first;
         onCanvasPreviewIsActive = true;
+        onCanvasPreviewMode = activatedToolStack.front().second.second;
     }
     else if (selectedToolStack.size() > 0) {
         onCanvasPreviewTool = selectedToolStack.front().second.first;
+        onCanvasPreviewMode = activatedToolStack.front().second.second;
     }
 
     for (Node *node : m_editingContext.selectedNodes()) {
@@ -367,7 +373,7 @@ void Editor::render()
 
                 const Vec2 point = cameraTransform.inverted() * mouseTransform * cursorPos;
                 const Vec2 snappedPoint = pixelSnap(point);
-                if (onCanvasPreviewTool) onCanvasPreviewTool->onCanvasPreview(mouseTransform * cursorPos, {cameraTransform.inverted() * mouseTransform * cursorPos, 1.0, quaternion}, onCanvasPreviewIsActive);
+                if (onCanvasPreviewTool) onCanvasPreviewTool->onCanvasPreview(mouseTransform * cursorPos, {cameraTransform.inverted() * mouseTransform * cursorPos, 1.0, quaternion}, onCanvasPreviewIsActive, onCanvasPreviewMode);
             }
         }
     }
@@ -403,14 +409,17 @@ void Editor::render()
 
     Tool *onTopPreviewTool = nullptr;
     bool onTopPreviewIsActive = false;
+    int onTopPreviewMode = 0;
     if (activatedToolStack.size() > 0) {
         onTopPreviewTool = activatedToolStack.front().second.first;
         onTopPreviewIsActive = true;
+        onTopPreviewMode = activatedToolStack.front().second.second;
     }
     else if (selectedToolStack.size() > 0) {
         onTopPreviewTool = selectedToolStack.front().second.first;
+        onTopPreviewMode = activatedToolStack.front().second.second;
     }
-    if (onTopPreviewTool) onTopPreviewTool->onTopPreview(mouseTransform * cursorPos, {cameraTransform.inverted() * mouseTransform * cursorPos, 1.0, quaternion}, onTopPreviewIsActive);
+    if (onTopPreviewTool) onTopPreviewTool->onTopPreview(mouseTransform * cursorPos, {cameraTransform.inverted() * mouseTransform * cursorPos, 1.0, quaternion}, onTopPreviewIsActive, onTopPreviewMode);
 }
 
 float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 &dabSize, const Vec2 &absoluteSpacing, const Vec2 &proportionalSpacing, const float offset, Stroke &output) {
@@ -442,22 +451,22 @@ float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point 
     return (pos - length) / increment;
 }
 
-Mat4 Editor::toolSpace(BufferNode &node, const Space space)
+Mat4 Editor::toolSpace(BufferNode &node, const EditingContext::Space space)
 {
     const Traversal::State &state = m_editingContext.states().value(&node);
 
     Mat4 spaceTransform;
     switch (space) {
-    case Space::Object: {
+    case EditingContext::Space::Object: {
         spaceTransform = Mat4();
     } break;
-    case Space::ObjectAspectCorrected: {
+    case EditingContext::Space::ObjectAspectCorrected: {
         spaceTransform = node.pixelAspectRatioTransform().inverted();
     } break;
-    case Space::World: {
+    case EditingContext::Space::World: {
         spaceTransform = state.transform.inverted();
     } break;
-    case Space::View: {
+    case EditingContext::Space::View: {
         spaceTransform = (cameraTransform * state.transform).inverted();
     } break;
     }
@@ -474,7 +483,7 @@ void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &no
     Mat4 offsetTransform;
     offsetTransform.translate(offset);
 
-    const Mat4 spaceTransform = toolSpace(node, dab.space);
+    const Mat4 spaceTransform = toolSpace(node, m_editingContext.space());
 
     const Vec2 spaceOffset = spaceTransform * Vec2(0.0f, 0.0f);
     Mat4 spaceOffsetTransform;

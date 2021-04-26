@@ -347,7 +347,7 @@ public:
         updateKey(typeid(this), {filled});
     }
 
-    void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &geometrySpace, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     const bool filled;

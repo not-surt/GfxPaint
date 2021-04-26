@@ -10,7 +10,6 @@ StrokeEditorWidget::StrokeEditorWidget(QWidget *parent) :
 {
     ui->setupUi(this);
 
-    QObject::connect(ui->spaceComboBox, qOverload<int>(&QComboBox::activated), this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->metricComboBox, qOverload<int>(&QComboBox::activated), this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->continuousCheckBox, &QCheckBox::toggled, this, &StrokeEditorWidget::updateStroke);
     QObject::connect(ui->absoluteSpacingWidthSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &StrokeEditorWidget::updateStroke);
@@ -38,14 +37,13 @@ void StrokeEditorWidget::setStroke(const Brush::Stroke &stroke)
 void StrokeEditorWidget::updateWidgets()
 {
     const QWidgetList widgets = {
-        ui->spaceComboBox, ui->metricComboBox,
+        ui->metricComboBox,
         ui->continuousCheckBox,
         ui->absoluteSpacingWidthSpinBox, ui->absoluteSpacingHeightSpinBox,
         ui->proportionalSpacingWidthSpinBox, ui->proportionalSpacingHeightSpinBox,
         ui->dabCountSpinBox,
     };
     for (auto widget : widgets) widget->blockSignals(true);
-    ui->spaceComboBox->setCurrentIndex(static_cast<int>(stroke.space));
     ui->metricComboBox->setCurrentIndex(stroke.metric);
     ui->continuousCheckBox->setChecked(stroke.continuous);
     ui->absoluteSpacingWidthSpinBox->setValue(stroke.absoluteSpacing.x());
@@ -59,8 +57,7 @@ void StrokeEditorWidget::updateWidgets()
 
 void StrokeEditorWidget::updateStroke()
 {
-    stroke.space = static_cast<Space>(ui->spaceComboBox->currentIndex());
-    stroke.metric = ui->spaceComboBox->currentIndex();
+    stroke.metric = ui->metricComboBox->currentIndex();
     stroke.continuous = ui->continuousCheckBox->isChecked();
     stroke.absoluteSpacing = {static_cast<float>(ui->absoluteSpacingWidthSpinBox->value()), static_cast<float>(ui->absoluteSpacingHeightSpinBox->value())};
     stroke.proportionalSpacing = {static_cast<float>(ui->proportionalSpacingWidthSpinBox->value()), static_cast<float>(ui->proportionalSpacingHeightSpinBox->value())};

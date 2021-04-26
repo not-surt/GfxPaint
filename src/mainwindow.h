@@ -99,9 +99,10 @@ protected:
     Ui::MainWindow *const ui;
     QActionGroup pixelRatiosGroup;
     QActionGroup toolsGroup;
+    QMenu *menuToolSpace;
+    QActionGroup toolSpaceGroup;
     std::map<Editor::ToolId, QAction *> toolIdToAction;
     std::map<QAction *, Editor::ToolId> actionToToolId;
-    QActionGroup blendModesGroup;
     QActionGroup tabPositionsGroup;
     Scene *activeDocument;
     Editor *activeEditor;

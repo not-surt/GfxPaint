@@ -5,7 +5,7 @@
 namespace GfxPaint {
 
 Brush::Dab::Dab() :
-    space{Space::Object}, type{Type::Distance}, metric{0},
+    type{Type::Distance}, metric{0},
     size{16.0f, 16.0f}, fixedRatio{true}, ratio{1.0f},
     angle{0.0f},
     origin{0.0f, 0.0f}, pixelSnapX{PixelSnap::Auto}, pixelSnapY{PixelSnap::Auto},
@@ -16,7 +16,7 @@ Brush::Dab::Dab() :
 }
 
 Brush::Dab::Dab(const Dab &other) :
-    space(other.space), type(other.type), metric(other.metric),
+    type(other.type), metric(other.metric),
     size(other.size), fixedRatio(other.fixedRatio), ratio(other.ratio),
     angle(other.angle),
     origin(other.origin), pixelSnapX(other.pixelSnapX), pixelSnapY(other.pixelSnapY),
@@ -36,7 +36,7 @@ Mat4 Brush::Dab::transform() const
 }
 
 Brush::Stroke::Stroke() :
-    space{Space::Object}, metric{0},
+    metric{0},
     continuous(false),
     absoluteSpacing{0.0f, 0.0f}, proportionalSpacing{0.25f, 0.25f},
     dabCount{0}
@@ -44,7 +44,7 @@ Brush::Stroke::Stroke() :
 }
 
 Brush::Stroke::Stroke(const Stroke &other) :
-    space(other.space), metric(other.metric),
+    metric(other.metric),
     continuous(other.continuous),
     absoluteSpacing(other.absoluteSpacing), proportionalSpacing(other.proportionalSpacing),
     dabCount(other.dabCount)

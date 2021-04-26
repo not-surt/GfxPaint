@@ -316,22 +316,24 @@ Colour src(const vec2 pos) {
     return src;
 }
 
-void RectProgram::render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &transform, Buffer * const dest, const Buffer * const destPalette)
+void RectProgram::render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &geometrySpace, const Mat4 &transform, Buffer *const dest, const Buffer * const destPalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
+    // HERE! Do geometry transform in different spaces then final transform? Like with dabs.
+    std::array<Vec2, 2> geometrySpacePoint{geometrySpace * points[0], geometrySpace * points[1]};
     Mat4 pointsMatrix;
-    const Vec2 &offset = Vec2(floor(points[0].x()), floor(points[0].y()));
-    const Vec2 &scale =  Vec2(floor(points[1].x() - points[0].x()), floor(points[1].y() - points[0].y()));
+    const Vec2 &offset = Vec2(floor(geometrySpacePoint[0].x()), floor(geometrySpacePoint[0].y()));
+    const Vec2 &scale =  Vec2(floor(geometrySpacePoint[1].x() - geometrySpacePoint[0].x()), floor(geometrySpacePoint[1].y() - geometrySpacePoint[0].y()));
     pointsMatrix.translate(offset.x(), offset.y());
     pointsMatrix.scale(scale.x(), scale.y());
     pointsMatrix.scale(0.5f, 0.5f);
     pointsMatrix.translate(1.0f, 1.0f);
 
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, (transform * pointsMatrix).data());
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, (transform * geometrySpace.inverted() *  pointsMatrix).data());
 
     glUniform4fv(program.uniformLocation("rgba"), 1, colour.rgba.data());
     glUniform1ui(program.uniformLocation("index"), colour.index);

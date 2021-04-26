@@ -16,13 +16,13 @@ public:
     explicit Tool(Editor &editor) :
         editor(editor), active(false)
     {}
-    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
-    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
-    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) {}
-    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) {}
-    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) {}
-    virtual void abort(const int mode = 0) {}
-    virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode = 0) {}
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode) {}
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode) {}
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode) {}
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode) {}
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode) {}
+    virtual void abort(const int mode) {}
+    virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode) {}
     virtual bool isExclusive() const { return true; }
 
 protected:
@@ -36,10 +36,10 @@ public:
         Tool(editor),
         strokeOffset(0.0), strokePoints()
     {}
-    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode) override;
 
 protected:
     float strokeOffset;
@@ -50,16 +50,16 @@ class RectTool : public Tool {
 public:
     explicit RectTool(Editor &editor) :
         Tool(editor),
-        points()
+        worldSpacePoints()
     {}
-    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
-    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode) override;
 
 protected:
-    std::array<Vec2, 2> points;
+    std::array<Vec2, 2> worldSpacePoints;
 };
 
 class EllipseTool : public Tool {
@@ -68,11 +68,11 @@ public:
         Tool(editor),
         points()
     {}
-    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
-    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode) override;
 
 protected:
     std::array<Vec2, 2> points;
@@ -84,23 +84,23 @@ public:
         Tool(editor),
         points()
     {}
-    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
-    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode) override;
 
 protected:
     std::vector<Vec2> points;
 };
 
-class PickTool : public Tool {
+class ColourPickTool : public Tool {
 public:
-    explicit PickTool(Editor &editor) :
+    explicit ColourPickTool(Editor &editor) :
         Tool(editor)
     {}
-    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode) override;
 
 protected:
 };
@@ -111,8 +111,8 @@ public:
         Tool(editor),
         oldTransformMode()
     {}
-    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void end(const Vec2 &viewportPos, const Point &point, const int mode) override;
     virtual bool isExclusive() const override { return false; }
 
 protected:
@@ -125,8 +125,8 @@ public:
         Tool(editor),
         oldViewportPos()
     {}
-    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode) override;
 
 protected:
     Vec2 oldViewportPos;
@@ -143,20 +143,20 @@ public:
         Tool(editor),
         oldViewportPos()
     {}
-    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode = 0) override;
-    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode = 0) override;
+    virtual void begin(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void update(const Vec2 &viewportPos, const Point &point, const int mode) override;
+    virtual void onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode) override;
 
 protected:
     Vec2 oldViewportPos;
 };
 
-class ZoomTool : public Tool {
+class WheelZoomTool : public Tool {
 public:
-    explicit ZoomTool(Editor &editor) :
+    explicit WheelZoomTool(Editor &editor) :
         Tool(editor)
     {}
-    virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode = 0) override;
+    virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode) override;
 };
 
 class RotateTool : public Tool {
@@ -164,7 +164,7 @@ public:
     explicit RotateTool(Editor &editor) :
         Tool(editor)
     {}
-    virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode = 0) override;
+    virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode) override;
 };
 
 } // namespace GfxPaint

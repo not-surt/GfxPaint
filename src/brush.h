@@ -6,13 +6,6 @@
 
 namespace GfxPaint {
 
-enum class Space {
-    Object,
-    ObjectAspectCorrected,
-    World,
-    View,
-};
-
 enum class PixelSnap {
     Off,
     Centre,
@@ -40,7 +33,6 @@ struct Brush
 
         Mat4 transform() const;
 
-        Space space;
         Type type;
         int metric;
         Vec2 size;
@@ -65,7 +57,6 @@ struct Brush
         inline bool operator==(const Stroke &rhs) const = default;
         inline bool operator!=(const Stroke &rhs) const = default;
 
-        Space space;
         int metric;
         bool continuous;
         Vec2 absoluteSpacing;

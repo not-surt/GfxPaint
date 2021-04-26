@@ -4,6 +4,13 @@
 
 namespace GfxPaint {
 
+const std::map<EditingContext::Space, QString> EditingContext::spaceNames{
+    {Space::Object, "Object Space"},
+    {Space::ObjectAspectCorrected, "Aspect-corrected Object Space"},
+    {Space::World, "World Space"},
+    {Space::View, "View Space"},
+};
+
 EditingContext::EditingContext(Scene &scene) :
     scene(scene),
     m_brush(),
@@ -64,22 +71,6 @@ void EditingContext::update()
         }
     }
     qDeleteAll(oldNodeContexts);
-}
-
-void EditingContext::setBrush(const Brush &brush)
-{
-    this->m_brush = brush;
-    update();
-}
-
-void EditingContext::setColour(const Colour &colour)
-{
-    this->m_colour = colour;
-}
-
-void EditingContext::setPalette(Buffer *const palette)
-{
-    this->m_palette = palette;
 }
 
 } // namespace GfxPaint
