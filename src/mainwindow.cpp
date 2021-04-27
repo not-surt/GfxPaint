@@ -25,7 +25,7 @@ namespace GfxPaint {
 MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     : QMainWindow(parent, flags),
       ui(new Ui::MainWindow),
-    pixelRatiosGroup(this), toolsGroup(this), menuToolSpace(nullptr), toolSpaceGroup(this), tabPositionsGroup(this),
+    pixelRatiosGroup(this), toolGroup(this), menuToolSpace(nullptr), toolSpaceGroup(this), blendGroup(this), composeGroup(this), tabPositionsGroup(this),
     activeDocument(nullptr), activeEditor(nullptr), activeEditorConnections(), editorSubWindows()
 {
 #ifdef Q_OS_WIN
@@ -187,7 +187,7 @@ void MainWindow::readSettings(QSettings &settings)
 
     if (settings.contains("tool")) {
         const int index = settings.value("tool").toInt();
-        if (index >= 0 && index < toolsGroup.actions().size()) toolsGroup.actions().at(index)->trigger();
+        if (index >= 0 && index < toolGroup.actions().size()) toolGroup.actions().at(index)->trigger();
     }
 }
 
@@ -258,7 +258,7 @@ void MainWindow::writeSettings(QSettings &settings) const
     settings.setValue("createEditorWithFile", ui->actionCreateEditorWithFile->isChecked());
     settings.setValue("closeFileWithLastEditor", ui->actionCloseFileWithLastEditor->isChecked());
 
-    settings.setValue("tool", toolsGroup.actions().indexOf(toolsGroup.checkedAction()));
+    settings.setValue("tool", toolGroup.actions().indexOf(toolGroup.checkedAction()));
 }
 
 void MainWindow::newSession()
@@ -545,12 +545,14 @@ void MainWindow::activateEditor(Editor *const editor)
     }
     activeEditorConnections.clear();
     removeEventFilter(activeEditor);
-    for (auto action : toolsGroup.actions()) {
-        toolsGroup.removeAction(action);
+    for (auto action : toolGroup.actions()) {
+        toolGroup.removeAction(action);
     }
-    auto actions = ui->toolsToolBar->actions();
+    auto actions = ui->toolToolBar->actions();
     ui->menuTool->clear();
-    ui->toolsToolBar->clear();
+    ui->toolToolBar->clear();
+    ui->menuBlend->clear();
+    ui->menuCompose->clear();
     qDeleteAll(actions);
     activeEditor = editor;
     if (activeEditor) {
@@ -592,7 +594,7 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(activeEditor, &Editor::transformModeChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransformMode);
         activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformTarget);        
 
-        toolsGroup.setExclusive(true);
+        toolGroup.setExclusive(true);
         ui->menuTool->addMenu(menuToolSpace);
         toolIdToAction.clear();
         actionToToolId.clear();
@@ -608,7 +610,7 @@ void MainWindow::activateEditor(Editor *const editor)
                 action->setData(static_cast<int>(id));
                 ui->menuTool->addAction(action);
                 toolButton->addAction(action);
-                toolsGroup.addAction(action);
+                toolGroup.addAction(action);
                 if (id == group.second) {
                     defaultAction = action;
                 }
@@ -619,22 +621,60 @@ void MainWindow::activateEditor(Editor *const editor)
                 actionToToolId.emplace(action, id);
             }
             toolButton->setDefaultAction(defaultAction);
-            ui->toolsToolBar->addWidget(centringWidget(toolButton));
+            ui->toolToolBar->addWidget(centringWidget(toolButton));
         }
         activeEditorConnections << QObject::connect(activeEditor, &Editor::selectedToolIdChanged, this, [this](const Editor::ToolId toolId){
             toolIdToAction.at(toolId)->setChecked(true);
         });
-        activeEditorConnections << QObject::connect(&toolsGroup, &QActionGroup::triggered, this, [this](QAction *const action){
+        activeEditorConnections << QObject::connect(&toolGroup, &QActionGroup::triggered, this, [this](QAction *const action){
             activeEditor->setSelectedToolId(actionToToolId.at(action));
         });
-
-//        activeEditorConnections << QObject::connect(activeEditor, &Editor::spaceChanged, this, [this](const EditingContext::Space space){
-//            toolSpaceGroup.actions()[static_cast<int>(space)]->setChecked(true);
-//        });
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::toolSpaceChanged, this, [this](const EditingContext::Space toolSpace){
+            toolSpaceGroup.actions()[static_cast<int>(toolSpace)]->setChecked(true);
+        });
         activeEditorConnections << QObject::connect(&toolSpaceGroup, &QActionGroup::triggered, this, [this](QAction *const action){
             activeEditor->editingContext().setSpace(static_cast<EditingContext::Space>(action->data().toInt()));
         });
-        toolSpaceGroup.actions()[static_cast<int>(activeEditor->editingContext().space())]->setChecked(true);
+        const int space = static_cast<int>(activeEditor->editingContext().space());
+        if (space >= 0 && space < toolSpaceGroup.actions().size()) {
+            toolSpaceGroup.actions()[space]->setChecked(true);
+        }
+
+        blendGroup.setExclusive(true);
+        for (int i = 0; i < RenderManager::blendModes.size(); ++i) {
+            auto &[name, func] = RenderManager::blendModes[i];
+            QAction *action = new QAction();
+            action->setText(name);
+            action->setCheckable(true);
+            action->setData(i);
+            ui->menuBlend->addAction(action);
+            blendGroup.addAction(action);
+        }
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::blendModeChanged, this, [this](const int blendMode){
+            Q_ASSERT(blendMode >= 0 && blendMode < blendGroup.actions().size());
+            blendGroup.actions()[blendMode]->setChecked(true);
+        });
+        activeEditorConnections << QObject::connect(&blendGroup, &QActionGroup::triggered, this, [this](QAction *const action){
+            activeEditor->setBlendMode(action->data().toInt());
+        });
+
+        composeGroup.setExclusive(true);
+        for (int i = 0; i < RenderManager::composeModes.size(); ++i) {
+            auto &[name, func] = RenderManager::composeModes[i];
+            QAction *action = new QAction();
+            action->setText(name);
+            action->setCheckable(true);
+            action->setData(i);
+            ui->menuCompose->addAction(action);
+            composeGroup.addAction(action);
+        }
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::composeModeChanged, this, [this](const int composeMode){
+            Q_ASSERT(composeMode >= 0 && composeMode < blendGroup.actions().size());
+            composeGroup.actions()[composeMode]->setChecked(true);
+        });
+        activeEditorConnections << QObject::connect(&composeGroup, &QActionGroup::triggered, this, [this](QAction *const action){
+            activeEditor->setComposeMode(action->data().toInt());
+        });
 
         installEventFilter(activeEditor);
 

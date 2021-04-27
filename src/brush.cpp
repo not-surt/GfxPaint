@@ -10,7 +10,6 @@ Brush::Dab::Dab() :
     angle{0.0f},
     origin{0.0f, 0.0f}, pixelSnapX{PixelSnap::Auto}, pixelSnapY{PixelSnap::Auto},
     hardness{0.0f}, opacity{1.0f},
-    blendMode{0}, composeMode{RenderManager::composeModeDefault},
     buffer()
 {
 }
@@ -21,7 +20,6 @@ Brush::Dab::Dab(const Dab &other) :
     angle(other.angle),
     origin(other.origin), pixelSnapX(other.pixelSnapX), pixelSnapY(other.pixelSnapY),
     hardness(other.hardness), opacity(other.opacity),
-    blendMode(other.blendMode), composeMode(other.composeMode),
     buffer(other.buffer)
 {
 }

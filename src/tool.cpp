@@ -95,7 +95,7 @@ void RectTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
 //            const Mat4 geometrySpace = Mat4(); // WorldSpace
             const Mat4 geometrySpace = editor.transform(); // ViewSpace
 //            Mat4 geometrySpace = editor.toolSpace(*bufferNode, editor.editingContext().brush().dab.space);
-            RectProgram *const program = new RectProgram(primitiveMode == Editor::PrimitiveToolMode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+            RectProgram *const program = new RectProgram(primitiveMode == Editor::PrimitiveToolMode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), editor.editingContext().blendMode(), editor.editingContext().composeMode());
             program->render(worldSpacePoints, editor.editingContext().colour(), geometrySpace, bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
             delete program;
         }
@@ -153,7 +153,7 @@ void EllipseTool::end(const Vec2 &viewportPos, const Point &point, const int mod
             bufferNode->buffer.bindFramebuffer();
 
             const Traversal::State &state = editor.editingContext().states().value(node);
-            EllipseProgram *const program = new EllipseProgram(primitiveMode == Editor::PrimitiveToolMode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+            EllipseProgram *const program = new EllipseProgram(primitiveMode == Editor::PrimitiveToolMode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), editor.editingContext().blendMode(), editor.editingContext().composeMode());
             program->render(points, editor.editingContext().colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
             delete program;
         }
@@ -229,7 +229,7 @@ void ContourTool::end(const Vec2 &viewportPos, const Point &point, const int mod
                                                                        boundsMin.x(), boundsMax.y(),
                                                                        boundsMax.x(), boundsMax.y()},
                                            {{0, 1, 2, 3}}, {4});
-            SingleColourModelProgram *const modelProgram = new SingleColourModelProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+            SingleColourModelProgram *const modelProgram = new SingleColourModelProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), editor.editingContext().blendMode(), editor.editingContext().composeMode());
             modelProgram->render(model, editor.editingContext().colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
             delete modelProgram;
 

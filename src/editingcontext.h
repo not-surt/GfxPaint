@@ -46,14 +46,27 @@ public:
     void update();
 
     void setSpace(const Space space) { m_space = space; }
+    void setBlendMode(const int blendMode) {
+        m_blendMode = blendMode;
+        update();
+    }
+    void setComposeMode(const int composeMode) {
+        m_composeMode = composeMode;
+        update();
+    }
     void setBrush(const Brush &brush) {
-        this->m_brush = brush;
+        m_brush = brush;
         update();
     }
     void setColour(const Colour &colour) { this->m_colour = colour; }
-    void setPalette(Buffer *const palette) { this->m_palette = palette; }
+    void setPalette(Buffer *const palette) {
+        this->m_palette = palette;
+        update();
+    }
 
     const Space &space() const { return m_space; }
+    const int &blendMode() const { return m_blendMode; }
+    const int &composeMode() const { return m_composeMode; }
     const Brush &brush() const { return m_brush; }
     const Colour colour() const { return m_colour; }
     Buffer *palette() const { return m_palette; }
@@ -67,6 +80,8 @@ public:
 private:
     Scene &scene;
     Space m_space;
+    int m_blendMode;
+    int m_composeMode;
     Brush m_brush;
     Colour m_colour;
     Buffer *m_palette;

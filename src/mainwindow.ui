@@ -61,9 +61,9 @@
     </item>
    </layout>
   </widget>
-  <widget class="QToolBar" name="toolsToolBar">
+  <widget class="QToolBar" name="toolToolBar">
    <property name="windowTitle">
-    <string>Tools</string>
+    <string>Tool</string>
    </property>
    <attribute name="toolBarArea">
     <enum>LeftToolBarArea</enum>
@@ -502,6 +502,16 @@
      <string>&amp;Tool</string>
     </property>
    </widget>
+   <widget class="QMenu" name="menuBlend">
+    <property name="title">
+     <string>&amp;Blend</string>
+    </property>
+   </widget>
+   <widget class="QMenu" name="menuCompose">
+    <property name="title">
+     <string>&amp;Compose</string>
+    </property>
+   </widget>
    <addaction name="menuApplication"/>
    <addaction name="menuWindow"/>
    <addaction name="menuFile"/>
@@ -509,6 +519,8 @@
    <addaction name="menuView"/>
    <addaction name="menuNode"/>
    <addaction name="menuTool"/>
+   <addaction name="menuBlend"/>
+   <addaction name="menuCompose"/>
   </widget>
   <widget class="DockWidget" name="paletteEditorDockWidget">
    <property name="windowTitle">

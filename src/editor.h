@@ -266,6 +266,9 @@ public slots:
     void setTransform(const Mat4 &transform);
     void updateContext();
     void setSelectedToolId(const ToolId tool);
+    void setToolSpace(const EditingContext::Space toolSpace);
+    void setBlendMode(const int blendMode);
+    void setComposeMode(const int composeMode);
 
 signals:
     void brushChanged(const GfxPaint::Brush &brush);
@@ -274,6 +277,9 @@ signals:
     void transformModeChanged(const GfxPaint::TransformTarget m_transformMode);
     void transformChanged(const Mat4 &transform);
     void selectedToolIdChanged(const ToolId tool);
+    void toolSpaceChanged(const EditingContext::Space toolSpace);
+    void blendModeChanged(const int blendMode);
+    void composeModeChanged(const int composeMode);
 
 protected:
     void init();
@@ -300,5 +306,7 @@ protected:
 };
 
 } // namespace GfxPaint
+
+Q_DECLARE_METATYPE(GfxPaint::EditingContext::Space)
 
 #endif // EDITOR_H

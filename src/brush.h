@@ -44,8 +44,6 @@ struct Brush
         PixelSnap pixelSnapY;
         float hardness;
         float opacity;
-        int blendMode;
-        int composeMode;
         Buffer buffer;
     };
 

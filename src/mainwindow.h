@@ -98,9 +98,11 @@ protected:
 
     Ui::MainWindow *const ui;
     QActionGroup pixelRatiosGroup;
-    QActionGroup toolsGroup;
+    QActionGroup toolGroup;
     QMenu *menuToolSpace;
     QActionGroup toolSpaceGroup;
+    QActionGroup blendGroup;
+    QActionGroup composeGroup;
     std::map<Editor::ToolId, QAction *> toolIdToAction;
     std::map<QAction *, Editor::ToolId> actionToToolId;
     QActionGroup tabPositionsGroup;

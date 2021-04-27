@@ -30,16 +30,6 @@ DabEditorWidget::DabEditorWidget(QWidget *parent) :
     QObject::connect(ui->pixelSnapYComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->hardnessSpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
     QObject::connect(ui->opacitySpinBox, qOverload<double>(&QDoubleSpinBox::valueChanged), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->blendModeComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
-    QObject::connect(ui->composeModeComboBox, qOverload<int>(&QComboBox::activated), this, &DabEditorWidget::updateDab);
-
-    for (auto &blendMode : RenderManager::blendModes) {
-        ui->blendModeComboBox->addItem(blendMode.label);
-    }
-
-    for (auto &composeMode : RenderManager::composeModes) {
-        ui->composeModeComboBox->addItem(composeMode.label);
-    }
 
     updateWidgets();
 }
@@ -66,7 +56,6 @@ void DabEditorWidget::updateWidgets()
         ui->originXSpinBox, ui->originYSpinBox,
         ui->pixelSnapXComboBox, ui->pixelSnapYComboBox,
         ui->hardnessSpinBox, ui->opacitySpinBox,
-        ui->blendModeComboBox, ui->composeModeComboBox,
     };
     for (auto widget : widgets) widget->blockSignals(true);
     ui->typeComboBox->setCurrentIndex(static_cast<int>(dab.type));
@@ -81,8 +70,6 @@ void DabEditorWidget::updateWidgets()
     ui->pixelSnapYComboBox->setCurrentIndex(static_cast<int>(dab.pixelSnapY));
     ui->hardnessSpinBox->setValue(dab.hardness);
     ui->opacitySpinBox->setValue(dab.opacity);
-    ui->blendModeComboBox->setCurrentIndex(dab.blendMode);
-    ui->composeModeComboBox->setCurrentIndex(dab.composeMode);
     for (auto widget : widgets) widget->blockSignals(false);
     updateDab();
 }
@@ -120,9 +107,6 @@ void DabEditorWidget::updateDab()
 
     dab.hardness = ui->hardnessSpinBox->value();
     dab.opacity = ui->opacitySpinBox->value();
-
-    dab.blendMode = ui->blendModeComboBox->currentIndex();
-    dab.composeMode = ui->composeModeComboBox->currentIndex();
 
     emit dabChanged(dab);
 }

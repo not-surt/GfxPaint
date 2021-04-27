@@ -532,4 +532,28 @@ void Editor::setSelectedToolId(const Editor::ToolId tool)
     }
 }
 
+void Editor::setToolSpace(const EditingContext::Space toolSpace)
+{
+    if (m_editingContext.space() != toolSpace) {
+        m_editingContext.setSpace(toolSpace);
+        emit toolSpaceChanged(toolSpace);
+    }
+}
+
+void Editor::setBlendMode(const int blendMode)
+{
+    if (m_editingContext.blendMode() != blendMode) {
+        m_editingContext.setBlendMode(blendMode);
+        emit blendModeChanged(blendMode);
+    }
+}
+
+void Editor::setComposeMode(const int composeMode)
+{
+    if (m_editingContext.composeMode() != composeMode) {
+        m_editingContext.setComposeMode(composeMode);
+        emit composeModeChanged(composeMode);
+    }
+}
+
 } // namespace GfxPaint

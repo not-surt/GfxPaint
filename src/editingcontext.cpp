@@ -13,6 +13,7 @@ const std::map<EditingContext::Space, QString> EditingContext::spaceNames{
 
 EditingContext::EditingContext(Scene &scene) :
     scene(scene),
+    m_space(Space::Object), m_blendMode{0}, m_composeMode{RenderManager::composeModeDefault},
     m_brush(),
     m_colour{{0.0, 0.0, 0.0, 1.0}, INDEX_INVALID},
     m_palette(nullptr),
@@ -25,6 +26,7 @@ EditingContext::EditingContext(Scene &scene) :
 
 EditingContext::EditingContext(EditingContext &other) :
     scene(other.scene),
+    m_space(other.m_space), m_blendMode(other.m_blendMode), m_composeMode(other.m_composeMode),
     m_brush(other.m_brush),
     m_colour(other.m_colour),
     m_palette(other.m_palette),
@@ -62,9 +64,9 @@ void EditingContext::update()
             Traversal::State &state = m_states[node];
             const Buffer::Format strokeBufferFormat(Buffer::Format::ComponentType::Float, 4, 4);
             m_bufferNodeContexts.insert(bufferNode, new BufferNodeContext(
-                new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_brush.dab.blendMode, m_brush.dab.composeMode),
+                new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_blendMode, m_composeMode),
                 new ColourPickProgram(bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format()),
-                new DabProgram(m_brush.dab.type, m_brush.dab.metric, strokeBufferFormat, false, Buffer::Format(), m_brush.dab.blendMode, m_brush.dab.composeMode),
+                new DabProgram(m_brush.dab.type, m_brush.dab.metric, strokeBufferFormat, false, Buffer::Format(), m_blendMode, m_composeMode),
                 new Buffer(bufferNode->buffer),
                 new Buffer(bufferNode->buffer.size(), strokeBufferFormat)
             ));

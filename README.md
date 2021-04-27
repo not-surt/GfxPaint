@@ -29,7 +29,9 @@ No unbundled external dependencies.
 
 Philosophy
 ----------
+-   Multi-sindow, multi-document, multi-editor.
 -   All image editing performed on GPU.
+-   Full blending functionality in indexed images using real-time quantisation.
 -   Modeless tool invocation as well as regular modal tool selection.
     eg. hold P key to draw with single pixel brush and release to return to previous tool.
     eg. hold S and R keys when you want to draw a single grid aligned rectangle.
