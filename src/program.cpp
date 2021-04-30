@@ -325,6 +325,7 @@ void RectProgram::render(const std::array<Vec2, 2> &points, const Colour &colour
 
     // HERE! Do geometry transform in different spaces then final transform? Like with dabs.
     std::array<Vec2, 2> geometrySpacePoint{geometrySpace * points[0], geometrySpace * points[1]};
+//    std::array<Vec2, 2> geometrySpacePoint{geometrySpace * Vec2{32, 64}, geometrySpace * Vec2{256, 128}};
     Mat4 pointsMatrix;
     const Vec2 &offset = Vec2(floor(geometrySpacePoint[0].x()), floor(geometrySpacePoint[0].y()));
     const Vec2 &scale =  Vec2(floor(geometrySpacePoint[1].x() - geometrySpacePoint[0].x()), floor(geometrySpacePoint[1].y() - geometrySpacePoint[0].y()));

@@ -159,9 +159,9 @@ public:
     virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode) override;
 };
 
-class RotateTool : public Tool {
+class WheelRotateTool : public Tool {
 public:
-    explicit RotateTool(Editor &editor) :
+    explicit WheelRotateTool(Editor &editor) :
         Tool(editor)
     {}
     virtual void wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode) override;

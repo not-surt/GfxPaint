@@ -6,6 +6,8 @@
 #include <QElapsedTimer>
 #include <QOpenGLShaderProgram>
 #include <QItemSelectionModel>
+#include <QUndoCommand>
+#include <QUndoStack>
 #include <cmath>
 #include <tuple>
 #include <set>
@@ -27,6 +29,31 @@ enum class TransformTarget {
     View,
     Object,
     Brush,
+};
+
+class ToolUndoCommand : public QUndoCommand {
+public:
+    explicit ToolUndoCommand(const QString &text, Tool *const tool, const int mode, const std::vector<Point> points, EditingContext *const context)
+        : QUndoCommand(text), tool(tool), mode(mode), points(points)/*, context(*context)*/, bufferCopy()
+    {
+        // TODO: calc bounds
+//        const QRect &bounds = destBuffer->rect();
+//        if (destBuffer && !bounds.isEmpty()) {
+//            bufferCopy = Buffer(bounds.size(), destBuffer->format());
+//            bufferCopy.copy(*destBuffer, bounds, {0, 0});
+//        }
+    }
+    ~ToolUndoCommand()
+    {
+    }
+    virtual void undo() override {}
+    virtual void redo() override {}
+
+    Tool *const tool;
+    const int mode;
+    const std::vector<Point> points;
+//    EditingContext context;
+    Buffer bufferCopy;
 };
 
 class Editor : public RenderedWidget
@@ -86,6 +113,7 @@ public:
     void setDocumentFilename(const QString &filename);
     void setDocumentModified(const bool modified = true);
     QString label() const;
+    QUndoStack *undoStack() { return qApp->documentManager.documentUndoStack(&scene); }
 
     virtual QSize sizeHint() const override { return QSize(64, 64); }
 
@@ -131,7 +159,7 @@ public:
     PanTool panTool;
     RotoZoomTool rotoZoomTool;
     WheelZoomTool zoomTool;
-    RotateTool rotateTool;
+    WheelRotateTool rotateTool;
 
     enum class ToolId {
         Invalid = -1,
@@ -178,10 +206,11 @@ public:
 
     struct ToolInfo {
         QString name;
-        Tool *const tool = nullptr;
+        Tool *const tool;
         int operationMode;
     };
     const std::map<ToolId, ToolInfo> toolInfo{
+        // Selectable tools
         {ToolId::Stroke, {"Stroke", &strokeTool, 0}},
         {ToolId::RectLined, {"Rectangle", &rectTool,  static_cast<int>(PrimitiveToolMode::Lined)}},
         {ToolId::RectFilled, {"Filled Rectangle", &rectTool, static_cast<int>(PrimitiveToolMode::Filled)}},
@@ -190,15 +219,7 @@ public:
         {ToolId::Contour, {"Contour", &contourTool, 0}},
         {ToolId::PickColourNode, {"Pick Colour From Node", &pickTool, static_cast<int>(PickToolMode::NodeColour)}},
         {ToolId::PickColourScene, {"Pick Colour From Scene", &pickTool, static_cast<int>(PickToolMode::SceneColour)}},
-    };
-    const std::vector<std::pair<std::vector<ToolId>, ToolId>> toolGroups{
-        {{ToolId::Stroke}, ToolId::Stroke},
-        {{ToolId::RectLined, ToolId::RectFilled}, ToolId::RectLined},
-        {{ToolId::EllipseLined, ToolId::EllipseFilled}, ToolId::EllipseLined},
-        {{ToolId::Contour}, ToolId::Contour},
-        {{ToolId::PickColourNode, ToolId::PickColourScene}, ToolId::PickColourNode},
-    };
-    const std::map<ToolId, ToolInfo> modelessToolInfo{
+        // Modeless tools
         {ToolId::TransformPan, {"Pan", &panTool, 0}},
         {ToolId::TransformZoom, {"Zoom", &panTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
         {ToolId::TransformRotate, {"Rotate", &rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},
@@ -211,12 +232,16 @@ public:
         {ToolId::SnappingOverrideOn, {"Snapping Override On", nullptr, 1}},
         {ToolId::SnappingOverrideOff, {"Snapping Override Off", nullptr, 0}},
     };
+    const std::vector<std::pair<std::vector<ToolId>, ToolId>> toolMenuGroups{
+        {{ToolId::Stroke}, ToolId::Stroke},
+        {{ToolId::RectLined, ToolId::RectFilled}, ToolId::RectLined},
+        {{ToolId::EllipseLined, ToolId::EllipseFilled}, ToolId::EllipseLined},
+        {{ToolId::Contour}, ToolId::Contour},
+        {{ToolId::PickColourNode, ToolId::PickColourScene}, ToolId::PickColourNode},
+    };
     const ToolId defaultTool = ToolId::Stroke;
     const std::map<InputState, ToolId> toolSelectors{
         {{{Qt::Key_Control}, {}, {}}, ToolId::PickColourNode},
-//        {{{Qt::Key_Control, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
-//        {{{Qt::Key_Shift, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},
-//        {{{Qt::Key_Control, Qt::Key_Shift, Qt::Key_Space}, {}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::RotoZoom)}},
         {{{Qt::Key_R}, {}, {}}, ToolId::RectLined},
         {{{Qt::Key_Shift, Qt::Key_R}, {}, {}}, ToolId::RectFilled},
         {{{Qt::Key_E}, {}, {}}, ToolId::EllipseLined},
@@ -231,18 +256,21 @@ public:
         {{{}, {Qt::LeftButton}, {}}, ToolActivationMode::Primary}, // Selected tool primary activator
         {{{}, {Qt::RightButton}, {}}, ToolActivationMode::Secondary}, // Selected tool secondary activator
     };
-    const std::map<InputState, std::pair<Tool *, int>> modelessToolActivators{
-        {{{}, {Qt::MiddleButton}, {}}, {&panTool, 0}},
-        {{{Qt::Key_Control}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
-        {{{Qt::Key_Shift}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::Rotate)}},
-        {{{Qt::Key_Control, Qt::Key_Shift}, {Qt::MiddleButton}, {}}, {&rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::RotoZoom)}},
-        {{{Qt::Key_Space}, {}, {}}, {&panTool, 0}},
-        {{{}, {}, {{false, false, true, true}}}, {&zoomTool, 0}},
-        {{{Qt::Key_Shift}, {}, {{false, false, true, true}}}, {&rotateTool, 0}},
-        {{{Qt::Key_V}, {}, {}}, {&transformTargetOverrideTool, static_cast<int>(TransformTarget::View)}},
-        {{{Qt::Key_O}, {}, {}}, {&transformTargetOverrideTool, static_cast<int>(TransformTarget::Object)}},
-        {{{Qt::Key_B}, {}, {}}, {&transformTargetOverrideTool, static_cast<int>(TransformTarget::Brush)}},
-        };
+    const std::map<InputState, ToolId> modelessToolActivators{
+        {{{}, {Qt::MiddleButton}, {}}, ToolId::TransformPan},
+        {{{Qt::Key_Control}, {Qt::MiddleButton}, {}}, ToolId::TransformZoom},
+        {{{Qt::Key_Shift}, {Qt::MiddleButton}, {}}, ToolId::TransformRotate},
+        {{{Qt::Key_Control, Qt::Key_Shift}, {Qt::MiddleButton}, {}}, ToolId::TransformRotoZoom},
+        {{{Qt::Key_Space}, {}, {}}, ToolId::TransformPan},
+        {{{Qt::Key_Control, Qt::Key_Space}, {}, {}}, ToolId::TransformZoom},
+        {{{Qt::Key_Shift, Qt::Key_Space}, {}, {}}, ToolId::TransformRotate},
+        {{{Qt::Key_Control, Qt::Key_Shift, Qt::Key_Space}, {}, {}}, ToolId::TransformRotoZoom},
+        {{{}, {}, {{false, false, true, true}}}, ToolId::WheelZoom},
+        {{{Qt::Key_Shift}, {}, {{false, false, true, true}}}, ToolId::WheelRotate},
+        {{{Qt::Key_V}, {}, {}}, ToolId::TransformOverrideView},
+        {{{Qt::Key_O}, {}, {}}, ToolId::TransformOverrideObject},
+        {{{Qt::Key_B}, {}, {}}, ToolId::TransformOverrideBrush},
+    };
     const std::map<Tool *, std::map<InputState, int>> toolModeModifiers{
         {&rectTool, {
                         {{{Qt::Key_Control}, {}, {}}, 1},
@@ -301,8 +329,8 @@ protected:
     QQuaternion quaternion;
 
     ToolId m_selectedToolId;
-    std::deque<std::pair<InputState, std::pair<Tool *, int>>> selectedToolStack;
-    std::deque<std::pair<InputState, std::pair<Tool *, int>>> activatedToolStack;
+    std::deque<std::pair<InputState, ToolId>> selectedToolStack;
+    std::deque<std::pair<InputState, ToolId>> activatedToolStack;
 };
 
 } // namespace GfxPaint

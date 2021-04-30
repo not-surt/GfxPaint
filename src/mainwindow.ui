@@ -576,6 +576,33 @@
     </layout>
    </widget>
   </widget>
+  <widget class="QDockWidget" name="undoDockWidget">
+   <property name="windowTitle">
+    <string>Undo History</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents_11">
+    <layout class="QVBoxLayout" name="verticalLayout_12">
+     <property name="leftMargin">
+      <number>0</number>
+     </property>
+     <property name="topMargin">
+      <number>0</number>
+     </property>
+     <property name="rightMargin">
+      <number>0</number>
+     </property>
+     <property name="bottomMargin">
+      <number>0</number>
+     </property>
+     <item>
+      <widget class="QUndoView" name="undoView"/>
+     </item>
+    </layout>
+   </widget>
+  </widget>
   <action name="actionNewFile">
    <property name="text">
     <string>&amp;New File...</string>

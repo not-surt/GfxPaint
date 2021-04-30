@@ -27,8 +27,8 @@ public:
         Buffer *const workBuffer;
         Buffer *const strokeBuffer;
 
-        BufferNodeContext(DabProgram *const dabProgram, ColourPickProgram *const colourPickProgram, DabProgram *const dabStrokeBufferProgram, Buffer *const workBuffer, Buffer *const strokeBuffer) :
-            dabProgram(dabProgram), colourPickProgram(colourPickProgram), dabStrokeBufferProgram(dabStrokeBufferProgram), workBuffer(workBuffer), strokeBuffer(strokeBuffer)
+        BufferNodeContext(DabProgram *const dabProgram, ColourPickProgram *const colourPickProgram, DabProgram *const dabStrokeBufferProgram, Buffer *const workBuffer, Buffer *const strokeBuffer)
+            : dabProgram(dabProgram), colourPickProgram(colourPickProgram), dabStrokeBufferProgram(dabStrokeBufferProgram), workBuffer(workBuffer), strokeBuffer(strokeBuffer)
         {}
         ~BufferNodeContext() {
             delete dabProgram;

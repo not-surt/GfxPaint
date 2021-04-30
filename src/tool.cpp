@@ -91,12 +91,12 @@ void RectTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
-//            const Mat4 geometrySpace = state.transform.inverted(); // ObjectSpace
-//            const Mat4 geometrySpace = Mat4(); // WorldSpace
-            const Mat4 geometrySpace = editor.transform(); // ViewSpace
-//            Mat4 geometrySpace = editor.toolSpace(*bufferNode, editor.editingContext().brush().dab.space);
+//            const Mat4 geometrySpace = state.transform.inverted(); // World-space to object-space
+//            const Mat4 geometrySpace = Mat4(); // World-space to world-space
+//            const Mat4 geometrySpace = editor.transform(); // World-space to view-space
+            Mat4 toolSpaceTransform = editor.toolSpace(*bufferNode, editor.editingContext().space());
             RectProgram *const program = new RectProgram(primitiveMode == Editor::PrimitiveToolMode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), editor.editingContext().blendMode(), editor.editingContext().composeMode());
-            program->render(worldSpacePoints, editor.editingContext().colour(), geometrySpace, bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
+            program->render(worldSpacePoints, editor.editingContext().colour(), toolSpaceTransform, bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
             delete program;
         }
     }
@@ -379,7 +379,7 @@ void WheelZoomTool::wheel(const Vec2 &viewportPos, const Vec2 &delta, const int 
     editor.setTransform(transform);
 }
 
-void RotateTool::wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode)
+void WheelRotateTool::wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode)
 {
     const float rotation = -15.0f * delta.y();
     Mat4 transform = editor.transform();

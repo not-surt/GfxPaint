@@ -371,10 +371,8 @@ bool MainWindow::event(QEvent *const event)
 {
     if (event->type() == QEvent::WindowActivate) {
         qApp->sessionManager.updateWindowActivationOrder(this);
-        event->accept();
-        return true;
     }
-    else return QMainWindow::event(event);
+    return QMainWindow::event(event);
 }
 
 bool MainWindow::openDocument(const QString &filename, const bool createEditor)
@@ -553,6 +551,7 @@ void MainWindow::activateEditor(Editor *const editor)
     ui->toolToolBar->clear();
     ui->menuBlend->clear();
     ui->menuCompose->clear();
+    ui->undoView->setStack(nullptr);
     qDeleteAll(actions);
     activeEditor = editor;
     if (activeEditor) {
@@ -592,13 +591,15 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(activeEditor, &Editor::transformChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransform);
         activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformChanged, activeEditor, &Editor::setTransform);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::transformModeChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransformMode);
-        activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformTarget);        
+        activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformTarget);
+
+        ui->undoView->setStack(qApp->documentManager.documentUndoStack(&activeEditor->scene));
 
         toolGroup.setExclusive(true);
         ui->menuTool->addMenu(menuToolSpace);
         toolIdToAction.clear();
         actionToToolId.clear();
-        for (const auto &group : activeEditor->toolGroups) {
+        for (const auto &group : activeEditor->toolMenuGroups) {
             MultiToolButton *const toolButton = new MultiToolButton();
             QAction *defaultAction = nullptr;
             ui->menuTool->addSeparator();

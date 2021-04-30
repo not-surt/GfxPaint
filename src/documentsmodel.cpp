@@ -1,5 +1,7 @@
 #include "documentsmodel.h"
 
+#include <QUndoStack>
+
 #include "scene.h"
 #include "scenemodel.h"
 #include "editor.h"
@@ -8,7 +10,7 @@ namespace GfxPaint {
 
 DocumentsModel::DocumentsModel()
     : QAbstractListModel(),
-      m_documents(), m_documentModels(), m_documentEditors()
+      m_documents(), m_documentModels(), m_documentEditors(), m_undoStacks()
 {
 }
 
@@ -44,6 +46,7 @@ void DocumentsModel::addDocument(Scene *const document)
     m_documents.insert(index, document);
     m_documentModels.insert(document, new SceneModel(*document));
     m_documentEditors.insert(document, QList<Editor *>());
+    m_undoStacks.insert(document, new QUndoStack(this));
     endInsertRows();
 }
 
@@ -59,6 +62,7 @@ void DocumentsModel::removeDocument(Scene *const document)
 //        delete editor;
 //        editor->deleteLater();
     }
+    m_undoStacks.take(document)->deleteLater();
     m_documentEditors.take(document);
     m_documentModels.take(document)->deleteLater();
     m_documents.removeAt(index);
@@ -103,6 +107,13 @@ void DocumentsModel::removeEditor(Editor *const editor)
     m_documentEditors[&editor->scene].removeAt(index);
     const QModelIndex modelIndex = createIndex(index, 0);
     emit dataChanged(modelIndex, modelIndex);
+}
+
+QUndoStack *DocumentsModel::documentUndoStack(Scene * const document) const
+{
+    Q_ASSERT(m_undoStacks.contains(document));
+
+    return m_undoStacks[document];
 }
 
 int DocumentsModel::rowCount(const QModelIndex &parent) const
