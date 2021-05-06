@@ -34,7 +34,7 @@ enum class TransformTarget {
 class ToolUndoCommand : public QUndoCommand {
 public:
     explicit ToolUndoCommand(const QString &text, Tool *const tool, const int mode, const std::vector<Point> points, EditingContext *const context)
-        : QUndoCommand(text), tool(tool), mode(mode), points(points)/*, context(*context)*/, bufferCopy()
+        : QUndoCommand(text), tool(tool), mode(mode), points(points), context(*context), bufferCopy()
     {
         // TODO: calc bounds
 //        const QRect &bounds = destBuffer->rect();
@@ -46,13 +46,30 @@ public:
     ~ToolUndoCommand()
     {
     }
-    virtual void undo() override {}
-    virtual void redo() override {}
+    virtual void undo() override {
+        for (Node *node : context.selectedNodes()) {
+            const EditingContext::BufferNodeContext *const bufferNodeContext = context.bufferNodeContext(node);
+            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+            if (bufferNode && bufferNodeContext && bufferNodeContext->workBuffer) {
+                bufferNode->buffer.copy(*bufferNodeContext->workBuffer);
+            }
+        }
+    }
+    virtual void redo() override {
+        for (Node *node : context.selectedNodes()) {
+            const EditingContext::BufferNodeContext *const bufferNodeContext = context.bufferNodeContext(node);
+            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+            if (bufferNode && bufferNodeContext && bufferNodeContext->workBuffer) {
+                bufferNodeContext->workBuffer->copy(bufferNode->buffer);
+                //        tool->end(cursorViewportPos, point, mode);
+            }
+        }
+    }
 
     Tool *const tool;
     const int mode;
     const std::vector<Point> points;
-//    EditingContext context;
+    EditingContext context;
     Buffer bufferCopy;
 };
 
@@ -160,6 +177,8 @@ public:
     RotoZoomTool rotoZoomTool;
     WheelZoomTool zoomTool;
     WheelRotateTool rotateTool;
+
+    Stroke toolStroke;
 
     enum class ToolId {
         Invalid = -1,

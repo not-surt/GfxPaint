@@ -32,6 +32,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
     RenderedWidget(parent),
     scene(scene), model(*qApp->documentManager.documentModel(&scene)),
     strokeTool(*this), rectTool(*this), ellipseTool(*this), contourTool(*this), pickTool(*this), transformTargetOverrideTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
+    toolStroke{},
     m_editingContext(scene),
     cameraTransform(), m_transformMode(),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
@@ -46,6 +47,7 @@ Editor::Editor(const Editor &other) :
     RenderedWidget(other.parentWidget()),
     scene(other.scene), model(other.model),
     strokeTool(other.strokeTool), rectTool(other.rectTool), ellipseTool(other.ellipseTool), contourTool(other.contourTool), pickTool(other.pickTool), transformTargetOverrideTool(other.transformTargetOverrideTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
+    toolStroke(other.toolStroke),
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform), m_transformMode(other.m_transformMode),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
@@ -161,8 +163,8 @@ bool Editor::event(QEvent *const event)
             quaternion = QQuaternion::fromEulerAngles(tilt.y(), tilt.x(), rotation);
         }
 
-        const Point point{cameraTransform.inverted() * mouseTransform * cursorPos, static_cast<float>(pressure), quaternion};
         const Vec2 cursorViewportPos = mouseTransform * cursorPos;
+        const Point point{cameraTransform.inverted() * cursorViewportPos, static_cast<float>(pressure), quaternion};
 
         /*if (inputStateChanged) */{
             selectedToolStack.clear();
@@ -197,7 +199,8 @@ bool Editor::event(QEvent *const event)
                 const auto [trigger, id] = *iterator;
                 if (!trigger.testExact(inputState)) {
                     const ToolInfo &info = toolInfo.at(id);
-                    info.tool->end(cursorViewportPos, point, info.operationMode);
+                    toolStroke.add(point);
+                    info.tool->end(point, info.operationMode);
                     iterator = activatedToolStack.erase(iterator);
                     releaseMouse();
                     releaseKeyboard();
@@ -215,7 +218,9 @@ bool Editor::event(QEvent *const event)
                     if (std::find(activatedToolStack.begin(), activatedToolStack.end(), pair) == activatedToolStack.end()) {
                         activatedToolStack.push_front(pair);
                         const ToolInfo &info = toolInfo.at(id);
-                        info.tool->begin(cursorViewportPos, point, info.operationMode);
+                        toolStroke = {};
+                        toolStroke.add(point);
+                        info.tool->begin(point, info.operationMode);
                         grabMouse();
                         grabKeyboard();
                         consume = true;
@@ -230,14 +235,15 @@ bool Editor::event(QEvent *const event)
                 const ToolInfo &info = toolInfo.at(iterator->second);
                 // Handle mouse wheel
                 if (event->type() == QEvent::Wheel) {
-                    info.tool->wheel(cursorViewportPos, wheelDelta, info.operationMode);
+                    info.tool->wheel(point, wheelDelta, info.operationMode);
                     consume = true;
                 }
                 // Update current tools
                 if (event->type() == QEvent::MouseMove ||
                          event->type() == QEvent::NonClientAreaMouseMove ||
                          event->type() == QEvent::TabletMove) {
-                    info.tool->update(cursorViewportPos, point, info.operationMode);
+                    toolStroke.add(point);
+                    info.tool->update(point, info.operationMode);
                     consume = true;
                 }
                 if (info.tool->isExclusive()) break;
@@ -374,7 +380,7 @@ void Editor::render()
 
                 const Vec2 point = cameraTransform.inverted() * mouseTransform * cursorPos;
                 const Vec2 snappedPoint = pixelSnap(point);
-                if (onCanvasPreviewTool) onCanvasPreviewTool->onCanvasPreview(mouseTransform * cursorPos, {cameraTransform.inverted() * mouseTransform * cursorPos, 1.0, quaternion}, onCanvasPreviewIsActive, onCanvasPreviewMode);
+                if (onCanvasPreviewTool) onCanvasPreviewTool->onCanvasPreview({cameraTransform.inverted() * mouseTransform * cursorPos, 1.0, quaternion}, onCanvasPreviewIsActive, onCanvasPreviewMode);
             }
         }
     }
@@ -422,7 +428,7 @@ void Editor::render()
         onTopPreviewTool = info.tool;
         onTopPreviewMode = info.operationMode;
     }
-    if (onTopPreviewTool) onTopPreviewTool->onTopPreview(mouseTransform * cursorPos, {cameraTransform.inverted() * mouseTransform * cursorPos, 1.0, quaternion}, onTopPreviewIsActive, onTopPreviewMode);
+    if (onTopPreviewTool) onTopPreviewTool->onTopPreview({cameraTransform.inverted() * mouseTransform * cursorPos, 1.0, quaternion}, onTopPreviewIsActive, onTopPreviewMode);
 }
 
 float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 &dabSize, const Vec2 &absoluteSpacing, const Vec2 &proportionalSpacing, const float offset, Stroke &output) {
@@ -458,23 +464,23 @@ Mat4 Editor::toolSpace(BufferNode &node, const EditingContext::Space space)
 {
     const Traversal::State &state = m_editingContext.states().value(&node);
 
-    Mat4 spaceTransform;
+    Mat4 toolSpaceTransform;
     switch (space) {
     case EditingContext::Space::Object: {
-        spaceTransform = state.transform.inverted(); // World-space to object-space
+        toolSpaceTransform = state.transform.inverted(); // World-space to object-space
     } break;
     case EditingContext::Space::ObjectAspectCorrected: {
         // TODO: wrong!
-        spaceTransform = state.transform.inverted() * node.pixelAspectRatioTransform().inverted(); // Object-space to aspect-corrected object-space
+        toolSpaceTransform = state.transform.inverted() * node.pixelAspectRatioTransform(); // Object-space to aspect-corrected object-space
     } break;
     case EditingContext::Space::World: {
-        spaceTransform = Mat4(); // World-space to world-space
+        toolSpaceTransform = Mat4(); // World-space to world-space
     } break;
     case EditingContext::Space::View: {
-        spaceTransform = transform(); // World-space to view-space
+        toolSpaceTransform = transform(); // World-space to view-space
     } break;
     }
-    return spaceTransform;
+    return toolSpaceTransform;
 }
 
 void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 &worldPos)
@@ -494,7 +500,7 @@ void Editor::drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &no
 
     const Buffer *const palette = state.palette;
     EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(&node);
-    bufferNodeContext->dabProgram->render(dab, colour, node.viewportTransform() * state.transform.inverted() * worldSpaceOffsetTransform * (toolSpaceOffsetTransform * toolSpaceTransform).inverted(), &node.buffer, palette);
+    bufferNodeContext->dabProgram->render(dab, colour, node.viewportTransform() * state.transform.inverted() * worldSpaceOffsetTransform * (toolSpaceOffsetTransform * toolSpaceTransform).inverted() * node.pixelAspectRatioTransform().inverted(), &node.buffer, palette);
 }
 
 void Editor::setTransformTarget(const TransformTarget transformMode)

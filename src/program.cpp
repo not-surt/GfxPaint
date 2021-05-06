@@ -316,7 +316,7 @@ Colour src(const vec2 pos) {
     return src;
 }
 
-void RectProgram::render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &geometrySpace, const Mat4 &transform, Buffer *const dest, const Buffer * const destPalette)
+void RectProgram::render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &toolSpaceTransform, const Mat4 &transform, Buffer *const dest, const Buffer * const destPalette)
 {
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
@@ -324,17 +324,23 @@ void RectProgram::render(const std::array<Vec2, 2> &points, const Colour &colour
     program.bind();
 
     // HERE! Do geometry transform in different spaces then final transform? Like with dabs.
-    std::array<Vec2, 2> geometrySpacePoint{geometrySpace * points[0], geometrySpace * points[1]};
-//    std::array<Vec2, 2> geometrySpacePoint{geometrySpace * Vec2{32, 64}, geometrySpace * Vec2{256, 128}};
+    std::array<Vec2, 2> toolSpacePoint{toolSpaceTransform * points[0], toolSpaceTransform * points[1]};
+//    std::array<Vec2, 2> geometrySpacePoint{toolSpaceTransform * Vec2{32, 64}, toolSpaceTransform * Vec2{256, 128}};
     Mat4 pointsMatrix;
-    const Vec2 &offset = Vec2(floor(geometrySpacePoint[0].x()), floor(geometrySpacePoint[0].y()));
-    const Vec2 &scale =  Vec2(floor(geometrySpacePoint[1].x() - geometrySpacePoint[0].x()), floor(geometrySpacePoint[1].y() - geometrySpacePoint[0].y()));
+    const Vec2 &offset = Vec2(std::floor(toolSpacePoint[0].x()), floor(toolSpacePoint[0].y()));
+    const Vec2 &scale =  Vec2(std::floor(toolSpacePoint[1].x() - toolSpacePoint[0].x()), std::floor(toolSpacePoint[1].y() - toolSpacePoint[0].y()));
+//    const float xScale = toolSpacePoint[1].x() - toolSpacePoint[0].x();
+//    const float yScale = toolSpacePoint[1].y() - toolSpacePoint[0].y();
+//    const float scaleXSign = xScale / std::abs(xScale);
+//    const float scaleYSign = yScale / std::abs(yScale);
+//    const float maxScale = std::max(std::abs(xScale), std::abs(yScale));
+//    const Vec2 &scale =  Vec2(maxScale * scaleXSign, maxScale * scaleYSign);
     pointsMatrix.translate(offset.x(), offset.y());
     pointsMatrix.scale(scale.x(), scale.y());
     pointsMatrix.scale(0.5f, 0.5f);
     pointsMatrix.translate(1.0f, 1.0f);
 
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, (transform * geometrySpace.inverted() *  pointsMatrix).data());
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, (transform * toolSpaceTransform.inverted() *  pointsMatrix).data());
 
     glUniform4fv(program.uniformLocation("rgba"), 1, colour.rgba.data());
     glUniform1ui(program.uniformLocation("index"), colour.index);

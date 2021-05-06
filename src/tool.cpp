@@ -4,13 +4,13 @@
 
 namespace GfxPaint {
 
-void StrokeTool::begin(const Vec2 &viewportPos, const Point &point, const int mode) {
+void StrokeTool::begin(const Point &point, const int mode) {
     strokePoints = {};
     strokeOffset = 0.0;
     strokePoints.add(point);
 }
 
-void StrokeTool::update(const Vec2 &viewportPos, const Point &point, const int mode) {
+void StrokeTool::update(const Point &point, const int mode) {
     const Stroke::Point &prevWorldPoint = strokePoints.points.last();
     const Stroke::Point worldPoint = strokePoints.add(point);
     for (Node *node : editor.editingContext().selectedNodes()) {
@@ -42,8 +42,8 @@ void StrokeTool::update(const Vec2 &viewportPos, const Point &point, const int m
     }
 }
 
-void StrokeTool::end(const Vec2 &viewportPos, const Point &point, const int mode) {
-    if (strokePoints.points.count() == 1) update(viewportPos, point, mode);
+void StrokeTool::end(const Point &point, const int mode) {
+    if (strokePoints.points.count() == 1) update(point, mode);
 
     // Clear stroke buffer
     for (Node *node : editor.editingContext().selectedNodes()) {
@@ -56,33 +56,33 @@ void StrokeTool::end(const Vec2 &viewportPos, const Point &point, const int mode
     }
 }
 
-void StrokeTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
+void StrokeTool::onCanvasPreview(const Point &point, const bool isActive, const int mode)
 {
     auto savePoints = strokePoints;
     auto saveOffset = strokeOffset;
 
-    begin(viewportPos, point, mode);
-    end(viewportPos, point, mode);
+    begin(point, mode);
+    end(point, mode);
 
     strokePoints = savePoints;
     strokeOffset = saveOffset;
 }
 
-void RectTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
+void RectTool::begin(const Point &point, const int mode)
 {
     worldSpacePoints[0] = point.pos;
 }
 
-void RectTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
+void RectTool::update(const Point &point, const int mode)
 {
     worldSpacePoints[1] = point.pos;
 }
 
-void RectTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
+void RectTool::end(const Point &point, const int mode)
 {
     const Editor::PrimitiveToolMode primitiveMode = static_cast<Editor::PrimitiveToolMode>(mode);
 
-    update(viewportPos, point, mode);
+    update(point, mode);
     for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
@@ -102,18 +102,18 @@ void RectTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
     }
 }
 
-void RectTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
+void RectTool::onCanvasPreview(const Point &point, const bool isActive, const int mode)
 {
     if (isActive) {
         auto savePoints = worldSpacePoints;
 
-        end(viewportPos, point, mode);
+        end(point, mode);
 
         worldSpacePoints = savePoints;
     }
 }
 
-void RectTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
+void RectTool::onTopPreview(const Point &point, const bool isActive, const int mode)
 {
     if (isActive) {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
@@ -129,21 +129,21 @@ void RectTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const b
     }
 }
 
-void EllipseTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
+void EllipseTool::begin(const Point &point, const int mode)
 {
     points[0] = point.pos;
 }
 
-void EllipseTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
+void EllipseTool::update(const Point &point, const int mode)
 {
     points[1] = point.pos;
 }
 
-void EllipseTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
+void EllipseTool::end(const Point &point, const int mode)
 {
     const Editor::PrimitiveToolMode primitiveMode = static_cast<Editor::PrimitiveToolMode>(mode);
 
-    update(viewportPos, point, mode);
+    update(point, mode);
     for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
@@ -160,18 +160,18 @@ void EllipseTool::end(const Vec2 &viewportPos, const Point &point, const int mod
     }
 }
 
-void EllipseTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
+void EllipseTool::onCanvasPreview(const Point &point, const bool isActive, const int mode)
 {
     if (isActive) {
         auto savePoints = points;
 
-        end(viewportPos, point, mode);
+        end(point, mode);
 
         points = savePoints;
     }
 }
 
-void EllipseTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
+void EllipseTool::onTopPreview(const Point &point, const bool isActive, const int mode)
 {
     if (isActive) {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
@@ -187,20 +187,20 @@ void EllipseTool::onTopPreview(const Vec2 &viewportPos, const Point &point, cons
     }
 }
 
-void ContourTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
+void ContourTool::begin(const Point &point, const int mode)
 {
     points.clear();
     points.push_back(point.pos);
 }
 
-void ContourTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
+void ContourTool::update(const Point &point, const int mode)
 {
     points.push_back(point.pos);
 }
 
-void ContourTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
+void ContourTool::end(const Point &point, const int mode)
 {
-    update(viewportPos, point, mode);
+    update(point, mode);
     for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
@@ -239,18 +239,18 @@ void ContourTool::end(const Vec2 &viewportPos, const Point &point, const int mod
     }
 }
 
-void ContourTool::onCanvasPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
+void ContourTool::onCanvasPreview(const Point &point, const bool isActive, const int mode)
 {
     if (isActive) {
         auto savePoints = points;
 
-        end(viewportPos, point, mode);
+        end(point, mode);
 
         points = savePoints;
     }
 }
 
-void ContourTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
+void ContourTool::onTopPreview(const Point &point, const bool isActive, const int mode)
 {
     if (isActive) {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
@@ -266,12 +266,12 @@ void ContourTool::onTopPreview(const Vec2 &viewportPos, const Point &point, cons
     }
 }
 
-void ColourPickTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
+void ColourPickTool::begin(const Point &point, const int mode)
 {
-    update(viewportPos, point, mode);
+    update(point, mode);
 }
 
-void ColourPickTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
+void ColourPickTool::update(const Point &point, const int mode)
 {
     for (Node *node : editor.editingContext().selectedNodes()) {
         const Traversal::State &state = editor.editingContext().states().value(node);
@@ -285,24 +285,26 @@ void ColourPickTool::update(const Vec2 &viewportPos, const Point &point, const i
     }
 }
 
-void TransformTargetOverrideTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
+void TransformTargetOverrideTool::begin(const Point &point, const int mode)
 {
     oldTransformMode = static_cast<int>(editor.transformTarget());
     editor.setTransformTarget(static_cast<TransformTarget>(mode));
 }
 
-void TransformTargetOverrideTool::end(const Vec2 &viewportPos, const Point &point, const int mode)
+void TransformTargetOverrideTool::end(const Point &point, const int mode)
 {
     editor.setTransformTarget(static_cast<TransformTarget>(oldTransformMode));
 }
 
-void PanTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
+void PanTool::begin(const Point &point, const int mode)
 {
+    const Vec2 viewportPos = editor.transform() * point.pos;
     oldViewportPos = viewportPos;
 }
 
-void PanTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
+void PanTool::update(const Point &point, const int mode)
 {
+    const Vec2 viewportPos = editor.transform() * point.pos;
     const Vec2 translation = viewportPos - oldViewportPos;
     Mat4 transform;
     transform.translate(translation);
@@ -326,13 +328,15 @@ void PanTool::update(const Vec2 &viewportPos, const Point &point, const int mode
     oldViewportPos = viewportPos;
 }
 
-void RotoZoomTool::begin(const Vec2 &viewportPos, const Point &point, const int mode)
+void RotoZoomTool::begin(const Point &point, const int mode)
 {
+    const Vec2 viewportPos = editor.transform() * point.pos;
     oldViewportPos = viewportPos;
 }
 
-void RotoZoomTool::update(const Vec2 &viewportPos, const Point &point, const int mode)
+void RotoZoomTool::update(const Point &point, const int mode)
 {
+    const Vec2 viewportPos = editor.transform() * point.pos;
     const Mode toolMode = static_cast<Mode>(mode);
     const bool rotate = (toolMode == Mode::RotoZoom || toolMode == Mode::Rotate);
     const bool zoom = (toolMode == Mode::RotoZoom || toolMode == Mode::Zoom);
@@ -357,7 +361,7 @@ void RotoZoomTool::update(const Vec2 &viewportPos, const Point &point, const int
     oldViewportPos = viewportPos;
 }
 
-void RotoZoomTool::onTopPreview(const Vec2 &viewportPos, const Point &point, const bool isActive, const int mode)
+void RotoZoomTool::onTopPreview(const Point &point, const bool isActive, const int mode)
 {
     if (isActive) {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
@@ -371,16 +375,18 @@ void RotoZoomTool::onTopPreview(const Vec2 &viewportPos, const Point &point, con
     }
 }
 
-void WheelZoomTool::wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode)
+void WheelZoomTool::wheel(const Point &point, const Vec2 &delta, const int mode)
 {
+    const Vec2 viewportPos = editor.transform() * point.pos;
     const float scaling = std::pow(2.0f, delta.y());
     Mat4 transform = editor.transform();
     rotateScaleAtOrigin(transform, 0.0, scaling, viewportPos);
     editor.setTransform(transform);
 }
 
-void WheelRotateTool::wheel(const Vec2 &viewportPos, const Vec2 &delta, const int mode)
+void WheelRotateTool::wheel(const Point &point, const Vec2 &delta, const int mode)
 {
+    const Vec2 viewportPos = editor.transform() * point.pos;
     const float rotation = -15.0f * delta.y();
     Mat4 transform = editor.transform();
     rotateScaleAtOrigin(transform, rotation, 1.0f, viewportPos);

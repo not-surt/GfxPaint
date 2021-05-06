@@ -190,6 +190,10 @@ public:
     typedef std::pair<std::type_index, QList<int>> Key;
 
     Program();
+    Program(const Program &other) :
+        OpenGL(true),
+        key(other.key), m_program(nullptr)
+    {}
     virtual ~Program();
 
     QOpenGLShaderProgram &program();
@@ -217,6 +221,12 @@ public:
 
         glGenBuffers(1, &storageBuffer);
     }
+    ToolProgram(const ToolProgram &other) :
+        Program(other),
+        storageBuffer(0)
+    {
+        glGenBuffers(1, &storageBuffer);
+    }
     virtual ~ToolProgram() override {
         glDeleteBuffers(1, &storageBuffer);
     }
@@ -235,6 +245,14 @@ public:
     {
         updateKey(typeid(this), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, static_cast<int>(destIndexed), static_cast<int>(destPaletteFormat.componentType), destPaletteFormat.componentSize, destPaletteFormat.componentCount, blendMode, composeMode});
 
+        glGenBuffers(1, &uniformBuffer);
+    }
+    RenderProgram(const RenderProgram &other) :
+        Program(other),
+        destFormat(other.destFormat), destIndexed(other.destIndexed), destPaletteFormat(other.destPaletteFormat),
+        blendMode(other.blendMode), composeMode(other.composeMode),
+        uniformBuffer(0)
+    {
         glGenBuffers(1, &uniformBuffer);
     }
     virtual ~RenderProgram() override {
@@ -259,6 +277,10 @@ public:
     {
         updateKey(typeid(this), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed)});
     }
+    RenderedWidgetProgram(const RenderedWidgetProgram &other) :
+        Program(),
+        srcFormat(other.srcFormat), srcIndexed(other.srcIndexed), srcPaletteFormat(other.srcPaletteFormat)
+    {}
 
     void render(Buffer *const src, const Mat4 &transform);
 
@@ -278,6 +300,10 @@ public:
     {
         updateKey(typeid(this), {static_cast<int>(srcFormat.componentType), srcFormat.componentSize, srcFormat.componentCount, static_cast<int>(srcIndexed), static_cast<int>(srcPaletteFormat.componentType), srcPaletteFormat.componentSize, srcPaletteFormat.componentCount});
     }
+    BufferProgram(const BufferProgram &other) :
+        RenderProgram(other),
+        srcFormat(other.srcFormat), srcIndexed(other.srcIndexed), srcPaletteFormat(other.srcPaletteFormat)
+    {}
 
     void render(Buffer *const src, const Buffer *const srcPalette, const Colour &srcTransparent, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette, const Colour &destTransparent);
 
@@ -317,6 +343,9 @@ public:
     {
         updateKey(typeid(this), {});
     }
+    SingleColourModelProgram(const SingleColourModelProgram &other) :
+        RenderProgram(other)
+    {}
 
     void render(Model *const model, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
@@ -331,6 +360,9 @@ public:
     {
         updateKey(typeid(this), {});
     }
+    VertexColourModelProgram(const VertexColourModelProgram &other) :
+        RenderProgram(other)
+    {}
 
     void render(Model *const model, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
@@ -346,6 +378,10 @@ public:
     {
         updateKey(typeid(this), {filled});
     }
+    RectProgram(const RectProgram &other) :
+        RenderProgram(other),
+        filled(other.filled)
+    {}
 
     void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &geometrySpace, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
@@ -363,6 +399,10 @@ public:
     {
         updateKey(typeid(this), {filled});
     }
+    EllipseProgram(const EllipseProgram &other) :
+        RenderProgram(other),
+        filled(other.filled)
+    {}
 
     void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
@@ -380,6 +420,12 @@ public:
     {
         updateKey(typeid(this), {});
 
+        glGenBuffers(1, &storageBuffer);
+    }
+    ContourStencilProgram(const ContourStencilProgram &other) :
+        RenderProgram(other),
+        storageBuffer(0), stencilTexture(0)
+    {
         glGenBuffers(1, &storageBuffer);
     }
 
@@ -413,6 +459,12 @@ public:
 
         glGenBuffers(1, &storageBuffer);
     }
+    LineProgram(const LineProgram &other) :
+        RenderProgram(other),
+        storageBuffer(0)
+    {
+        glGenBuffers(1, &storageBuffer);
+    }
 
     virtual ~LineProgram() override {
         glDeleteBuffers(1, &storageBuffer);
@@ -434,6 +486,11 @@ public:
     {
         updateKey(typeid(this), {static_cast<int>(pattern), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode});
     }
+    PatternProgram(const PatternProgram &other) :
+        Program(other),
+        pattern(other.pattern), destFormat(other.destFormat), blendMode(other.blendMode)
+    {
+    }
 
     void render(const Mat4 &transform);
 
@@ -454,6 +511,15 @@ public:
     {
         updateKey(typeid(this), {static_cast<int>(type), metric});
 
+        glGenBuffers(1, &uniformBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
+    }
+    DabProgram(const DabProgram &other) :
+        RenderProgram(other),
+        type(other.type), metric(other.metric),
+        uniformData{}
+    {
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
@@ -496,6 +562,18 @@ public:
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
     }
+    ColourPlaneProgram(const ColourPlaneProgram &other) :
+        Program(other),
+        colourSpace(other.colourSpace), useXAxis(other.useXAxis), useYAxis(other.useYAxis),
+        destFormat(other.destFormat),
+        blendMode(other.blendMode),
+        quantise(other.quantise), quantisePaletteFormat(other.quantisePaletteFormat),
+        uniformBuffer(0), uniformData()
+    {
+        glGenBuffers(1, &uniformBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+        glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
+    }
     virtual ~ColourPlaneProgram() override {
         glDeleteBuffers(1, &uniformBuffer);
     }
@@ -531,6 +609,13 @@ public:
     {
         updateKey(typeid(this), {static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
     }
+    ColourPaletteProgram(const ColourPaletteProgram &other) :
+        Program(other),
+        destFormat(other.destFormat),
+        blendMode(other.blendMode),
+        paletteFormat(other.paletteFormat)
+    {
+    }
 
     void render(const Buffer *const palette, const QSize &cells, const Mat4 &transform, Buffer *const dest);
 
@@ -546,10 +631,20 @@ class ColourPalettePickProgram : public ToolProgram {
 public:
     ColourPalettePickProgram(const Buffer::Format format) :
         ToolProgram(),
-        format(format)
+        format(format),
+        uniformBuffer(0)
     {
         updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount});
 
+        glGenBuffers(1, &uniformBuffer);
+        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
+        glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
+    }
+    ColourPalettePickProgram(const ColourPalettePickProgram &other) :
+        ToolProgram(other),
+        format(other.format),
+        uniformBuffer(0)
+    {
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
@@ -580,6 +675,11 @@ public:
     {
         updateKey(typeid(this), {static_cast<int>(from), static_cast<int>(to)});
     }
+    ColourConversionProgram(const ColourConversionProgram &other) :
+        ToolProgram(other),
+        from(other.from), to(other.to)
+    {
+    }
 
     Colour convert(const Colour &colour);
 
@@ -601,6 +701,11 @@ public:
         format(format), indexed(indexed), paletteFormat(paletteFormat)
     {
         updateKey(typeid(this), {static_cast<int>(format.componentType), format.componentSize, format.componentCount, indexed, static_cast<int>(paletteFormat.componentType), paletteFormat.componentSize, paletteFormat.componentCount});
+    }
+    ColourPickProgram(const ColourPickProgram &other) :
+        ToolProgram(other),
+        format(other.format), indexed(other.indexed), paletteFormat(other.paletteFormat)
+    {
     }
 
     Colour pick(const Buffer *const src, const Buffer *const srcPalette, const Vec2 &pos);
