@@ -24,18 +24,18 @@ public:
     const Mat4 &transform() const;
     void setTransform(const Mat4 &transform);
 
-    TransformTarget transformMode() const;
-    void setTransformMode(const TransformTarget transformMode);
+    EditingContext::TransformTarget transformTarget() const;
+    void setTransformTarget(const EditingContext::TransformTarget transformTarget);
 
 signals:
-    void transformChanged(const Mat4 &transform);
-    void transformModeChanged(const GfxPaint::TransformTarget transformMode);
+    void transformChanged(const GfxPaint::Mat4 &transform);
+    void transformTargetChanged(const GfxPaint::EditingContext::TransformTarget transformTarget);
 
 private:
     Ui::TransformEditorWidget *ui;
 
     TransformModel model;
-    TransformTarget m_transformMode;
+    EditingContext::TransformTarget m_transformTarget;
 };
 
 } // namespace GfxPaint

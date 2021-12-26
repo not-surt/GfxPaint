@@ -26,7 +26,7 @@ public slots:
     void setFitSwatchSize(const bool fitColumnCount);
 
 signals:
-    void colourPicked(const Colour &colour);
+    void colourPicked(const GfxPaint::Colour &colour);
 
 protected:
     virtual bool event(QEvent *const event) override;

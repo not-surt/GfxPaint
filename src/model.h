@@ -18,6 +18,7 @@ public:
         glGenBuffers(1, &indirectBuffer);
 
         const GLsizei vertexSize = std::accumulate(attributeSizes.begin(), attributeSizes.end(), 0);
+        Q_ASSERT(vertexSize > 0);
         const GLsizei vertexStride = sizeof(GLfloat) * vertexSize;
         const int vertexCount = vertices.size() / vertexSize;
 

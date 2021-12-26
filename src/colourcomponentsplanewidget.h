@@ -25,10 +25,10 @@ public:
 public slots:
     void setColour(const GfxPaint::Colour &colour);
     void setPalette(const GfxPaint::Buffer *const palette);
-    void setPos(const Vec2 &pos);
+    void setPos(const GfxPaint::Vec2 &pos);
 
 signals:
-    void posChanged(const Vec2 &pos);
+    void posChanged(const GfxPaint::Vec2 &pos);
 
 protected:
     virtual void mousePressEvent(QMouseEvent *event) override { mouseEvent(event); }

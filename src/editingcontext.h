@@ -1,4 +1,4 @@
-#ifndef EDITINGCONTEXT_H
+﻿#ifndef EDITINGCONTEXT_H
 #define EDITINGCONTEXT_H
 
 #include <QItemSelectionModel>
@@ -7,18 +7,25 @@
 #include "brush.h"
 #include "node.h"
 #include "scene.h"
+#include "tool.h"
 
 namespace GfxPaint {
 
 class EditingContext {
 public:
-    enum class Space {
+    enum class TransformTarget {
+        View,
+        Object,
+        Brush,
+    };
+    static const std::map<TransformTarget, QString> transformTargetNames;
+    enum class ToolSpace {
         Object,
         ObjectAspectCorrected,
         World,
         View,
     };
-    static const std::map<Space,QString> spaceNames;
+    static const std::map<ToolSpace, QString> toolSpaceNames;
 
     struct BufferNodeContext {
         DabProgram *const dabProgram;
@@ -45,7 +52,7 @@ public:
 
     void update();
 
-    void setSpace(const Space space) { m_space = space; }
+    void setSpace(const ToolSpace toolSpace) { m_toolSpace = toolSpace; }
     void setBlendMode(const int blendMode) {
         m_blendMode = blendMode;
         update();
@@ -64,7 +71,7 @@ public:
         update();
     }
 
-    const Space &space() const { return m_space; }
+    const ToolSpace &space() const { return m_toolSpace; }
     const int &blendMode() const { return m_blendMode; }
     const int &composeMode() const { return m_composeMode; }
     const Brush &brush() const { return m_brush; }
@@ -77,13 +84,17 @@ public:
     QItemSelectionModel &selectionModel() { return m_selectionModel; }
     QList<Node *> &selectedNodes() { return m_selectedNodes; }
 
+    Stroke toolStroke;
+    int toolMode;
+    TransformTarget transformTarget;
+
 private:
     Scene &scene;
-    Space m_space;
+    ToolSpace m_toolSpace;
     int m_blendMode;
     int m_composeMode;
     Brush m_brush;
-    Colour m_colour;
+    Colour m_colour;    
     Buffer *m_palette;
     QHash<Node *, BufferNodeContext *> m_bufferNodeContexts;
     QHash<Node *, Traversal::State> m_states;

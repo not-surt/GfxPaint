@@ -120,7 +120,7 @@ void ColourSlidersWidget::updateWidgets()
         ColourComponentsPlaneWidget *const colourSlider = new ColourComponentsPlaneWidget(colourSpace, i, -1, ui->quantiseCheckBox->isChecked() && m_palette, m_palette ? m_palette->format() : Buffer::Format());
         ui->colourSliderLayout->addWidget(colourSlider);
         colourSlider->setPalette(m_palette);
-        QObject::connect(colourSlider, &ColourComponentsPlaneWidget::posChanged, [this](){
+        QObject::connect(colourSlider, &ColourComponentsPlaneWidget::posChanged, this, [this](){
             updateColourFromSliders();
             updateSliderColours();
             emit colourChanged(m_colour);

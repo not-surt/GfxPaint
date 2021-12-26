@@ -380,23 +380,6 @@
     <property name="title">
      <string>&amp;Edit</string>
     </property>
-    <widget class="QMenu" name="menu_Context_Scope">
-     <property name="title">
-      <string>&amp;Context Scope</string>
-     </property>
-     <addaction name="actionContextScopeEditor"/>
-     <addaction name="actionContextScopeDocument"/>
-     <addaction name="actionContextScopeWindow"/>
-     <addaction name="actionContextScopeApplication"/>
-    </widget>
-    <addaction name="actionUndo"/>
-    <addaction name="actionRedo"/>
-    <addaction name="separator"/>
-    <addaction name="actionClear"/>
-    <addaction name="separator"/>
-    <addaction name="actionSnapToGrid"/>
-    <addaction name="separator"/>
-    <addaction name="menu_Context_Scope"/>
    </widget>
    <widget class="QMenu" name="menuApplication">
     <property name="title">

@@ -78,7 +78,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     QObject::connect(ui->actionOpenSession, &QAction::triggered, this, &MainWindow::openSession);
     QObject::connect(ui->actionSaveSession, &QAction::triggered, this, &MainWindow::saveSession);
     QObject::connect(ui->actionSaveSessionAs, &QAction::triggered, this, &MainWindow::saveSessionAs);
-    QObject::connect(ui->actionAbout, &QAction::triggered, [this](){
+    QObject::connect(ui->actionAbout, &QAction::triggered, this, [this](){
         QMessageBox::about(this, QString("About %1").arg(qApp->applicationName()), "Well, what about it?");
     });
     QObject::connect(ui->actionExit, &QAction::triggered, this, &MainWindow::promptExit);
@@ -93,7 +93,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     QObject::connect(ui->actionCloseAllEditors, &QAction::triggered, this, &MainWindow::closeAllEditors);
     QObject::connect(ui->actionCascadeEditors, &QAction::triggered, ui->mdiArea, &QMdiArea::cascadeSubWindows);
     QObject::connect(ui->actionTileEditors, &QAction::triggered, ui->mdiArea, &QMdiArea::tileSubWindows);
-    QObject::connect(ui->actionTabbedEditors, &QAction::toggled, [this](bool checked){
+    QObject::connect(ui->actionTabbedEditors, &QAction::toggled, this, [this](bool checked){
         ui->mdiArea->setViewMode(checked ? QMdiArea::TabbedView : QMdiArea::SubWindowView);
     });
     ui->actionTabbedEditors->setChecked(ui->actionTabbedEditors->isChecked());
@@ -107,7 +107,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     ui->actionTabPositionBottom->setData(QTabWidget::South);
     ui->actionTabPositionLeft->setData(QTabWidget::West);
     ui->actionTabPositionRight->setData(QTabWidget::East);
-    QObject::connect(&tabPositionsGroup, &QActionGroup::triggered, [this](QAction *const action){
+    QObject::connect(&tabPositionsGroup, &QActionGroup::triggered, this, [this](QAction *const action){
         ui->mdiArea->setTabPosition(static_cast<QTabWidget::TabPosition>(action->data().toInt()));
     });
     ui->actionTabPositionTop->setChecked(ui->actionTabPositionTop->isChecked());
@@ -121,7 +121,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     QObject::connect(ui->actionCloseOtherFiles, &QAction::triggered, this, &MainWindow::closeOtherFiles);
     QObject::connect(ui->actionCloseAllFiles, &QAction::triggered, this, &MainWindow::closeAllFiles);
 
-    QObject::connect(ui->actionFullscreen, &QAction::toggled, [this](bool checked){
+    QObject::connect(ui->actionFullscreen, &QAction::toggled, this, [this](bool checked){
         setWindowState(windowState().setFlag(Qt::WindowFullScreen, checked));
     });
     ui->actionFullscreen->setChecked(windowState().testFlag(Qt::WindowFullScreen));
@@ -149,7 +149,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     menuToolSpace = new QMenu(this);
     menuToolSpace->setTitle("Tool Space");
     toolSpaceGroup.setExclusive(true);
-    for (auto &[space, name] : EditingContext::spaceNames) {
+    for (auto &[space, name] : EditingContext::toolSpaceNames) {
         QAction *const action = new QAction(this);
         action->setText(name);
         action->setData(static_cast<int>(space));
@@ -161,7 +161,8 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
 
 MainWindow::~MainWindow()
 {
-    for (auto editor : editorSubWindows.keys()) {
+    const auto keys = editorSubWindows.keys();
+    for (auto editor : keys) {
 //        deleteEditor(editor); // If parented then should be deleted automatically?
     }
     delete ui;
@@ -514,7 +515,7 @@ void MainWindow::deleteEditor(Editor *const editor)
 void MainWindow::activateDocument(Scene *const document)
 {
     activeDocument = document;
-    if (!activeEditor || (activeEditor && &activeEditor->scene != activeDocument)) {
+    if (!activeEditor || &activeEditor->scene != activeDocument) {
         for (auto subWindow : ui->mdiArea->subWindowList(QMdiArea::ActivationHistoryOrder)) {
             Editor *const editor = dynamic_cast<Editor *>(subWindow->widget());
             if (&editor->scene == activeDocument) {
@@ -590,10 +591,16 @@ void MainWindow::activateEditor(Editor *const editor)
 
         activeEditorConnections << QObject::connect(activeEditor, &Editor::transformChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransform);
         activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformChanged, activeEditor, &Editor::setTransform);
-        activeEditorConnections << QObject::connect(activeEditor, &Editor::transformModeChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransformMode);
-        activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformModeChanged, activeEditor, &Editor::setTransformTarget);
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::transformTargetChanged, ui->transformEditorWidget, &TransformEditorWidget::setTransformTarget);
+        activeEditorConnections << QObject::connect(ui->transformEditorWidget, &TransformEditorWidget::transformTargetChanged, activeEditor, &Editor::setTransformTarget);
 
-        ui->undoView->setStack(qApp->documentManager.documentUndoStack(&activeEditor->scene));
+        QUndoStack *const undoStack = qApp->documentManager.documentUndoStack(&activeEditor->scene);
+        ui->undoView->setStack(undoStack);
+        auto menuEditActions = ui->menuEdit->actions();
+        ui->menuEdit->clear();
+        qDeleteAll(menuEditActions);
+        ui->menuEdit->addAction(undoStack->createUndoAction(this));
+        ui->menuEdit->addAction(undoStack->createRedoAction(this));
 
         toolGroup.setExclusive(true);
         ui->menuTool->addMenu(menuToolSpace);
@@ -630,11 +637,11 @@ void MainWindow::activateEditor(Editor *const editor)
         activeEditorConnections << QObject::connect(&toolGroup, &QActionGroup::triggered, this, [this](QAction *const action){
             activeEditor->setSelectedToolId(actionToToolId.at(action));
         });
-        activeEditorConnections << QObject::connect(activeEditor, &Editor::toolSpaceChanged, this, [this](const EditingContext::Space toolSpace){
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::toolSpaceChanged, this, [this](const EditingContext::ToolSpace toolSpace){
             toolSpaceGroup.actions()[static_cast<int>(toolSpace)]->setChecked(true);
         });
         activeEditorConnections << QObject::connect(&toolSpaceGroup, &QActionGroup::triggered, this, [this](QAction *const action){
-            activeEditor->editingContext().setSpace(static_cast<EditingContext::Space>(action->data().toInt()));
+            activeEditor->editingContext().setSpace(static_cast<EditingContext::ToolSpace>(action->data().toInt()));
         });
         const int space = static_cast<int>(activeEditor->editingContext().space());
         if (space >= 0 && space < toolSpaceGroup.actions().size()) {
@@ -679,7 +686,7 @@ void MainWindow::activateEditor(Editor *const editor)
 
         installEventFilter(activeEditor);
 
-        activeEditor->activate();
+        activeEditor->activeEditingContextUpdated();
     }
     else {
         ui->sceneTreeWidget->setEditor(nullptr);

@@ -24,10 +24,10 @@ public:
     const Mat4 &transform() const;
 
 signals:
-    void transformChanged(const Mat4 &transform);
+    void transformChanged(const GfxPaint::Mat4 &transform);
 
 public slots:
-    void setTransform(const Mat4 &transform);
+    void setTransform(const GfxPaint::Mat4 &transform);
 
 protected:
     Mat4 m_transform;

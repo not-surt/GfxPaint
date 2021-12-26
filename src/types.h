@@ -49,6 +49,8 @@ typedef QVector2D Vec2;
 typedef QVector3D Vec3;
 typedef QVector4D Vec4;
 
+typedef std::list<size_t> GraphIndex;
+
 class Mat4 : public QMatrix4x4 {
 public:
     using QMatrix4x4::QMatrix4x4;

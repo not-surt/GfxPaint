@@ -4,18 +4,25 @@
 
 namespace GfxPaint {
 
-const std::map<EditingContext::Space, QString> EditingContext::spaceNames{
-    {Space::Object, "Object Space"},
-    {Space::ObjectAspectCorrected, "Aspect-corrected Object Space"},
-    {Space::World, "World Space"},
-    {Space::View, "View Space"},
+const std::map<EditingContext::TransformTarget, QString> EditingContext::transformTargetNames{
+    {TransformTarget::View, "View"},
+    {TransformTarget::Object, "Object"},
+    {TransformTarget::Brush, "Brush"},
+};
+
+const std::map<EditingContext::ToolSpace, QString> EditingContext::toolSpaceNames{
+    {ToolSpace::Object, "Object Space"},
+    {ToolSpace::ObjectAspectCorrected, "Aspect-corrected Object Space"},
+    {ToolSpace::World, "World Space"},
+    {ToolSpace::View, "View Space"},
 };
 
 EditingContext::EditingContext(Scene &scene) :
     scene(scene),
-    m_space(Space::Object), m_blendMode{0}, m_composeMode{RenderManager::composeModeDefault},
+    m_toolSpace(ToolSpace::Object), m_blendMode{0}, m_composeMode{RenderManager::composeModeDefault},
     m_brush(),
     m_colour{{0.0, 0.0, 0.0, 1.0}, INDEX_INVALID},
+    toolStroke{}, toolMode(0), transformTarget(TransformTarget::View),
     m_palette(nullptr),
     m_bufferNodeContexts(),
     m_selectionModel(qApp->documentManager.documentModel(&scene)),
@@ -26,9 +33,10 @@ EditingContext::EditingContext(Scene &scene) :
 
 EditingContext::EditingContext(EditingContext &other) :
     scene(other.scene),
-    m_space(other.m_space), m_blendMode(other.m_blendMode), m_composeMode(other.m_composeMode),
+    m_toolSpace(other.m_toolSpace), m_blendMode(other.m_blendMode), m_composeMode(other.m_composeMode),
     m_brush(other.m_brush),
     m_colour(other.m_colour),
+    toolStroke(other.toolStroke), toolMode(other.toolMode), transformTarget(other.transformTarget),
     m_palette(other.m_palette),
     m_bufferNodeContexts(),
     m_selectionModel(other.m_selectionModel.model()),

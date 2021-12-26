@@ -36,7 +36,7 @@ QOpenGLShaderProgram *Program::createProgram() const
     }
 
     program->link();
-    Q_ASSERT(program->isLinked());
+    Q_ASSERT_X(program->isLinked(), typeid(*this).name(), "Program linking failed.");
 
     return program;
 
@@ -599,6 +599,9 @@ in VertexOut {
 } gIn[];
 
 uniform mat4 matrix;
+
+// Unused to stop complaining about unmatching input in frag
+out layout(location = 0) vec2 pos;
 
 out GeometryOut {
     float linePos;

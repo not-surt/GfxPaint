@@ -15,7 +15,7 @@
 
 namespace GfxPaint {
 
-static const std::list<QOpenGLShader::ShaderTypeBit> programStages = {
+const std::list<QOpenGLShader::ShaderTypeBit> programStages = {
     QOpenGLShader::Geometry, QOpenGLShader::Vertex, QOpenGLShader::Fragment, QOpenGLShader::Compute,
 };
 
@@ -729,7 +729,8 @@ public:
     {
     }
     ~ProgramManager() {
-        for (const auto &key : programs.keys()) {
+        const auto keys = programs.keys();
+        for (const auto &key : keys) {
             delete programs.value(key).first;
         }
     }

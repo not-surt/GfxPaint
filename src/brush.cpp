@@ -14,15 +14,15 @@ Brush::Dab::Dab() :
 {
 }
 
-Brush::Dab::Dab(const Dab &other) :
-    type(other.type), metric(other.metric),
-    size(other.size), fixedRatio(other.fixedRatio), ratio(other.ratio),
-    angle(other.angle),
-    origin(other.origin), pixelSnapX(other.pixelSnapX), pixelSnapY(other.pixelSnapY),
-    hardness(other.hardness), opacity(other.opacity),
-    buffer(other.buffer)
-{
-}
+//Brush::Dab::Dab(const Dab &other) :
+//    type(other.type), metric(other.metric),
+//    size(other.size), fixedRatio(other.fixedRatio), ratio(other.ratio),
+//    angle(other.angle),
+//    origin(other.origin), pixelSnapX(other.pixelSnapX), pixelSnapY(other.pixelSnapY),
+//    hardness(other.hardness), opacity(other.opacity),
+//    buffer(other.buffer)
+//{
+//}
 
 Mat4 Brush::Dab::transform() const
 {
@@ -41,13 +41,13 @@ Brush::Stroke::Stroke() :
 {
 }
 
-Brush::Stroke::Stroke(const Stroke &other) :
-    metric(other.metric),
-    continuous(other.continuous),
-    absoluteSpacing(other.absoluteSpacing), proportionalSpacing(other.proportionalSpacing),
-    dabCount(other.dabCount)
-{
-}
+//Brush::Stroke::Stroke(const Stroke &other) :
+//    metric(other.metric),
+//    continuous(other.continuous),
+//    absoluteSpacing(other.absoluteSpacing), proportionalSpacing(other.proportionalSpacing),
+//    dabCount(other.dabCount)
+//{
+//}
 
 Brush::Brush() :
     dab(), stroke()

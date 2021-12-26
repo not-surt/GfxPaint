@@ -24,7 +24,7 @@ struct Brush
         };
 
         Dab();
-        Dab(const Dab &other);
+//        Dab(const Dab &other);
 
     public:
         Dab &operator=(const Dab &) = default;
@@ -49,7 +49,7 @@ struct Brush
 
     struct Stroke {
         Stroke();
-        Stroke(const Stroke &other);
+//        Stroke(const Stroke &other);
 
         Stroke &operator=(const Stroke &) = default;
         inline bool operator==(const Stroke &rhs) const = default;

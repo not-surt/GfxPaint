@@ -25,16 +25,10 @@
 
 namespace GfxPaint {
 
-enum class TransformTarget {
-    View,
-    Object,
-    Brush,
-};
-
 class ToolUndoCommand : public QUndoCommand {
 public:
-    explicit ToolUndoCommand(const QString &text, Tool *const tool, const int mode, const std::vector<Point> points, EditingContext *const context)
-        : QUndoCommand(text), tool(tool), mode(mode), points(points), context(*context), bufferCopy()
+    explicit ToolUndoCommand(const QString &text, Tool *const tool, const int mode, const std::vector<Point> points, EditingContext *const context, const Mat4 &viewTransform)
+        : QUndoCommand(text), tool(tool), mode(mode), points(points), context(*context), viewTransform(viewTransform), bufferCopy()
     {
         // TODO: calc bounds
 //        const QRect &bounds = destBuffer->rect();
@@ -70,6 +64,7 @@ public:
     const int mode;
     const std::vector<Point> points;
     EditingContext context;
+    const Mat4 viewTransform;
     Buffer bufferCopy;
 };
 
@@ -118,7 +113,7 @@ public:
         }
     };
 
-    explicit Editor();
+//    explicit Editor();
     explicit Editor(Scene &scene, QWidget *parent = nullptr);
     Editor(const Editor &other);
     virtual ~Editor() override;
@@ -139,13 +134,13 @@ public:
     Buffer *getWidgetBuffer() { return RenderedWidget::widgetBuffer; }
     const Mat4 &getViewportTransform() const { return viewportTransform; }
 
-    void activate();
+    void activeEditingContextUpdated();
 
     void insertNodes(const QList<Node *> &nodes);
     void removeSelectedNodes();
     void duplicateSelectedNodes();
 
-    float pixelSnapOffset(const PixelSnap pixelSnap, const float target, const float size) {
+    static float pixelSnapOffset(const PixelSnap pixelSnap, const float target, const float size) {
         switch (pixelSnap) {
         case PixelSnap::Centre: return 0.5f;
         case PixelSnap::Edge: return 0.0f;
@@ -154,15 +149,15 @@ public:
         default: return target;
         }
     }
-    Vec2 pixelSnap(const Vec2 target) {
-        const Brush::Dab &dab = m_editingContext.brush().dab;
+    static Vec2 pixelSnap(EditingContext &context, const Vec2 target) {
+        const Brush::Dab &dab = context.brush().dab;
         const float offsetX = pixelSnapOffset(dab.pixelSnapX, target.x(), dab.size.x());
         const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.y());
         return snap({offsetX, offsetY}, {1.0f, 1.0f}, target);
     }
-    float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 &brushSize, const Vec2 &absoluteSpacing, const Vec2 &proportionalSpacing, const float offset, Stroke &output);
-    Mat4 toolSpace(BufferNode &node, const EditingContext::Space space);
-    void drawDab(const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 &worldPos);
+    static float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 &brushSize, const Vec2 &absoluteSpacing, const Vec2 &proportionalSpacing, const float offset, Stroke &output);
+    static Mat4 toolSpace(EditingContext &context, const Mat4 &viewTransform, BufferNode &node, const EditingContext::ToolSpace space);
+    static void drawDab(EditingContext &context, const Mat4 &viewTransform, const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 &worldPos);
 
     Scene &scene;
     SceneModel &model;
@@ -177,8 +172,6 @@ public:
     RotoZoomTool rotoZoomTool;
     WheelZoomTool zoomTool;
     WheelRotateTool rotateTool;
-
-    Stroke toolStroke;
 
     enum class ToolId {
         Invalid = -1,
@@ -208,21 +201,6 @@ public:
         SnappingOverrideOff,
     };
 
-    enum class PrimitiveToolMode {
-        Lined,
-        Filled,
-    };
-    enum class PrimitiveToolModifierMode {
-        Bounded,
-        Centred,
-        BoundedFixedAspectRatio,
-        CentredFixedAspectRatio,
-    };
-    enum class PickToolMode {
-        NodeColour,
-        SceneColour,
-    };
-
     struct ToolInfo {
         QString name;
         Tool *const tool;
@@ -231,13 +209,13 @@ public:
     const std::map<ToolId, ToolInfo> toolInfo{
         // Selectable tools
         {ToolId::Stroke, {"Stroke", &strokeTool, 0}},
-        {ToolId::RectLined, {"Rectangle", &rectTool,  static_cast<int>(PrimitiveToolMode::Lined)}},
-        {ToolId::RectFilled, {"Filled Rectangle", &rectTool, static_cast<int>(PrimitiveToolMode::Filled)}},
-        {ToolId::EllipseLined, {"Ellipse", &ellipseTool, static_cast<int>(PrimitiveToolMode::Lined)}},
-        {ToolId::EllipseFilled, {"Filled Ellipse", &ellipseTool, static_cast<int>(PrimitiveToolMode::Filled)}},
+        {ToolId::RectLined, {"Rectangle", &rectTool,  static_cast<int>(PrimitiveTool::Mode::Lined)}},
+        {ToolId::RectFilled, {"Filled Rectangle", &rectTool, static_cast<int>(PrimitiveTool::Mode::Filled)}},
+        {ToolId::EllipseLined, {"Ellipse", &ellipseTool, static_cast<int>(PrimitiveTool::Mode::Lined)}},
+        {ToolId::EllipseFilled, {"Filled Ellipse", &ellipseTool, static_cast<int>(PrimitiveTool::Mode::Filled)}},
         {ToolId::Contour, {"Contour", &contourTool, 0}},
-        {ToolId::PickColourNode, {"Pick Colour From Node", &pickTool, static_cast<int>(PickToolMode::NodeColour)}},
-        {ToolId::PickColourScene, {"Pick Colour From Scene", &pickTool, static_cast<int>(PickToolMode::SceneColour)}},
+        {ToolId::PickColourNode, {"Pick Colour From Node", &pickTool, static_cast<int>(ColourPickTool::Mode::NodeColour)}},
+        {ToolId::PickColourScene, {"Pick Colour From Scene", &pickTool, static_cast<int>(ColourPickTool::Mode::SceneColour)}},
         // Modeless tools
         {ToolId::TransformPan, {"Pan", &panTool, 0}},
         {ToolId::TransformZoom, {"Zoom", &panTool, static_cast<int>(RotoZoomTool::Mode::Zoom)}},
@@ -245,9 +223,9 @@ public:
         {ToolId::TransformRotoZoom, {"RotoZoom", &rotoZoomTool, static_cast<int>(RotoZoomTool::Mode::RotoZoom)}},
         {ToolId::WheelZoom, {"Wheel Zoom", &zoomTool, 0}},
         {ToolId::WheelRotate, {"Wheel Rotate", &rotateTool, 0}},
-        {ToolId::TransformOverrideView, {"Transform Override View", &transformTargetOverrideTool, static_cast<int>(TransformTarget::View)}},
-        {ToolId::TransformOverrideObject, {"Transform Override Object", &transformTargetOverrideTool, static_cast<int>(TransformTarget::Object)}},
-        {ToolId::TransformOverrideBrush, {"Transform Override Brush", &transformTargetOverrideTool, static_cast<int>(TransformTarget::Brush)}},
+        {ToolId::TransformOverrideView, {"Transform Override View", &transformTargetOverrideTool, static_cast<int>(EditingContext::TransformTarget::View)}},
+        {ToolId::TransformOverrideObject, {"Transform Override Object", &transformTargetOverrideTool, static_cast<int>(EditingContext::TransformTarget::Object)}},
+        {ToolId::TransformOverrideBrush, {"Transform Override Brush", &transformTargetOverrideTool, static_cast<int>(EditingContext::TransformTarget::Brush)}},
         {ToolId::SnappingOverrideOn, {"Snapping Override On", nullptr, 1}},
         {ToolId::SnappingOverrideOff, {"Snapping Override Off", nullptr, 0}},
     };
@@ -303,17 +281,17 @@ public:
                    }},
     };
 
-    TransformTarget transformTarget() const { return m_transformMode; }
+    EditingContext::TransformTarget transformTarget() const { return m_editingContext.transformTarget; }
     Mat4 transform() const { return cameraTransform; }
 
 public slots:
     void setBrush(const GfxPaint::Brush &brush);
     void setColour(const GfxPaint::Colour &colour);
-    void setTransformTarget(const GfxPaint::TransformTarget m_transformMode);
-    void setTransform(const Mat4 &transform);
+    void setTransformTarget(const EditingContext::TransformTarget transformTarget);
+    void setTransform(const GfxPaint::Mat4 &transform);
     void updateContext();
-    void setSelectedToolId(const ToolId tool);
-    void setToolSpace(const EditingContext::Space toolSpace);
+    void setSelectedToolId(const GfxPaint::Editor::ToolId tool);
+    void setToolSpace(const GfxPaint::EditingContext::ToolSpace toolSpace);
     void setBlendMode(const int blendMode);
     void setComposeMode(const int composeMode);
 
@@ -321,10 +299,10 @@ signals:
     void brushChanged(const GfxPaint::Brush &brush);
     void colourChanged(const GfxPaint::Colour &colour);
     void paletteChanged(GfxPaint::Buffer *const palette);
-    void transformModeChanged(const GfxPaint::TransformTarget m_transformMode);
-    void transformChanged(const Mat4 &transform);
-    void selectedToolIdChanged(const ToolId tool);
-    void toolSpaceChanged(const EditingContext::Space toolSpace);
+    void transformTargetChanged(const EditingContext::TransformTarget transformTarget);
+    void transformChanged(const GfxPaint::Mat4 &transform);
+    void selectedToolIdChanged(const GfxPaint::Editor::ToolId tool);
+    void toolSpaceChanged(const GfxPaint::EditingContext::ToolSpace toolSpace);
     void blendModeChanged(const int blendMode);
     void composeModeChanged(const int composeMode);
 
@@ -335,7 +313,6 @@ protected:
     EditingContext m_editingContext;
 
     Mat4 cameraTransform;
-    TransformTarget m_transformMode;
 
     InputState inputState;
     Vec2 cursorPos;
@@ -354,6 +331,6 @@ protected:
 
 } // namespace GfxPaint
 
-Q_DECLARE_METATYPE(GfxPaint::EditingContext::Space)
+Q_DECLARE_METATYPE(GfxPaint::EditingContext::ToolSpace)
 
 #endif // EDITOR_H

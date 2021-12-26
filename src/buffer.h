@@ -71,8 +71,8 @@ public:
             Q_ASSERT(formats.contains(*this));
             return formats.at(*this);
         }
-        QString componentTypeName() const { return QString::fromStdString(componentTypeNames.at(componentType)); }
         static QString componentTypeName(const ComponentType componentType) { return QString::fromStdString(componentTypeNames.at(componentType)); }
+        QString componentTypeName() const { return componentTypeName(componentType); }
         QString shaderSamplerType() const { return QString::fromStdString(componentInfo().shaderSamplerType); }
         QString shaderImageType() const { return QString::fromStdString(componentInfo().shaderImageType); }
         GLenum format() const { return componentInfo().formats[this->componentCount - 1]; }

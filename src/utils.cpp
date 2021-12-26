@@ -140,7 +140,9 @@ Buffer bufferFromImageFile(const QString &filename, Buffer *const palette, Colou
 
 void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements)
 {
-    for (const auto &key : replacements.keys()) string.replace(key, replacements[key]);
+    const auto keys = replacements.keys();
+    for (const auto &key : keys)
+        string.replace(key, replacements[key]);
 }
 
 float stairstep(const float value, const float size) {

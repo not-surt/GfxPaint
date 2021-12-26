@@ -39,7 +39,7 @@ https://www.fourcc.org/fccyvrgb.php
 
 // Define saturation macro, if not already user-defined
 #ifndef saturate
-#define saturate(v) clamp(v, 0, 1)
+#define saturate(v) clamp(v, vec3(0), vec3(1))
 #endif
 
 // Constants

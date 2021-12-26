@@ -156,15 +156,15 @@ RenderManager::RenderManager() :
     surface.create();
     context.setFormat(surface.format());
     context.setShareContext(QOpenGLContext::globalShareContext());
-    const bool createContextSuccess = context.create();
-//    const bool createContextSuccess = false;
+    bool createContextSuccess = context.create();
+//    bool createContextSuccess = false;
     // If OpenGL ES context creation not successfull try to fall back to comparable desktop OpenGL context
     if (!createContextSuccess) {
         surface.destroy();
         surface.setFormat(formatGL);
         surface.create();
         context.setFormat(surface.format());
-        const bool createContextSuccess = context.create();
+        createContextSuccess = context.create();
         Q_ASSERT(createContextSuccess);
     }
     qDebug() << "Is OpenGL ES?" << context.isOpenGLES();//////////////////////////////
@@ -304,7 +304,8 @@ QString RenderManager::headerShaderPart()
     src += qApp->renderManager.glslVersionString();
     src += fileToString(":/shaders/header.glsl");
     src += fileToString(":/shaders/util.glsl");
-    for (auto key : colourSpaceInfo.keys()) {
+    const auto keys = colourSpaceInfo.keys();
+    for (auto key : keys) {
         QString str =
 R"(
 vec3 $COLOURSPACE_to_$COLOURSPACE(vec3 rgb) {

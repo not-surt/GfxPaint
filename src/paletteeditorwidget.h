@@ -26,7 +26,7 @@ public slots:
     void setPalette(const GfxPaint::Buffer *const palette);
 
 signals:
-    void colourPicked(const Colour &colour);
+    void colourPicked(const GfxPaint::Colour &colour);
 
 protected:
     void reorder();
