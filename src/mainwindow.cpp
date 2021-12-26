@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
+#include <QtGlobal>
 #include <QMdiSubWindow>
 #include <QMessageBox>
 #include <QCloseEvent>
@@ -9,7 +10,7 @@
 #include <QProgressDialog>
 #include <QFileDialog>
 #include <QProgressBar>
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) && (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     #include <QtPlatformHeaders\QWindowsWindowFunctions>
 #endif
 
@@ -28,7 +29,7 @@ MainWindow::MainWindow(QWidget *const parent, const Qt::WindowFlags flags)
     pixelRatiosGroup(this), toolGroup(this), menuToolSpace(nullptr), toolSpaceGroup(this), blendGroup(this), composeGroup(this), tabPositionsGroup(this),
     activeDocument(nullptr), activeEditor(nullptr), activeEditorConnections(), editorSubWindows()
 {
-#ifdef Q_OS_WIN
+#if defined(Q_OS_WIN) && (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
     winId(); // Allocate window handle
     QWindowsWindowFunctions::setHasBorderInFullScreen(windowHandle(), true);
 #endif

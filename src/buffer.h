@@ -5,9 +5,9 @@
 #include <QSharedData>
 #include <QSharedDataPointer>
 #include <QDebug>
-#include <frozen/map.h>
-#include <frozen/unordered_map.h>
-#include <frozen/string.h>
+//#include <frozen/map.h>
+//#include <frozen/unordered_map.h>
+//#include <frozen/string.h>
 
 #include "opengl.h"
 
