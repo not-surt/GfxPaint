@@ -639,14 +639,14 @@ void MainWindow::activateEditor(Editor *const editor)
             activeEditor->setSelectedToolId(actionToToolId.at(action));
         });
         activeEditorConnections << QObject::connect(activeEditor, &Editor::toolSpaceChanged, this, [this](const EditingContext::ToolSpace toolSpace){
-            toolSpaceGroup.actions()[static_cast<int>(toolSpace)]->setChecked(true);
+            toolSpaceGroup.actions().at(static_cast<int>(toolSpace))->setChecked(true);
         });
         activeEditorConnections << QObject::connect(&toolSpaceGroup, &QActionGroup::triggered, this, [this](QAction *const action){
             activeEditor->editingContext().setSpace(static_cast<EditingContext::ToolSpace>(action->data().toInt()));
         });
         const int space = static_cast<int>(activeEditor->editingContext().space());
         if (space >= 0 && space < toolSpaceGroup.actions().size()) {
-            toolSpaceGroup.actions()[space]->setChecked(true);
+            toolSpaceGroup.actions().at(space)->setChecked(true);
         }
 
         blendGroup.setExclusive(true);
@@ -661,7 +661,7 @@ void MainWindow::activateEditor(Editor *const editor)
         }
         activeEditorConnections << QObject::connect(activeEditor, &Editor::blendModeChanged, this, [this](const int blendMode){
             Q_ASSERT(blendMode >= 0 && blendMode < blendGroup.actions().size());
-            blendGroup.actions()[blendMode]->setChecked(true);
+            blendGroup.actions().at(blendMode)->setChecked(true);
         });
         activeEditorConnections << QObject::connect(&blendGroup, &QActionGroup::triggered, this, [this](QAction *const action){
             activeEditor->setBlendMode(action->data().toInt());
@@ -679,7 +679,7 @@ void MainWindow::activateEditor(Editor *const editor)
         }
         activeEditorConnections << QObject::connect(activeEditor, &Editor::composeModeChanged, this, [this](const int composeMode){
             Q_ASSERT(composeMode >= 0 && composeMode < blendGroup.actions().size());
-            composeGroup.actions()[composeMode]->setChecked(true);
+            composeGroup.actions().at(composeMode)->setChecked(true);
         });
         activeEditorConnections << QObject::connect(&composeGroup, &QActionGroup::triggered, this, [this](QAction *const action){
             activeEditor->setComposeMode(action->data().toInt());

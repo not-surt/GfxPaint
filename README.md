@@ -3,7 +3,7 @@ GfxPaint ![Icon](./GfxPaint.png "GfxPaint's icon")
 
 Description
 -----------
-Qt + OpenGL + scenegraph based indexed image editor with a focus on pixelart.
+Qt + OpenGL + scenegraph based indexed image editor with a focus on indexed-colour pixelart.
 
 >   **WARNING: nowhere near usable state!**
 >
@@ -29,10 +29,10 @@ No unbundled external dependencies.
 
 Philosophy
 ----------
--   Multi-sindow, multi-document, multi-editor.
+-   Multi-window, multi-document, multi-editor.
 -   All image editing performed on GPU.
 -   Full blending functionality in indexed images using real-time quantisation.
--   Modeless tool invocation as well as regular modal tool selection.
+-   Modeless tool invocation as well as traditional modal tool selection.
     eg. hold P key to draw with single pixel brush and release to return to previous tool.
     eg. hold S and R keys when you want to draw a single grid aligned rectangle.
 -   Mixed image format scenes. Can have different image formats for each buffer. Can mix and match indexed and truecolour buffers.

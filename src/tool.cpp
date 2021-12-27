@@ -23,7 +23,7 @@ void StrokeTool::update(EditingContext &context, const Mat4 &viewTransform) {
             Stroke dabStroke;
             strokeOffset = Editor::strokeSegmentDabs(prevWorldPoint, worldPoint, brush.dab.size, brush.stroke.absoluteSpacing, brush.stroke.proportionalSpacing, strokeOffset, dabStroke);
             // TODO: instancing?
-            for (auto point : dabStroke.points) {
+            for (const auto &point : dabStroke.points) {
                 const Vec2 snappedPoint = Editor::pixelSnap(context, point.pos);
                 Brush::Dab dab(brush.dab);
                 dab.size *= point.pressure;
@@ -125,8 +125,9 @@ void EllipseTool::end(EditingContext &context, const Mat4 &viewTransform)
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
+            Mat4 toolSpaceTransform = Editor::toolSpace(context, viewTransform, *bufferNode, context.space());
             EllipseProgram *const program = new EllipseProgram(primitiveMode == PrimitiveTool::Mode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode(), context.composeMode());
-            program->render({context.toolStroke.points.front().pos, context.toolStroke.points.back().pos}, context.colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
+            program->render({context.toolStroke.points.front().pos, context.toolStroke.points.back().pos}, context.colour(), toolSpaceTransform, bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
             delete program;
         }
     }

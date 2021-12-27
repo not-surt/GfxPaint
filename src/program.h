@@ -15,7 +15,7 @@
 
 namespace GfxPaint {
 
-const std::list<QOpenGLShader::ShaderTypeBit> programStages = {
+const std::array programStages{
     QOpenGLShader::Geometry, QOpenGLShader::Vertex, QOpenGLShader::Fragment, QOpenGLShader::Compute,
 };
 
@@ -57,7 +57,7 @@ struct SimpleProgram {
         QOpenGLShaderProgram *program = new QOpenGLShaderProgram();
         QMap<QOpenGLShader::ShaderTypeBit, QString> definitions, main;
         SimpleProgramState state;
-        for (auto stage : programStages) {
+        for (const auto stage : programStages) {
             for (const auto component : components) {
                 if (component->stages() & stage) {
                     definitions[stage] += component->definitions(state);
@@ -166,7 +166,7 @@ struct ComponentProgram {
     QOpenGLShaderProgram *createProgram() const {
         QOpenGLShaderProgram *const program = new QOpenGLShaderProgram();
 
-        for (const auto &stage : programStages) {
+        for (const auto stage : programStages) {
             switch (stage) {
             case  QOpenGLShader::Geometry: {
             } break;
@@ -370,46 +370,47 @@ protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 };
 
-class RectProgram : public RenderProgram {
+class BoundedPrimitiveProgram : public RenderProgram {
 public:
-    RectProgram(const bool filled, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
-        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
+    using RenderProgram::RenderProgram;
+
+    void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &toolSpaceTransform, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+};
+
+class BoundedDistancePrimitiveProgram : public BoundedPrimitiveProgram {
+public:
+    BoundedDistancePrimitiveProgram(const bool filled, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        BoundedPrimitiveProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
         filled(filled)
     {
         updateKey(typeid(this), {filled});
     }
-    RectProgram(const RectProgram &other) :
-        RenderProgram(other),
+    BoundedDistancePrimitiveProgram(const BoundedDistancePrimitiveProgram &other) :
+        BoundedPrimitiveProgram(other),
         filled(other.filled)
     {}
-
-    void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &geometrySpace, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     const bool filled;
 
+    virtual QString generateDistanceSource() const = 0;
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 };
 
-class EllipseProgram : public RenderProgram {
+class RectProgram : public BoundedDistancePrimitiveProgram {
 public:
-    EllipseProgram(const bool filled, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
-        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
-        filled(filled)
-    {
-        updateKey(typeid(this), {filled});
-    }
-    EllipseProgram(const EllipseProgram &other) :
-        RenderProgram(other),
-        filled(other.filled)
-    {}
-
-    void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    using BoundedDistancePrimitiveProgram::BoundedDistancePrimitiveProgram;
 
 protected:
-    const bool filled;
+    virtual QString generateDistanceSource() const override;
+};
 
-    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+class EllipseProgram : public BoundedDistancePrimitiveProgram {
+public:
+    using BoundedDistancePrimitiveProgram::BoundedDistancePrimitiveProgram;
+
+protected:
+    virtual QString generateDistanceSource() const override;
 };
 
 class ContourStencilProgram : public RenderProgram {

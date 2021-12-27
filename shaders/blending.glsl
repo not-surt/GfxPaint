@@ -1,3 +1,32 @@
+// Index blend functions
+uint blendIndexNormal(const uint dest, const uint src) {
+    return src;
+}
+uint blendIndexAdd(const uint dest, const uint src) {
+    return dest + src;
+}
+uint blendIndexSuptract(const uint dest, const uint src) {
+    return dest - src;
+}
+uint blendIndexMultiply(const uint dest, const uint src) {
+    return dest * src;
+}
+uint blendIndexDivide(const uint dest, const uint src) {
+    return dest / src;
+}
+uint blendIndexModulus(const uint dest, const uint src) {
+    return dest % src;
+}
+uint blendIndexMin(const uint dest, const uint src) {
+    return min(dest, src);
+}
+uint blendIndexMax(const uint dest, const uint src) {
+    return max(dest, src);
+}
+uint blendIndexDifference(const uint dest, const uint src) {
+    return uint(abs(int(dest) - int(src)));
+}
+
 // Scalar blend functions
 
 float blendNormalScalar(const float dest, const float src) {

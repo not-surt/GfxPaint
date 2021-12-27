@@ -287,6 +287,9 @@ precision highp int;
 precision highp sampler2D;
 precision highp isampler2D;
 precision highp usampler2D;
+precision highp sampler3D;
+precision highp isampler3D;
+precision highp usampler3D;
 precision highp image2D;
 precision highp iimage2D;
 precision highp uimage2D;
@@ -390,9 +393,9 @@ const float dark = base - offset;
 vec4 lightColour = vec4(vec3(light), 1.0);
 vec4 darkColour = vec4(vec3(dark), 1.0);
 
-vec4 $NAME(const vec2 pos) {
+Colour $NAME(const vec2 pos) {
     bool alternate = !((mod(pos.x, 2.0) >= 1.0) == (mod(pos.y, 2.0) >= 1.0));
-    return alternate ? lightColour : darkColour;
+    return Colour(alternate ? lightColour : darkColour, INDEX_INVALID);
 }
 )";
     stringMultiReplace(src, {
