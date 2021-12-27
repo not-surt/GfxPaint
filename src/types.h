@@ -38,7 +38,7 @@ typedef GLuint Index;
 
 struct Colour {
     alignas(16) Rgba rgba{RGBA_INVALID};
-    alignas(4) GLuint index{INDEX_INVALID};
+    alignas(4) Index index{INDEX_INVALID};
 
 //    inline bool operator==(const Colour &rhs) const = default;
 //    inline bool operator!=(const Colour &rhs) const = default;

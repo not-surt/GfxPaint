@@ -22,12 +22,16 @@ const std::array programStages{
 struct SimpleProgramState {
     GLint attributeLocation = 0;
     GLint uniformLocation = 0;
+    GLint bindingLocation = 0;
 
     GLint nextAttributeLocation() {
         return attributeLocation++;
     }
     GLint nextUniformLocation() {
         return uniformLocation++;
+    }
+    GLint nextBindingLocation() {
+        return bindingLocation++;
     }
 };
 

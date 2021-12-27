@@ -364,17 +364,15 @@ QString RenderManager::vertexMainShaderPart()
     QString src;
     src +=
 R"(
-uniform mat4 matrix;
-
-uniform ivec2 srcRectPos;
-uniform ivec2 srcRectSize;
+uniform mat4 transform;
+uniform mat4 object;
 
 out layout(location = 0) vec2 pos;
 
 void main(void) {
     vec2 vertexPos = vertices[gl_VertexID];
-    pos = vec2(srcRectPos) + vertexPos * vec2(srcRectSize);
-    gl_Position = matrix * vec4(vertexPos, 0.0, 1.0);
+    pos = (object * vec4(vertexPos, 0.0, 1.0)).xy;
+    gl_Position = (transform * object) * vec4(vertexPos, 0.0, 1.0);
 }
 )";
     return src;
@@ -628,7 +626,23 @@ Colour $NAME(const vec2 pos) {
     return src;
 }
 
-QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat, const int blendMode, const int composeMode)
+QString RenderManager::standardInputFragmentShaderPart(const QString &name)
+{
+    QString src;
+    src += R"(
+in layout(location = 0) vec2 pos;
+
+Colour src(void) {
+    return $NAME(pos);
+}
+)";
+    stringMultiReplace(src, {
+        {"$NAME", name},
+    });
+    return src;
+}
+
+QString RenderManager::standardFragmentMainShaderPart(const Buffer::Format format, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat, const int blendMode, const int composeMode)
 {
     QString src;
     src += fileToString(":/shaders/compositing.glsl");
@@ -636,8 +650,6 @@ QString RenderManager::fragmentMainShaderPart(const Buffer::Format format, const
     if (indexed && paletteFormat.isValid()) src += fileToString(":/shaders/palette.glsl");
     src +=
 R"(
-in layout(location = 0) vec2 pos;
-
 uniform Colour srcTransparent;
 //uniform Colour destTransparent;
 
@@ -653,7 +665,7 @@ vec4 compose(const vec4 dest, const vec4 src) {
 
 void main(void) {
     Colour destColour = dest(gl_FragCoord.xy);
-    Colour srcColour = src(pos);
+    Colour srcColour = src();
     vec4 blended = blend(destColour.rgba, srcColour.rgba);
     vec4 composed = compose(destColour.rgba, blended);
 )";
@@ -684,17 +696,15 @@ R"(
     return src;
 }
 
-QString RenderManager::widgetOutputShaderPart()
+QString RenderManager::widgetFragmentMainShaderPart()
 {
     QString src;
     src +=
 R"(
-in layout(location = 0) vec2 pos;
-
 out layout(location = 0) vec4 fragment;
 
 void main(void) {
-    fragment = premultiply(src(pos).rgba);
+    fragment = premultiply(src().rgba);
 }
 )";
     return src;
