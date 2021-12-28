@@ -36,7 +36,7 @@ typedef GLuint Index;
 #define RGBA_INVALID Rgba{FLOAT_INF, FLOAT_INF, FLOAT_INF, FLOAT_INF}
 #define INDEX_INVALID std::numeric_limits<GLuint>::max()
 
-struct Colour {
+struct alignas(16) Colour {
     alignas(16) Rgba rgba{RGBA_INVALID};
     alignas(4) Index index{INDEX_INVALID};
 

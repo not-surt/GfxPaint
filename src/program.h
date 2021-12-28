@@ -9,6 +9,7 @@
 
 #include "types.h"
 #include "buffer.h"
+#include "stroke.h"
 #include "brush.h"
 #include "model.h"
 #include "utils.h"
@@ -450,10 +451,10 @@ protected:
 class LineProgram : public RenderProgram {
 public:
     struct Point {
-        Vec2 pos alignas(8);
-        GLfloat width alignas(4);
-        GLfloat lineAbsPos alignas(4);
-        Colour colour alignas(16);
+        alignas(8) Vec2 pos;
+        alignas(4) GLfloat width;
+        alignas(4) GLfloat lineAbsPos;
+        alignas(16) Colour colour;
     };
 
     LineProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
@@ -505,6 +506,35 @@ protected:
     const Pattern pattern;
     const Buffer::Format destFormat;
     const int blendMode;
+};
+
+class PixelLineProgram : public RenderProgram {
+public:
+    PixelLineProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
+        storageBuffer(0)
+    {
+        updateKey(typeid(this), {});
+
+        glGenBuffers(1, &storageBuffer);
+    }
+    PixelLineProgram(const PixelLineProgram &other) :
+        RenderProgram(other),
+        storageBuffer(0)
+    {
+        glGenBuffers(1, &storageBuffer);
+    }
+
+    virtual ~PixelLineProgram() override {
+        glDeleteBuffers(1, &storageBuffer);
+    }
+
+    void render(const std::vector<Stroke::Point> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+
+protected:
+    GLuint storageBuffer;
+
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 };
 
 class DabProgram : public RenderProgram {

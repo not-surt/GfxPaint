@@ -31,7 +31,7 @@ void Editor::init()
 Editor::Editor(Scene &scene, QWidget *parent) :
     RenderedWidget(parent),
     scene(scene), model(*qApp->documentManager.documentModel(&scene)),
-    strokeTool(), rectTool(), ellipseTool(), contourTool(), pickTool(), transformTargetOverrideTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
+    pixelTool(), strokeTool(), rectTool(), ellipseTool(), contourTool(), pickTool(), transformTargetOverrideTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
     m_editingContext(scene),
     cameraTransform(),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
@@ -45,7 +45,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
 Editor::Editor(const Editor &other) :
     RenderedWidget(other.parentWidget()),
     scene(other.scene), model(other.model),
-    strokeTool(other.strokeTool), rectTool(other.rectTool), ellipseTool(other.ellipseTool), contourTool(other.contourTool), pickTool(other.pickTool), transformTargetOverrideTool(other.transformTargetOverrideTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
+    pixelTool(other.pixelTool), strokeTool(other.strokeTool), rectTool(other.rectTool), ellipseTool(other.ellipseTool), contourTool(other.contourTool), pickTool(other.pickTool), transformTargetOverrideTool(other.transformTargetOverrideTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
@@ -200,6 +200,7 @@ bool Editor::event(QEvent *const event)
                     m_editingContext.toolStroke.add(point);
                     m_editingContext.toolMode = info.operationMode;
                     info.tool->end(m_editingContext, transform());
+                    qDebug() << "END!";
                     if (info.tool->updatesContext()) {
                         activeEditingContextUpdated();
                     }
@@ -224,6 +225,7 @@ bool Editor::event(QEvent *const event)
                         m_editingContext.toolStroke.add(point);
                         m_editingContext.toolMode = info.operationMode;
                         info.tool->begin(m_editingContext, transform());
+                        qDebug() << "BEGIN!";
                         if (info.tool->updatesContext()) {
                             activeEditingContextUpdated();
                         }
@@ -390,9 +392,9 @@ void Editor::render()
         const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode && bufferNodeContext->workBuffer) {
-            bufferNodeContext->workBuffer->copy(bufferNode->buffer);
             // Draw on-canvas tool preview
-            if (cursorOver) {
+            if (cursorOver && onCanvasPreviewTool) {
+                bufferNodeContext->workBuffer->copy(bufferNode->buffer);
                 ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
                 bufferNode->buffer.bindFramebuffer();
                 glDisable(GL_DEPTH_TEST);
@@ -401,7 +403,7 @@ void Editor::render()
                 const Vec2 point = cameraTransform.inverted() * mouseTransform * cursorPos;
                 const Vec2 snappedPoint = Editor::pixelSnap(m_editingContext, point);
                 m_editingContext.toolMode = onCanvasPreviewMode;
-                if (onCanvasPreviewTool) onCanvasPreviewTool->onCanvasPreview(m_editingContext, transform(), onCanvasPreviewIsActive);
+                onCanvasPreviewTool->onCanvasPreview(m_editingContext, transform(), onCanvasPreviewIsActive);
             }
         }
     }
@@ -410,30 +412,40 @@ void Editor::render()
     widgetBuffer->bindFramebuffer();
     scene.render(widgetBuffer, false, nullptr, viewportTransform * cameraTransform, &m_editingContext.states());
 
-    // Undraw on-canvas tool preview
     for (Node *node : m_editingContext.selectedNodes()) {
         const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode && bufferNodeContext->workBuffer) {
-            if (cursorOver) {
+            // Undraw on-canvas tool preview
+            if (cursorOver && onCanvasPreviewTool) {
 //                bufferNodeContext->workBuffer->clear();
                 bufferNode->buffer.copy(*bufferNodeContext->workBuffer);
             }
         }
     }
 
-    LineProgram *lineProgram = new LineProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    std::vector<LineProgram::Point> points{
-        {{16.0, 256.0f}, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
-        {{16.0, 16.0f}, 0.0f, 0.0f, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
-        {{256.0, 16.0f}, 16.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
-        {{256.0, 256.0f}, 32.0f, 0.0f, {{0.0f, 1.0f, 1.0f, 1.0f}, INDEX_INVALID}},
-        {{16.0, 256.0f}, 16.0f, 0.0f, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
-        {{128.0, 128.0f}, 8.0f, 0.0f, {{0.0f, 0.0f, 0.0f, 0.5f}, INDEX_INVALID}},
-        {{16.0, 16.0f}, 0.0f, 0.0f, {{0.0f, 0.0f, 0.0f, 0.0f}, INDEX_INVALID}},
-        {{16.0, 16.0f}, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+//    LineProgram *lineProgram = new LineProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+//    std::vector<LineProgram::Point> points{
+//        {{16.0, 256.0f}, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+//        {{16.0, 16.0f}, 0.0f, 0.0f, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+//        {{256.0, 16.0f}, 16.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+//        {{256.0, 256.0f}, 32.0f, 0.0f, {{0.0f, 1.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+//        {{16.0, 256.0f}, 16.0f, 0.0f, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+//        {{128.0, 128.0f}, 8.0f, 0.0f, {{0.0f, 0.0f, 0.0f, 0.5f}, INDEX_INVALID}},
+//        {{16.0, 16.0f}, 0.0f, 0.0f, {{0.0f, 0.0f, 0.0f, 0.0f}, INDEX_INVALID}},
+//        {{16.0, 16.0f}, 0.0f, 0.0f, {{0.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}},
+//    };
+//    lineProgram->render(points, {{1.0f, 0.0f, 0.0f, 1.0f}, INDEX_INVALID}, viewportTransform * cameraTransform, widgetBuffer, nullptr);
+
+    PixelLineProgram *pixelLineProgram = new PixelLineProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+    std::vector<Stroke::Point> pixelPoints{
+        {{16.0, 16.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 1.0f},
+        {{160.0, 16.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
+        {{160.0, 160.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
+        {{16.0, 160.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
+        {{16.0, 16.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 1.0f},
     };
-    lineProgram->render(points, {{1.0f, 0.0f, 0.0f, 1.0f}, INDEX_INVALID}, viewportTransform * cameraTransform, widgetBuffer, nullptr);
+    pixelLineProgram->render(pixelPoints, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}, viewportTransform * cameraTransform, widgetBuffer, nullptr);
 
     Tool *onTopPreviewTool = nullptr;
     bool onTopPreviewIsActive = false;

@@ -72,8 +72,6 @@ class Editor : public RenderedWidget
 {
     Q_OBJECT
 
-    friend class EditorInputState;
-
 public:
     struct InputState {
         QSet<Qt::Key> keys;
@@ -162,6 +160,7 @@ public:
     Scene &scene;
     SceneModel &model;
 
+    PixelTool pixelTool;
     StrokeTool strokeTool;
     RectTool rectTool;
     EllipseTool ellipseTool;
@@ -175,6 +174,7 @@ public:
 
     enum class ToolId {
         Invalid = -1,
+        Pixel,
         Stroke,
         RectLined,
         RectFilled,
@@ -208,6 +208,7 @@ public:
     };
     const std::map<ToolId, ToolInfo> toolInfo{
         // Selectable tools
+        {ToolId::Pixel, {"Pixel", &pixelTool, 0}},
         {ToolId::Stroke, {"Stroke", &strokeTool, 0}},
         {ToolId::RectLined, {"Rectangle", &rectTool,  static_cast<int>(PrimitiveTool::Mode::Lined)}},
         {ToolId::RectFilled, {"Filled Rectangle", &rectTool, static_cast<int>(PrimitiveTool::Mode::Filled)}},
@@ -230,13 +231,13 @@ public:
         {ToolId::SnappingOverrideOff, {"Snapping Override Off", nullptr, 0}},
     };
     const std::vector<std::pair<std::vector<ToolId>, ToolId>> toolMenuGroups{
-        {{ToolId::Stroke}, ToolId::Stroke},
+        {{ToolId::Pixel, ToolId::Stroke}, ToolId::Pixel},
         {{ToolId::RectLined, ToolId::RectFilled}, ToolId::RectLined},
         {{ToolId::EllipseLined, ToolId::EllipseFilled}, ToolId::EllipseLined},
         {{ToolId::Contour}, ToolId::Contour},
         {{ToolId::PickColourNode, ToolId::PickColourScene}, ToolId::PickColourNode},
     };
-    const ToolId defaultTool = ToolId::Stroke;
+    const ToolId defaultTool = ToolId::Pixel;
     const std::map<InputState, ToolId> toolSelectors{
         {{{Qt::Key_Control}, {}, {}}, ToolId::PickColourNode},
         {{{Qt::Key_R}, {}, {}}, ToolId::RectLined},

@@ -28,6 +28,13 @@ public:
     virtual bool isUndoable(EditingContext &context) const { return true; }
 };
 
+class PixelTool : public Tool {
+public:
+    using Tool::Tool;
+    virtual void end(EditingContext &context, const Mat4 &viewTransform) override;
+    virtual void onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
+};
+
 class StrokeTool : public Tool {
 public:
     explicit StrokeTool() :

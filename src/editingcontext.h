@@ -83,10 +83,42 @@ public:
     QHash<Node *, Traversal::State> &states() { return m_states; }
     QItemSelectionModel &selectionModel() { return m_selectionModel; }
     QList<Node *> &selectedNodes() { return m_selectedNodes; }
+    void perNode(void (*func)(Node *node, const Traversal::State &state)) {
+        for (Node *node : selectedNodes()) {
+            const Traversal::State &state = states().value(node);
+            func(node, state);
+        }
+    }
+    void perBufferNode(void (*func)(const BufferNode *node, const Traversal::State &state, const EditingContext::BufferNodeContext *bufferNodeContext)) {
+        for (Node *node : selectedNodes()) {
+            BufferNode *bufferNode = dynamic_cast<BufferNode *>(node);
+            if (bufferNode) {
+                const Traversal::State &state = states().value(node);
+                const EditingContext::BufferNodeContext *const bufferNodeContext = this->bufferNodeContext(node);
+                func(bufferNode, state, bufferNodeContext);
+            }
+        }
+    }
 
     Stroke toolStroke;
     int toolMode;
     TransformTarget transformTarget;
+
+    struct alignas(16) ShaderStruct {
+        alignas(16) Colour colour;
+    };
+    QString getShaderStructString() {
+        return R"(
+struct EditingContext {
+    Colour colour;
+}
+)";
+    }
+    ShaderStruct getShaderStruct() {
+        return ShaderStruct{
+            m_colour,
+        };
+    }
 
 private:
     Scene &scene;

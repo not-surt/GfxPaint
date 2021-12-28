@@ -683,6 +683,82 @@ void LineProgram::render(const std::vector<LineProgram::Point> &points, const Co
     glDrawArraysInstanced(GL_LINES_ADJACENCY, 0, 4, points.size() - 3);
 }
 
+QString PixelLineProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+{
+    const QString common = R"(
+struct Point {
+    vec2 pos;
+    float pressure;
+    vec4 quaternion;
+    float age;
+    float distance;
+};
+)";
+
+    QString src;
+
+    switch(stage) {
+    case QOpenGLShader::Vertex: {
+        src += RenderManager::headerShaderPart();
+        src += common;
+        src += R"(
+uniform mat4 matrix;
+
+layout(std430, binding = 0) buffer StorageData
+{
+    Point points[];
+} storageData;
+
+layout(location = 0) out Point outputs;
+
+void main(void)
+{
+    Point point = storageData.points[gl_InstanceID + gl_VertexID];
+    outputs = point;
+    gl_Position = matrix * vec4(point.pos, 0.0, 1.0);
+}
+)";
+    }break;
+    case QOpenGLShader::Fragment: {
+        src += RenderManager::headerShaderPart();
+        src += common;
+        src += R"(
+uniform Colour colour;
+
+layout(location = 0) in Point inputs;
+
+Colour src(void) {
+    return colour;
+}
+)";
+        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
+        src += RenderManager::standardFragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
+    }break;
+    default: break;
+    }
+
+    return src;
+}
+
+void PixelLineProgram::render(const std::vector<Stroke::Point> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette)
+{
+    Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
+
+    QOpenGLShaderProgram &program = this->program();
+    program.bind();
+
+    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.constData());
+    glUniform4fv(program.uniformLocation("colour.rgba"), 1, colour.rgba.data());
+    glUniform1ui(program.uniformLocation("colour.index"), colour.index);
+
+    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
+
+    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(Stroke::Point), points.data(), GL_STATIC_DRAW);
+
+    glDrawArraysInstanced(GL_LINES, 0, 2, points.size() - 1);
+}
+
 QString DabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
     QString src;

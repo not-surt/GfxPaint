@@ -4,14 +4,98 @@
 
 namespace GfxPaint {
 
+void PixelTool::end(EditingContext &context, const Mat4 &viewTransform)
+{
+    const std::vector<Stroke::Point> &strokePoints = context.toolStroke.points;
+    const std::vector<Stroke::Point> *points;
+    std::vector<Stroke::Point> temp;
+    if (strokePoints.size() == 1) {
+        temp.push_back(strokePoints.back());
+        temp.push_back(strokePoints.back());
+        temp[1].pos += Vec2(1.0, 1.0);
+        points = &temp;
+    }
+    else {
+        points = &strokePoints;
+    }
+    for (Node *node : context.selectedNodes()) {
+        const Traversal::State &state = context.states().value(node);
+        BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+        const EditingContext::BufferNodeContext *const bufferNodeContext = context.bufferNodeContext(node);
+        if (bufferNode) {
+            ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+            bufferNode->buffer.bindFramebuffer();
+
+            PixelLineProgram *pixelLineProgram = new PixelLineProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode(), context.composeMode());
+            pixelLineProgram->render(*points, context.colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
+        }
+    }
+}
+
+void PixelTool::onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive)
+{
+    qDebug() << context.toolStroke.points.size();
+    if (isActive) {
+        end(context, viewTransform);
+    }
+    else {
+        begin(context, viewTransform);
+        end(context, viewTransform);
+    }
+}
+
 void StrokeTool::begin(EditingContext &context, const Mat4 &viewTransform) {
     strokeOffset = 0.0;
 }
 
 void StrokeTool::update(EditingContext &context, const Mat4 &viewTransform) {
-    const int lastPointIndex = context.toolStroke.points.size() - 1;
-    const Stroke::Point &prevWorldPoint = (context.toolStroke.points.count() == 1 ? context.toolStroke.points[lastPointIndex] : context.toolStroke.points[lastPointIndex - 1]);
-    const Stroke::Point &worldPoint = context.toolStroke.points[lastPointIndex];
+//    const int lastPointIndex = context.toolStroke.points.size() - 1;
+//    const Stroke::Point &prevWorldPoint = (context.toolStroke.points.count() == 1 ? context.toolStroke.points[lastPointIndex] : context.toolStroke.points[lastPointIndex - 1]);
+//    const Stroke::Point &worldPoint = context.toolStroke.points[lastPointIndex];
+//    for (Node *node : context.selectedNodes()) {
+//        const Traversal::State &state = context.states().value(node);
+//        BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+//        const EditingContext::BufferNodeContext *const bufferNodeContext = context.bufferNodeContext(node);
+//        if (bufferNode) {
+//            ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+//            bufferNode->buffer.bindFramebuffer();
+//            const Brush &brush = context.brush();
+//            Stroke dabStroke;
+//            strokeOffset = Editor::strokeSegmentDabs(prevWorldPoint, worldPoint, brush.dab.size, brush.stroke.absoluteSpacing, brush.stroke.proportionalSpacing, strokeOffset, dabStroke);
+//            qDebug() << typeid(*this).name();
+//            // TODO: instancing?
+//            for (const auto &point : dabStroke.points) {
+//                const Vec2 snappedPoint = Editor::pixelSnap(context, point.pos);
+//                Brush::Dab dab(brush.dab);
+//                dab.size *= point.pressure;
+//                dab.angle += point.quaternion.toEulerAngles().z();
+//                Editor::drawDab(context, viewTransform, dab, context.colour(), *bufferNode, snappedPoint);
+//            }
+
+//            // Draw to stroke buffer
+////            bufferNodeContext->strokeBuffer->bindFramebuffer();
+////            for (auto pos : points) {
+////                const Vector2D snappedPoint = Editor::pixelSnap(context, pos);
+////                Editor::drawDab(context, viewTransform, dab, context.colour(), *bufferNode, snappedPoint);
+////            }
+//        }
+//    }
+}
+
+void StrokeTool::end(EditingContext &context, const Mat4 &viewTransform) {
+//    if (context.toolStroke.points.count() == 1) update(context, viewTransform);
+
+//    // Clear stroke buffer
+//    for (Node *node : context.selectedNodes()) {
+//        const Traversal::State &state = context.states().value(node);
+//        BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+//        const EditingContext::BufferNodeContext *const bufferNodeContext = context.bufferNodeContext(node);
+//        if (bufferNode) {
+////            bufferNodeContext->strokeBuffer->clear();
+//        }
+//    }
+    const auto &strokePoints = context.toolStroke.points;
+    const QRectF lastSegmentBounds;
     for (Node *node : context.selectedNodes()) {
         const Traversal::State &state = context.states().value(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
@@ -20,49 +104,47 @@ void StrokeTool::update(EditingContext &context, const Mat4 &viewTransform) {
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
             const Brush &brush = context.brush();
-            Stroke dabStroke;
-            strokeOffset = Editor::strokeSegmentDabs(prevWorldPoint, worldPoint, brush.dab.size, brush.stroke.absoluteSpacing, brush.stroke.proportionalSpacing, strokeOffset, dabStroke);
+            qDebug() << typeid(*this).name();
             // TODO: instancing?
-            for (const auto &point : dabStroke.points) {
-                const Vec2 snappedPoint = Editor::pixelSnap(context, point.pos);
-                Brush::Dab dab(brush.dab);
-                dab.size *= point.pressure;
-                dab.angle += point.quaternion.toEulerAngles().z();
-                Editor::drawDab(context, viewTransform, dab, context.colour(), *bufferNode, snappedPoint);
+            float strokeOffset = 0.0;
+            for (std::size_t i = 1; i < strokePoints.size(); ++i) {
+                const QRectF segmentBounds;
+                if (segmentBounds.intersects(lastSegmentBounds)) {
+
+                }
+                Stroke dabStroke;
+                strokeOffset = Editor::strokeSegmentDabs(strokePoints[i - 1], strokePoints[i], brush.dab.size, brush.stroke.absoluteSpacing, brush.stroke.proportionalSpacing, strokeOffset, dabStroke);
+                for (const auto &dabPoint : dabStroke.points) {
+                    const Vec2 snappedPoint = Editor::pixelSnap(context, dabPoint.pos);
+                    Brush::Dab dab(brush.dab);
+                    dab.size *= dabPoint.pressure;
+                    dab.angle += dabPoint.quaternion.toEulerAngles().z();
+                    Editor::drawDab(context, viewTransform, dab, context.colour(), *bufferNode, snappedPoint);
+                }
             }
-
-            // Draw to stroke buffer
-//            bufferNodeContext->strokeBuffer->bindFramebuffer();
-//            for (auto pos : points) {
-//                const Vector2D snappedPoint = Editor::pixelSnap(context, pos);
-//                Editor::drawDab(context, viewTransform, dab, context.colour(), *bufferNode, snappedPoint);
-//            }
-        }
-    }
-}
-
-void StrokeTool::end(EditingContext &context, const Mat4 &viewTransform) {
-    if (context.toolStroke.points.count() == 1) update(context, viewTransform);
-
-    // Clear stroke buffer
-    for (Node *node : context.selectedNodes()) {
-        const Traversal::State &state = context.states().value(node);
-        BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        const EditingContext::BufferNodeContext *const bufferNodeContext = context.bufferNodeContext(node);
-        if (bufferNode) {
-//            bufferNodeContext->strokeBuffer->clear();
         }
     }
 }
 
 void StrokeTool::onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive)
 {
-    auto saveOffset = strokeOffset;
+//    auto saveOffset = strokeOffset;
 
-    begin(context, viewTransform);
-    end(context, viewTransform);
+//    begin(context, viewTransform);
+//    end(context, viewTransform);
 
-    strokeOffset = saveOffset;
+//    strokeOffset = saveOffset;
+    if (isActive) {
+        end(context, viewTransform);
+    }
+    else {
+        auto saveOffset = strokeOffset;
+
+        begin(context, viewTransform);
+        end(context, viewTransform);
+
+        strokeOffset = saveOffset;
+    }
 }
 
 void RectTool::end(EditingContext &context, const Mat4 &viewTransform)
@@ -234,7 +316,7 @@ void ColourPickTool::update(EditingContext &context, const Mat4 &viewTransform)
         EditingContext::BufferNodeContext *const bufferNodeContext = context.bufferNodeContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
-            const Vec2 bufferPoint = state.transform.inverted() * context.toolStroke.points.last().pos;
+            const Vec2 bufferPoint = state.transform.inverted() * context.toolStroke.points.back().pos;
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             context.setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, bufferPoint));
         }
@@ -259,13 +341,13 @@ void TransformTargetOverrideTool::end(EditingContext &context, const Mat4 &viewT
 
 void PanTool::begin(EditingContext &context, const Mat4 &viewTransform)
 {
-    const Vec2 viewportPos = viewTransform * context.toolStroke.points.last().pos;
+    const Vec2 viewportPos = viewTransform * context.toolStroke.points.back().pos;
     oldViewportPos = viewportPos;
 }
 
 void PanTool::update(EditingContext &context, const Mat4 &viewTransform)
 {
-    const Vec2 viewportPos = viewTransform * context.toolStroke.points.last().pos;
+    const Vec2 viewportPos = viewTransform * context.toolStroke.points.back().pos;
     const Vec2 translation = viewportPos - oldViewportPos;
     Mat4 transform;
     transform.translate(translation);
@@ -291,13 +373,13 @@ void PanTool::update(EditingContext &context, const Mat4 &viewTransform)
 
 void RotoZoomTool::begin(EditingContext &context, const Mat4 &viewTransform)
 {
-    const Vec2 viewportPos = viewTransform * context.toolStroke.points.last().pos;
+    const Vec2 viewportPos = viewTransform * context.toolStroke.points.back().pos;
     oldViewportPos = viewportPos;
 }
 
 void RotoZoomTool::update(EditingContext &context, const Mat4 &viewTransform)
 {
-    const Vec2 viewportPos = viewTransform * context.toolStroke.points.last().pos;
+    const Vec2 viewportPos = viewTransform * context.toolStroke.points.back().pos;
     const Mode toolMode = static_cast<Mode>(context.toolMode);
     const bool rotate = (toolMode == Mode::RotoZoom || toolMode == Mode::Rotate);
     const bool zoom = (toolMode == Mode::RotoZoom || toolMode == Mode::Zoom);
@@ -338,7 +420,7 @@ void RotoZoomTool::onTopPreview(Editor &editor, EditingContext &context, const M
 
 void WheelZoomTool::wheel(EditingContext &context, const Mat4 &viewTransform, const Vec2 &delta)
 {
-    const Vec2 viewportPos = editor.transform() * context.toolStroke.points.last().pos;
+    const Vec2 viewportPos = editor.transform() * context.toolStroke.points.back().pos;
     const float scaling = std::pow(2.0f, delta.y());
     Mat4 transform = editor.transform();
     rotateScaleAtOrigin(transform, 0.0, scaling, viewportPos);
@@ -347,7 +429,7 @@ void WheelZoomTool::wheel(EditingContext &context, const Mat4 &viewTransform, co
 
 void WheelRotateTool::wheel(EditingContext &context, const Mat4 &viewTransform, const Vec2 &delta)
 {
-    const Vec2 viewportPos = editor.transform() * context.toolStroke.points.last().pos;
+    const Vec2 viewportPos = editor.transform() * context.toolStroke.points.back().pos;
     const float rotation = -15.0f * delta.y();
     Mat4 transform = editor.transform();
     rotateScaleAtOrigin(transform, rotation, 1.0f, viewportPos);
