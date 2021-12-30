@@ -13,14 +13,20 @@ Qt + OpenGL + scenegraph based indexed image editor with a focus on indexed-colo
 
 Contents
 --------
-1.  [Building](#building)
-2.  [Philosophy](#philosophy)
-3.  [License](#license)
+1.  [Usage](#usage)
+2.  [Building](#building)
+3.  [Philosophy](#philosophy)
+4.  [License](#license)
+
+Usage
+-----
+Operating requirements:
+-  Desktop OpenGL 4.3 or OpenGL ES 3.2
 
 Building
 --------
 Build requirements:
--   Qt 5.15/6.0
+-   Qt 6.2 (maybe other versions)
 -   C++20
 -   GCC/CLANG (maybe other compilers)
 
