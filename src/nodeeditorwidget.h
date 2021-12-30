@@ -21,6 +21,6 @@ private:
     Ui::NodeEditorWidget *ui;
 };
 
-
 } // namespace GfXPaint
+
 #endif // NODEEDITORWIDGET_H

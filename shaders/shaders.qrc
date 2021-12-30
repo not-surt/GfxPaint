@@ -1,9 +1,7 @@
 <RCC>
     <qresource prefix="/shaders">
-        <file>header.glsl</file>
+        <file>types.glsl</file>
         <file>palette.glsl</file>
-        <file>background.vert</file>
-        <file>background.frag</file>
         <file>util.glsl</file>
         <file>distance.glsl</file>
         <file>compositing.glsl</file>

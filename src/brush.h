@@ -18,7 +18,6 @@ struct Brush
 {
     struct Dab {
         enum class Type {
-            Pixel,
             Distance,
             Buffer,
         };
@@ -33,17 +32,17 @@ struct Brush
 
         Mat4 transform() const;
 
-        Type type;
-        int metric;
-        Vec2 size;
-        bool fixedRatio;
-        float ratio;
-        float angle;
-        Vec2 origin;
-        PixelSnap pixelSnapX;
-        PixelSnap pixelSnapY;
-        float hardness;
-        float opacity;
+        alignas(4) Type type;
+        alignas(4) int metric;
+        alignas(8) Vec2 size;
+        alignas(4) bool fixedRatio;
+        alignas(4) float ratio;
+        alignas(4) float angle;
+        alignas(8) Vec2 origin;
+        alignas(4) PixelSnap pixelSnapX;
+        alignas(4) PixelSnap pixelSnapY;
+        alignas(4) float hardness;
+        alignas(4) float opacity;
         Buffer buffer;
     };
 

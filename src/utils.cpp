@@ -40,7 +40,7 @@ QString fileToString(const QString &path)
     else return QString();
 }
 
-Mat4 viewportTransform(const QSize size)
+Mat4 viewportToClipTransform(const QSize size)
 {
     const float data[] = {
         2.0f / size.width(), 0.0f, 0.0f, 0.0f,

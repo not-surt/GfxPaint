@@ -35,7 +35,7 @@ protected:
     Brush brush;
     Colour colour;
 
-    DabProgram *program;
+    BrushDabProgram *program;
 };
 
 } // namespace GfxPaint

@@ -72,9 +72,9 @@ void EditingContext::update()
             Traversal::State &state = m_states[node];
             const Buffer::Format strokeBufferFormat(Buffer::Format::ComponentType::Float, 4, 4);
             m_bufferNodeContexts.insert(bufferNode, new BufferNodeContext(
-                new DabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_blendMode, m_composeMode),
+                new BrushDabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_blendMode, m_composeMode),
                 new ColourPickProgram(bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format()),
-                new DabProgram(m_brush.dab.type, m_brush.dab.metric, strokeBufferFormat, false, Buffer::Format(), m_blendMode, m_composeMode),
+                new BrushDabProgram(m_brush.dab.type, m_brush.dab.metric, strokeBufferFormat, false, Buffer::Format(), m_blendMode, m_composeMode),
                 new Buffer(bufferNode->buffer),
                 new Buffer(bufferNode->buffer.size(), strokeBufferFormat)
             ));

@@ -35,19 +35,11 @@ public:
     virtual void onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
 };
 
-class StrokeTool : public Tool {
+class BrushTool : public Tool {
 public:
-    explicit StrokeTool() :
-        Tool(),
-        strokeOffset(0.0)
-    {}
-    virtual void begin(EditingContext &context, const Mat4 &viewTransform) override;
-    virtual void update(EditingContext &context, const Mat4 &viewTransform) override;
+    using Tool::Tool;
     virtual void end(EditingContext &context, const Mat4 &viewTransform) override;
     virtual void onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
-
-protected:
-    float strokeOffset;
 };
 
 class PrimitiveTool : public Tool {

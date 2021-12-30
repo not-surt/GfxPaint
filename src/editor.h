@@ -27,7 +27,7 @@ namespace GfxPaint {
 
 class ToolUndoCommand : public QUndoCommand {
 public:
-    explicit ToolUndoCommand(const QString &text, Tool *const tool, const int mode, const std::vector<Point> points, EditingContext *const context, const Mat4 &viewTransform)
+    explicit ToolUndoCommand(const QString &text, Tool *const tool, const int mode, const std::vector<Stroke::Point> points, EditingContext *const context, const Mat4 &viewTransform)
         : QUndoCommand(text), tool(tool), mode(mode), points(points), context(*context), viewTransform(viewTransform), bufferCopy()
     {
         // TODO: calc bounds
@@ -62,7 +62,7 @@ public:
 
     Tool *const tool;
     const int mode;
-    const std::vector<Point> points;
+    const std::vector<Stroke::Point> points;
     EditingContext context;
     const Mat4 viewTransform;
     Buffer bufferCopy;
@@ -161,7 +161,7 @@ public:
     SceneModel &model;
 
     PixelTool pixelTool;
-    StrokeTool strokeTool;
+    BrushTool brushTool;
     RectTool rectTool;
     EllipseTool ellipseTool;
     ContourTool contourTool;
@@ -175,7 +175,7 @@ public:
     enum class ToolId {
         Invalid = -1,
         Pixel,
-        Stroke,
+        Brush,
         RectLined,
         RectFilled,
         EllipseLined,
@@ -200,6 +200,14 @@ public:
         SnappingOverrideOn,
         SnappingOverrideOff,
     };
+    const std::vector<std::pair<std::vector<ToolId>, ToolId>> toolMenuGroups{
+        {{ToolId::Pixel, ToolId::Brush}, ToolId::Pixel},
+        {{ToolId::RectLined, ToolId::RectFilled}, ToolId::RectLined},
+        {{ToolId::EllipseLined, ToolId::EllipseFilled}, ToolId::EllipseLined},
+        {{ToolId::Contour}, ToolId::Contour},
+        {{ToolId::PickColourNode, ToolId::PickColourScene}, ToolId::PickColourNode},
+    };
+    const ToolId defaultTool = ToolId::Pixel;
 
     struct ToolInfo {
         QString name;
@@ -209,7 +217,7 @@ public:
     const std::map<ToolId, ToolInfo> toolInfo{
         // Selectable tools
         {ToolId::Pixel, {"Pixel", &pixelTool, 0}},
-        {ToolId::Stroke, {"Stroke", &strokeTool, 0}},
+        {ToolId::Brush, {"Brush", &brushTool, 0}},
         {ToolId::RectLined, {"Rectangle", &rectTool,  static_cast<int>(PrimitiveTool::Mode::Lined)}},
         {ToolId::RectFilled, {"Filled Rectangle", &rectTool, static_cast<int>(PrimitiveTool::Mode::Filled)}},
         {ToolId::EllipseLined, {"Ellipse", &ellipseTool, static_cast<int>(PrimitiveTool::Mode::Lined)}},
@@ -230,16 +238,11 @@ public:
         {ToolId::SnappingOverrideOn, {"Snapping Override On", nullptr, 1}},
         {ToolId::SnappingOverrideOff, {"Snapping Override Off", nullptr, 0}},
     };
-    const std::vector<std::pair<std::vector<ToolId>, ToolId>> toolMenuGroups{
-        {{ToolId::Pixel, ToolId::Stroke}, ToolId::Pixel},
-        {{ToolId::RectLined, ToolId::RectFilled}, ToolId::RectLined},
-        {{ToolId::EllipseLined, ToolId::EllipseFilled}, ToolId::EllipseLined},
-        {{ToolId::Contour}, ToolId::Contour},
-        {{ToolId::PickColourNode, ToolId::PickColourScene}, ToolId::PickColourNode},
-    };
-    const ToolId defaultTool = ToolId::Pixel;
+    // TODO: are these actually modelss activators and should have modal switching keys here (or should that be handled buy regular actions?)
     const std::map<InputState, ToolId> toolSelectors{
         {{{Qt::Key_Control}, {}, {}}, ToolId::PickColourNode},
+        {{{Qt::Key_P}, {}, {}}, ToolId::Pixel},
+        {{{Qt::Key_B}, {}, {}}, ToolId::Brush},
         {{{Qt::Key_R}, {}, {}}, ToolId::RectLined},
         {{{Qt::Key_Shift, Qt::Key_R}, {}, {}}, ToolId::RectFilled},
         {{{Qt::Key_E}, {}, {}}, ToolId::EllipseLined},

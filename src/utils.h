@@ -53,7 +53,7 @@ QString fileToString(const QString &path);
 
 void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements);
 
-Mat4 viewportTransform(const QSize size);
+Mat4 viewportToClipTransform(const QSize size);
 
 vec4 qColorToVec4(const QColor &qColor);
 QColor qColorFromVec4(const vec4 &colour);

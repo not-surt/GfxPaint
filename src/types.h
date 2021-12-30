@@ -5,6 +5,7 @@
 #include <array>
 #include <algorithm>
 #include <iterator>
+#include <cmath>
 #include <QVector2D>
 #include <QVector3D>
 #include <QMatrix4x4>

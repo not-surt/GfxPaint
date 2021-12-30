@@ -74,7 +74,7 @@ void RenderedWidget::resizeGL(int w, int h)
     Mat4 originTransform;
     memcpy(originTransform.data(), data, sizeof(data));
     mouseTransform = originTransform.inverted();
-    viewportTransform = Mat4(GfxPaint::viewportTransform({w, h})) * originTransform;
+    viewportTransform = Mat4(GfxPaint::viewportToClipTransform({w, h})) * originTransform;
 
     {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);

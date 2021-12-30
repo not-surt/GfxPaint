@@ -23,6 +23,8 @@ QMAKE_CXXFLAGS += -pedantic -pedantic-errors -Wno-unused-parameter -Wno-unused-v
 DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x051500    # disables all the APIs deprecated before Qt 5.15.0
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
+#PRECOMPILED_HEADER = stable.h
+
 VPATH += src/ thirdparty/
 INCLUDEPATH += src/ thirdparty/include/
 
@@ -51,6 +53,14 @@ SOURCES +=\
     sessionmanager.cpp \
     src/tileseticonmanager.cpp \
     strokeeditorwidget.cpp \
+    thirdparty/src/qtpropertybrowser/qtbuttonpropertybrowser.cpp \
+    thirdparty/src/qtpropertybrowser/qteditorfactory.cpp \
+    thirdparty/src/qtpropertybrowser/qtgroupboxpropertybrowser.cpp \
+    thirdparty/src/qtpropertybrowser/qtpropertybrowser.cpp \
+    thirdparty/src/qtpropertybrowser/qtpropertybrowserutils.cpp \
+    thirdparty/src/qtpropertybrowser/qtpropertymanager.cpp \
+    thirdparty/src/qtpropertybrowser/qttreepropertybrowser.cpp \
+    thirdparty/src/qtpropertybrowser/qtvariantproperty.cpp \
     transformeditorwidget.cpp \
     transformmodel.cpp \
     types.cpp \
@@ -108,6 +118,14 @@ HEADERS  += \
     frozen/string.h \
     frozen/unordered_map.h \
     frozen/unordered_set.h \
+    thirdparty/src/qtpropertybrowser/qtbuttonpropertybrowser.h \
+    thirdparty/src/qtpropertybrowser/qteditorfactory.h \
+    thirdparty/src/qtpropertybrowser/qtgroupboxpropertybrowser.h \
+    thirdparty/src/qtpropertybrowser/qtpropertybrowser.h \
+    thirdparty/src/qtpropertybrowser/qtpropertybrowserutils_p.h \
+    thirdparty/src/qtpropertybrowser/qtpropertymanager.h \
+    thirdparty/src/qtpropertybrowser/qttreepropertybrowser.h \
+    thirdparty/src/qtpropertybrowser/qtvariantproperty.h \
     transformeditorwidget.h \
     transformmodel.h \
     types.h \
@@ -141,6 +159,7 @@ FORMS    += \
 RESOURCES += \
     icon.qrc \
     thirdparty/fonts/thirdpartyfonts.qrc \
+    thirdparty/src/qtpropertybrowser/qtpropertybrowser.qrc \
     thirdparty/stylesheets/qdarkstyle/style.qrc \
     thirdparty/stylesheets/darkorange/darkorange.qrc \
     thirdparty/shaders/thirdpartyshaders.qrc \

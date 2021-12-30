@@ -27,22 +27,18 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QTreeWidget" name="nodeInheritanceTreeWidget">
-     <property name="rootIsDecorated">
-      <bool>false</bool>
-     </property>
-     <attribute name="headerVisible">
-      <bool>false</bool>
-     </attribute>
-     <column>
-      <property name="text">
-       <string notr="true">1</string>
-      </property>
-     </column>
-    </widget>
+    <widget class="QtTreePropertyBrowser" name="propertyBrowser" native="true"/>
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QtTreePropertyBrowser</class>
+   <extends>QWidget</extends>
+   <header>thirdparty/src/qtpropertybrowser/qttreepropertybrowser.h</header>
+   <container>1</container>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

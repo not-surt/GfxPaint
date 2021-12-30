@@ -31,7 +31,7 @@ void Editor::init()
 Editor::Editor(Scene &scene, QWidget *parent) :
     RenderedWidget(parent),
     scene(scene), model(*qApp->documentManager.documentModel(&scene)),
-    pixelTool(), strokeTool(), rectTool(), ellipseTool(), contourTool(), pickTool(), transformTargetOverrideTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
+    pixelTool(), brushTool(), rectTool(), ellipseTool(), contourTool(), pickTool(), transformTargetOverrideTool(*this), panTool(*this), rotoZoomTool(*this), zoomTool(*this), rotateTool(*this),
     m_editingContext(scene),
     cameraTransform(),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
@@ -45,7 +45,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
 Editor::Editor(const Editor &other) :
     RenderedWidget(other.parentWidget()),
     scene(other.scene), model(other.model),
-    pixelTool(other.pixelTool), strokeTool(other.strokeTool), rectTool(other.rectTool), ellipseTool(other.ellipseTool), contourTool(other.contourTool), pickTool(other.pickTool), transformTargetOverrideTool(other.transformTargetOverrideTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
+    pixelTool(other.pixelTool), brushTool(other.brushTool), rectTool(other.rectTool), ellipseTool(other.ellipseTool), contourTool(other.contourTool), pickTool(other.pickTool), transformTargetOverrideTool(other.transformTargetOverrideTool), panTool(other.panTool), rotoZoomTool(other.rotoZoomTool), zoomTool(other.zoomTool), rotateTool(other.rotateTool),
     m_editingContext(other.scene),
     cameraTransform(other.cameraTransform),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
@@ -144,13 +144,16 @@ bool Editor::event(QEvent *const event)
 
         if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove || event->type() == QEvent::NonClientAreaMouseMove) {
             cursorDelta = Vec2(mouseEvent->localPos()) - cursorPos;
+            inputStateChanged = true;
         }
         if (event->type() == QEvent::TabletRelease || event->type() == QEvent::TabletMove) {
             cursorDelta = Vec2(tabletEvent->posF()) - cursorPos;
+            inputStateChanged = true;
         }
         if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::NonClientAreaMouseButtonRelease || event->type() == QEvent::MouseMove || event->type() == QEvent::NonClientAreaMouseMove) {
             cursorPos = Vec2(mouseEvent->localPos());
             pressure = 1.0f;
+            inputStateChanged = true;
         }
         if (event->type() == QEvent::TabletPress || event->type() == QEvent::TabletRelease || event->type() == QEvent::TabletMove) {
             cursorPos = Vec2(tabletEvent->posF());
@@ -159,12 +162,13 @@ bool Editor::event(QEvent *const event)
             tilt = {qDegreesToRadians(static_cast<float>(tabletEvent->xTilt())), qDegreesToRadians(static_cast<float>(tabletEvent->yTilt()))};
             rotation = qRadiansToDegrees(std::atan2(std::sin(tilt.y()), std::sin(tilt.x())) + (tau<float> / 4.0f));
             quaternion = QQuaternion::fromEulerAngles(tilt.y(), tilt.x(), rotation);
+            inputStateChanged = true;
         }
 
         const Vec2 cursorViewportPos = mouseTransform * cursorPos;
-        const Point point{cameraTransform.inverted() * cursorViewportPos, static_cast<float>(pressure), quaternion};
+        const Vec2 cursorWorldPos = cameraTransform.inverted() * (mouseTransform * cursorPos);
 
-        /*if (inputStateChanged) */{
+        if (inputStateChanged) {
             selectedToolStack.clear();
             if (m_selectedToolId != ToolId::Invalid) {
                 auto pair = std::make_pair(InputState(), m_selectedToolId);
@@ -197,10 +201,9 @@ bool Editor::event(QEvent *const event)
                 const auto &[trigger, id] = *iterator;
                 if (!trigger.testExact(inputState)) {
                     const ToolInfo &info = toolInfo.at(id);
-                    m_editingContext.toolStroke.add(point);
+                    m_editingContext.toolStroke.add(cursorWorldPos, pressure, quaternion);
                     m_editingContext.toolMode = info.operationMode;
                     info.tool->end(m_editingContext, transform());
-                    qDebug() << "END!";
                     if (info.tool->updatesContext()) {
                         activeEditingContextUpdated();
                     }
@@ -222,10 +225,9 @@ bool Editor::event(QEvent *const event)
                         activatedToolStack.push_front(pair);
                         const ToolInfo &info = toolInfo.at(id);
                         m_editingContext.toolStroke = {};
-                        m_editingContext.toolStroke.add(point);
+                        m_editingContext.toolStroke.add(cursorWorldPos, pressure, quaternion);
                         m_editingContext.toolMode = info.operationMode;
                         info.tool->begin(m_editingContext, transform());
-                        qDebug() << "BEGIN!";
                         if (info.tool->updatesContext()) {
                             activeEditingContextUpdated();
                         }
@@ -254,7 +256,7 @@ bool Editor::event(QEvent *const event)
                 if (event->type() == QEvent::MouseMove ||
                          event->type() == QEvent::NonClientAreaMouseMove ||
                          event->type() == QEvent::TabletMove) {
-                    m_editingContext.toolStroke.add(point);
+                    m_editingContext.toolStroke.add(cursorWorldPos, pressure, quaternion);
                     m_editingContext.toolMode = info.operationMode;
                     info.tool->update(m_editingContext, transform());
                     if (info.tool->updatesContext()) {
@@ -267,10 +269,10 @@ bool Editor::event(QEvent *const event)
             }
         }
 
-        // Add point for preview
+        // Add points for preview
         if (activatedToolStack.empty() && !selectedToolStack.empty()) {
             m_editingContext.toolStroke = {};
-            m_editingContext.toolStroke.add(point);
+            m_editingContext.toolStroke.add(cursorWorldPos, pressure, quaternion);
         }
     }
 
@@ -437,15 +439,28 @@ void Editor::render()
 //    };
 //    lineProgram->render(points, {{1.0f, 0.0f, 0.0f, 1.0f}, INDEX_INVALID}, viewportTransform * cameraTransform, widgetBuffer, nullptr);
 
-    PixelLineProgram *pixelLineProgram = new PixelLineProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    std::vector<Stroke::Point> pixelPoints{
-        {{16.0, 16.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 1.0f},
-        {{160.0, 16.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
-        {{160.0, 160.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
-        {{16.0, 160.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
-        {{16.0, 16.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 1.0f},
-    };
-    pixelLineProgram->render(pixelPoints, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}, viewportTransform * cameraTransform, widgetBuffer, nullptr);
+//    std::vector<Stroke::Point> strokePoints{
+//        {{16.0, 16.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 1.0f},
+//        {{160.0, 16.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
+//        {{160.0, 160.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
+//        {{16.0, 160.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 0.0f},
+//        {{16.0, 16.0f}, 0.0f, {0.0f, 0.0f, 0.0f, 0.0f}, 0.0f, 1.0f},
+//    };
+
+//    PixelLineProgram *pixelLineProgram = new PixelLineProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+//    pixelLineProgram->render(strokePoints, {{1.0f, 0.0f, 1.0f, 1.0f}, INDEX_INVALID}, viewportTransform * cameraTransform, Mat4(), widgetBuffer, nullptr);
+
+//    BrushDabProgram *brushDabProgram = new BrushDabProgram(m_editingContext.brush().dab.type, m_editingContext.brush().dab.metric, RenderedWidget::format, false, Buffer::Format(), m_editingContext.blendMode(), m_editingContext.composeMode());
+//    brushDabProgram->render(strokePoints, m_editingContext.brush().dab, m_editingContext.colour(), viewportTransform * cameraTransform, Mat4(), widgetBuffer, nullptr);
+
+    SmoothQuadProgram *smoothQuadProgram = new SmoothQuadProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+    std::vector<vec2> smoothQuadPoints{
+        {16.0, 16.0f},
+        {160.0, 16.0f},
+        {160.0, 160.0f},
+        {66.0, 100.0f},
+   };
+    smoothQuadProgram->render(smoothQuadPoints, viewportTransform * cameraTransform, widgetBuffer, nullptr);
 
     Tool *onTopPreviewTool = nullptr;
     bool onTopPreviewIsActive = false;
@@ -523,6 +538,7 @@ void Editor::drawDab(EditingContext &context, const Mat4 &viewTransform, const B
 
     const Traversal::State &state = context.states().value(&node);
 
+    // TODO: move tool space handling to tool
     const Mat4 toolSpaceTransform = Editor::toolSpace(context, viewTransform, node, context.space());
 
     const Vec2 toolSpaceOffset = toolSpaceTransform * Vec2(0.0f, 0.0f);
@@ -534,7 +550,7 @@ void Editor::drawDab(EditingContext &context, const Mat4 &viewTransform, const B
 
     const Buffer *const palette = state.palette;
     EditingContext::BufferNodeContext *const bufferNodeContext = context.bufferNodeContext(&node);
-    bufferNodeContext->dabProgram->render(dab, colour, node.viewportTransform() * state.transform.inverted() * worldSpaceOffsetTransform * (toolSpaceOffsetTransform * toolSpaceTransform).inverted() * node.pixelAspectRatioTransform().inverted(), &node.buffer, palette);
+//    bufferNodeContext->dabProgram->render(context.toolStroke.points, dab, colour, node.viewportTransform() * state.transform.inverted() * worldSpaceOffsetTransform * (toolSpaceOffsetTransform * toolSpaceTransform).inverted() * node.pixelAspectRatioTransform().inverted(), &node.buffer, palette);
 }
 
 void Editor::setTransformTarget(const EditingContext::TransformTarget transformTarget)
@@ -568,7 +584,6 @@ void Editor::updateContext()
 
 void Editor::setSelectedToolId(const Editor::ToolId tool)
 {
-    qDebug() << "tool changed!" << (int)tool;
     if (m_selectedToolId != tool) {
         m_selectedToolId = tool;
         emit selectedToolIdChanged(m_selectedToolId);

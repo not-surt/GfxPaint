@@ -279,9 +279,14 @@ QString RenderManager::glslVersionString() const
 {
     QString src;
     src+= "#version " + QString::number(surface.format().majorVersion()) + QString::number(surface.format().minorVersion()) + "0" + (surface.format().renderableType() == QSurfaceFormat::OpenGLES ? " es" : " core") + "\n";
+    return src;
+}
+
+QString RenderManager::glslPrecisionString() const
+{
+    QString src;
     if (surface.format().renderableType() == QSurfaceFormat::OpenGLES) {
-        src +=
-R"(
+        src += R"(
 precision highp float;
 precision highp int;
 precision highp sampler2D;
@@ -305,7 +310,8 @@ QString RenderManager::headerShaderPart()
 {
     QString src;
     src += qApp->renderManager.glslVersionString();
-    src += fileToString(":/shaders/header.glsl");
+    src += qApp->renderManager.glslPrecisionString();
+    src += fileToString(":/shaders/types.glsl");
     src += fileToString(":/shaders/util.glsl");
     const auto keys = colourSpaceInfo.keys();
     for (auto key : keys) {
@@ -323,33 +329,39 @@ vec3 $COLOURSPACE_to_$COLOURSPACE(vec3 rgb) {
     return src;
 }
 
+QString RenderManager::resourceShaderPart(const QString &filename)
+{
+    QString src;
+    src += fileToString(":/shaders/" + filename);
+    return src;
+}
+
 QString RenderManager::attributelessShaderPart(const AttributelessModel model)
 {
     const QMap<AttributelessModel, QString> models = {
-        { AttributelessModel::SingleVertex,
-R"(
+        { AttributelessModel::SingleVertex, R"(
 const vec2 vertices[1] = vec2[](
     vec2(0.0, 0.0)
 );
 )"
         },
-        { AttributelessModel::ClipQuad,
-R"(
+        // Clip-space quad in triangle strip order
+        { AttributelessModel::ClipQuad, R"(
 const vec2 vertices[4] = vec2[](
     vec2(-1.0, 1.0),
     vec2(-1.0, -1.0),
-    vec2(1.0, -1.0),
-    vec2(1.0, 1.0)
+    vec2(1.0, 1.0),
+    vec2(1.0, -1.0)
 );
 )"
         },
-        { AttributelessModel::UnitQuad,
-R"(
+        // Unit quad in triangle strip order
+        { AttributelessModel::UnitQuad, R"(
 const vec2 vertices[4] = vec2[](
     vec2(0.0, 1.0),
     vec2(0.0, 0.0),
-    vec2(1.0, 0.0),
-    vec2(1.0, 1.0)
+    vec2(1.0, 1.0),
+    vec2(1.0, 0.0)
 );
 )"
         },
@@ -480,16 +492,9 @@ R"(
     return src;
 }
 
-QString RenderManager::dabShaderPart(const QString &name, const Brush::Dab::Type type, const int metric)
+QString RenderManager::brushDabShaderPart(const QString &name, const Brush::Dab::Type type, const int metric)
 {
     const QMap<Brush::Dab::Type, QString> types = {
-        { Brush::Dab::Type::Pixel,
-R"(
-float $NAMEBrush(const vec2 pos) {
-    return 0.0;
-}
-)"
-        },
         { Brush::Dab::Type::Distance,
 R"(
 float $NAMEBrush(const vec2 pos) {
@@ -521,12 +526,18 @@ layout(std140, binding = 0) uniform Data {
 uniform float $NAMEHardness;
 uniform float $NAMEOpacity;
 uniform vec4 $NAMEColour;
+uniform uint $NAMEIndex;
 Colour $NAME(const vec2 pos) {
     float weight;
     weight = clamp(1.0 - $NAMEBrush(pos), 0.0, 1.0);
     weight = clamp(weight * (1.0 / (1.0 - $NAMEHardness)), 0.0, 1.0);
     weight *= $NAMEOpacity;
-    return Colour(vec4($NAMEColour.rgb, $NAMEColour.a * weight), INDEX_INVALID);
+    float alpha = $NAMEColour.a * weight;
+    uint index = INDEX_INVALID;
+    if (alpha == $NAMEColour.a) {
+        index = $NAMEIndex;
+    }
+    return Colour(vec4($NAMEColour.rgb, alpha), INDEX_INVALID);
 }
 )";
     stringMultiReplace(src, {

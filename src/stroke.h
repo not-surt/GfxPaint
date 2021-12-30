@@ -9,25 +9,23 @@
 
 namespace GfxPaint {
 
-struct alignas(16) Point {
-    alignas(8) Vec2 pos;
-    alignas(4) float pressure;
-    alignas(16) QQuaternion quaternion;
-
-    Point(const Vec2 pos, const float pressure, const QQuaternion &quaternion) :
-        pos(pos), pressure(pressure), quaternion(quaternion)
-    {}
-};
-
-struct alignas(16) Stroke {
-    struct Point : GfxPaint::Point {
+struct Stroke {
+    struct alignas(16) Point {
+        alignas(8) Vec2 pos;
+        alignas(4) float pressure;
+        alignas(16) QQuaternion quaternion;
         alignas(4) float age;
         alignas(4) float distance;
 
         Point(const Vec2 pos, const float pressure, const QQuaternion &quaternion, const float age, const float distance) :
-            GfxPaint::Point(pos, pressure, quaternion),
-            age(age), distance(distance)
+            pos(pos), pressure(pressure), quaternion(quaternion), age(age), distance(distance)
         {}
+
+        Point translated(const Vec2 &offset) const {
+            Point point(*this);
+            point.pos += offset;
+            return point;
+        }
     };
 
     std::vector<Point> points = {};
@@ -51,9 +49,6 @@ struct alignas(16) Stroke {
         points.push_back(point);
         length += point.distance;
         return points.back();
-    }
-    const Point &add(const GfxPaint::Point &point) {
-        return add(point.pos, point.pressure, point.quaternion);
     }
 
     static Point interpolate(const Point &from, const Point &to, const float position) {

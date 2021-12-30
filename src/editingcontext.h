@@ -28,13 +28,13 @@ public:
     static const std::map<ToolSpace, QString> toolSpaceNames;
 
     struct BufferNodeContext {
-        DabProgram *const dabProgram;
+        BrushDabProgram *const dabProgram;
         ColourPickProgram *const colourPickProgram;
-        DabProgram *const dabStrokeBufferProgram;
+        BrushDabProgram *const dabStrokeBufferProgram;
         Buffer *const workBuffer;
         Buffer *const strokeBuffer;
 
-        BufferNodeContext(DabProgram *const dabProgram, ColourPickProgram *const colourPickProgram, DabProgram *const dabStrokeBufferProgram, Buffer *const workBuffer, Buffer *const strokeBuffer)
+        BufferNodeContext(BrushDabProgram *const dabProgram, ColourPickProgram *const colourPickProgram, BrushDabProgram *const dabStrokeBufferProgram, Buffer *const workBuffer, Buffer *const strokeBuffer)
             : dabProgram(dabProgram), colourPickProgram(colourPickProgram), dabStrokeBufferProgram(dabStrokeBufferProgram), workBuffer(workBuffer), strokeBuffer(strokeBuffer)
         {}
         ~BufferNodeContext() {
@@ -83,22 +83,6 @@ public:
     QHash<Node *, Traversal::State> &states() { return m_states; }
     QItemSelectionModel &selectionModel() { return m_selectionModel; }
     QList<Node *> &selectedNodes() { return m_selectedNodes; }
-    void perNode(void (*func)(Node *node, const Traversal::State &state)) {
-        for (Node *node : selectedNodes()) {
-            const Traversal::State &state = states().value(node);
-            func(node, state);
-        }
-    }
-    void perBufferNode(void (*func)(const BufferNode *node, const Traversal::State &state, const EditingContext::BufferNodeContext *bufferNodeContext)) {
-        for (Node *node : selectedNodes()) {
-            BufferNode *bufferNode = dynamic_cast<BufferNode *>(node);
-            if (bufferNode) {
-                const Traversal::State &state = states().value(node);
-                const EditingContext::BufferNodeContext *const bufferNodeContext = this->bufferNodeContext(node);
-                func(bufferNode, state, bufferNodeContext);
-            }
-        }
-    }
 
     Stroke toolStroke;
     int toolMode;

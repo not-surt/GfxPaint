@@ -79,13 +79,15 @@ public:
     static QSurfaceFormat defaultFormat();
 
     QString glslVersionString() const;
+    QString glslPrecisionString() const;
 
     static QString headerShaderPart();
+    static QString resourceShaderPart(const QString &filename);
     static QString attributelessShaderPart(const AttributelessModel model);
     static QString modelVertexMainShaderPart();
     static QString vertexMainShaderPart();
     static QString patternShaderPart(const QString &name, const Pattern pattern);
-    static QString dabShaderPart(const QString &name, const Brush::Dab::Type type, const int metric);
+    static QString brushDabShaderPart(const QString &name, const Brush::Dab::Type type, const int metric);
     static QString paletteShaderPart(const QString &name, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString bufferShaderPart(const QString &name, const GLint uniformBlockBinding, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString standardInputFragmentShaderPart(const QString &name);

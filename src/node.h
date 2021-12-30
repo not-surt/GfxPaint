@@ -179,7 +179,7 @@ public:
     }
 
     Mat4 viewportTransform() const {
-        return GfxPaint::viewportTransform(buffer.size());
+        return GfxPaint::viewportToClipTransform(buffer.size());
     }
 
 private:

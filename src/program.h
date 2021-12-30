@@ -192,7 +192,7 @@ struct ComponentProgram {
 
 class Program : protected OpenGL {
 public:
-    typedef std::pair<std::type_index, QList<int>> Key;
+    typedef std::pair<std::type_index, std::list<int>> Key;
 
     Program();
     Program(const Program &other) :
@@ -204,9 +204,10 @@ public:
     QOpenGLShaderProgram &program();
 
 protected:
-    void updateKey(const std::type_index type, const QList<int> &values) {
+    void updateKey(const std::type_index type, const std::list<int> &values) {
         key.first = type;
-        key.second.append(values);
+        std::list<int> &list = key.second;
+        list.insert(list.end(), values.begin(), values.end());
     }
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const = 0;
     QOpenGLShaderProgram *createProgram() const;
@@ -287,7 +288,7 @@ public:
         srcFormat(other.srcFormat), srcIndexed(other.srcIndexed), srcPaletteFormat(other.srcPaletteFormat)
     {}
 
-    void render(Buffer *const src, const Mat4 &transform);
+    void render(Buffer *const src, const Mat4 &worldToClip);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -310,7 +311,7 @@ public:
         srcFormat(other.srcFormat), srcIndexed(other.srcIndexed), srcPaletteFormat(other.srcPaletteFormat)
     {}
 
-    void render(Buffer *const src, const Buffer *const srcPalette, const Colour &srcTransparent, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette, const Colour &destTransparent);
+    void render(Buffer *const src, const Buffer *const srcPalette, const Colour &srcTransparent, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const destPalette, const Colour &destTransparent);
 
 protected:
     struct UniformData {
@@ -352,7 +353,7 @@ public:
         RenderProgram(other)
     {}
 
-    void render(Model *const model, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(Model *const model, const Colour &colour, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -369,7 +370,7 @@ public:
         RenderProgram(other)
     {}
 
-    void render(Model *const model, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(Model *const model, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -379,7 +380,7 @@ class BoundedPrimitiveProgram : public RenderProgram {
 public:
     using RenderProgram::RenderProgram;
 
-    void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &toolSpaceTransform, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &toolSpaceTransform, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const destPalette);
 };
 
 class BoundedDistancePrimitiveProgram : public BoundedPrimitiveProgram {
@@ -438,12 +439,41 @@ public:
     virtual ~ContourStencilProgram() override {
         glDeleteBuffers(1, &storageBuffer);
     }
-    void render(const std::vector<Vec2> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::vector<Vec2> &points, const Colour &colour, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const destPalette);
     void postRender();
 
 protected:
     GLuint storageBuffer;
     GLuint stencilTexture;
+
+    virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
+};
+
+class SmoothQuadProgram : public RenderProgram {
+public:
+    SmoothQuadProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
+        storageBuffer(0)
+    {
+        updateKey(typeid(this), {});
+
+        glGenBuffers(1, &storageBuffer);
+    }
+    SmoothQuadProgram(const SmoothQuadProgram &other) :
+        RenderProgram(other),
+        storageBuffer(0)
+    {
+        glGenBuffers(1, &storageBuffer);
+    }
+
+    virtual ~SmoothQuadProgram() override {
+        glDeleteBuffers(1, &storageBuffer);
+    }
+
+    void render(const std::vector<vec2> &points, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const destPalette);
+
+protected:
+    GLuint storageBuffer;
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 };
@@ -476,7 +506,7 @@ public:
         glDeleteBuffers(1, &storageBuffer);
     }
 
-    void render(const std::vector<Point> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::vector<Point> &points, const Colour &colour, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     GLuint storageBuffer;
@@ -529,7 +559,7 @@ public:
         glDeleteBuffers(1, &storageBuffer);
     }
 
-    void render(const std::vector<Stroke::Point> &points, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::vector<Stroke::Point> &points, const Colour &colour, const Mat4 &worldToBuffer, const Mat4 &bufferToClip, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     GLuint storageBuffer;
@@ -537,20 +567,22 @@ protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 };
 
-class DabProgram : public RenderProgram {
+class BrushDabProgram : public RenderProgram {
 public:
-    DabProgram(const Brush::Dab::Type type, const int metric, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+    BrushDabProgram(const Brush::Dab::Type type, const int metric, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
         RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
         type(type), metric(metric),
-        uniformData{}
+        uniformData{},
+        storageBuffer(0)
     {
         updateKey(typeid(this), {static_cast<int>(type), metric});
 
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
+        glGenBuffers(1, &storageBuffer);
     }
-    DabProgram(const DabProgram &other) :
+    BrushDabProgram(const BrushDabProgram &other) :
         RenderProgram(other),
         type(other.type), metric(other.metric),
         uniformData{}
@@ -558,12 +590,14 @@ public:
         glGenBuffers(1, &uniformBuffer);
         glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
         glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
+        glGenBuffers(1, &storageBuffer);
     }
-    virtual ~DabProgram() override {
+    virtual ~BrushDabProgram() override {
         glDeleteBuffers(1, &uniformBuffer);
+        glDeleteBuffers(1, &storageBuffer);
     }
 
-    void render(const Brush::Dab &dab, const Colour &colour, const Mat4 &transform, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::vector<Stroke::Point> &points, const Brush::Dab &dab, const Colour &colour, const Mat4 &worldToBuffer, const Mat4 &bufferToClip, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
     struct UniformData {
@@ -579,6 +613,7 @@ protected:
     const int metric;
 
     UniformData uniformData;
+    GLuint storageBuffer;
 };
 
 class ColourPlaneProgram : public Program {
@@ -613,7 +648,7 @@ public:
         glDeleteBuffers(1, &uniformBuffer);
     }
 
-    void render(const Colour &colour, const int xComponent, const int yComponent, const Mat4 &transform, Buffer *const dest, const Buffer *const quantisePalette);
+    void render(const Colour &colour, const int xComponent, const int yComponent, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const quantisePalette);
 
 protected:
     struct UniformData {
@@ -652,7 +687,7 @@ public:
     {
     }
 
-    void render(const Buffer *const palette, const QSize &cells, const Mat4 &transform, Buffer *const dest);
+    void render(const Buffer *const palette, const QSize &cells, const Mat4 &worldToClip, Buffer *const dest);
 
 protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;

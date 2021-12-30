@@ -22,7 +22,7 @@ void BrushViewWidget::setBrush(const Brush &brush)
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     QList<Program *> oldPrograms = {program};
-    program = new DabProgram(brush.dab.type, brush.dab.metric, RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+    program = new BrushDabProgram(brush.dab.type, brush.dab.metric, RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
     qDeleteAll(oldPrograms);
 
     this->brush = brush;
@@ -38,7 +38,7 @@ void BrushViewWidget::initializeGL()
 
 void BrushViewWidget::render()
 {
-    program->render(brush.dab, colour, viewportTransform, widgetBuffer, nullptr);
+    program->render({Stroke::Point({0.0, 0.0}, 0.0, {}, 0.0, 0.0)}, brush.dab, colour, Mat4(), viewportTransform, widgetBuffer, nullptr);
 }
 
 } // namespace GfxPaint
