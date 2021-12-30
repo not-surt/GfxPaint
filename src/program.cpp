@@ -384,40 +384,43 @@ float dist(const vec2 pos) {
 
 QString ContourStencilProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
+    const QString common = R"(
+struct Point {
+    vec2 pos;
+    float pressure;
+    vec4 quaternion;
+    float age;
+    float distance;
+};
+
+layout(std430, binding = 0) buffer StorageData {
+    Point points[];
+} storageData;
+)";
+
     QString src;
 
     switch(stage) {
     case QOpenGLShader::Vertex: {
         src += RenderManager::headerShaderPart();
+        src += common;
         src += R"(
-layout(std430, binding = 0) buffer StorageData
-{
-    vec2 points[];
-} storageData;
-
-out VertexOut {
-    vec2 pos;
-} vOut;
+out Point point;
 
 void main(void)
 {
-    vOut.pos = storageData.points[gl_InstanceID + gl_VertexID];
+    point = storageData.points[gl_InstanceID + gl_VertexID];
 }
 )";
     }break;
     case QOpenGLShader::Geometry: {
         src += RenderManager::headerShaderPart();
+        src += common;
         src += R"(
 layout (lines) in;
 layout (triangle_strip, max_vertices = 3) out;
 
-layout(std430, binding = 0) buffer StorageData {
-    vec2 points[];
-} storageData;
-
-in VertexOut {
-    vec2 pos;
-} gIn[];
+in Point point[];
 
 uniform mat4 matrix;
 
@@ -426,11 +429,11 @@ out layout(location = 0) vec2 pos;
 
 void main(void)
 {
-    gl_Position = matrix * vec4(storageData.points[0], 0.0, 1.0);
+    gl_Position = matrix * vec4(storageData.points[0].pos, 0.0, 1.0);
     EmitVertex();
-    gl_Position = matrix * vec4(gIn[0].pos, 0.0, 1.0);
+    gl_Position = matrix * vec4(point[0].pos, 0.0, 1.0);
     EmitVertex();
-    gl_Position = matrix * vec4(gIn[1].pos, 0.0, 1.0);
+    gl_Position = matrix * vec4(point[1].pos, 0.0, 1.0);
     EmitVertex();
     EndPrimitive();
 }
@@ -438,6 +441,7 @@ void main(void)
     }break;
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
+        src += common;
         src += R"(
 uniform Rgba rgba;
 uniform Index index;
@@ -455,7 +459,7 @@ Colour src(void) {
     return src;
 }
 
-void ContourStencilProgram::render(const std::vector<Vec2> &points, const Colour &colour, const Mat4 &worldToClip, Buffer *const dest, const Buffer * const destPalette)
+void ContourStencilProgram::render(const std::vector<Stroke::Point> &points, const Colour &colour, const Mat4 &worldToClip, Buffer *const dest, const Buffer * const destPalette)
 {
     if (points.size() < 2) return;
 
@@ -475,7 +479,7 @@ void ContourStencilProgram::render(const std::vector<Vec2> &points, const Colour
     glClear(GL_STENCIL_BUFFER_BIT);
     // Draw stencil
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(Vec2), points.data(), GL_STATIC_DRAW);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(Stroke::Point), points.data(), GL_STATIC_DRAW);
 
     QOpenGLShaderProgram &program = this->program();
     program.bind();
@@ -933,7 +937,11 @@ void main(void)
 in layout(location = 0) vec2 pos;
 
 Colour src(void) {
-    return srcDab(pos);
+    Colour colour = srcDab(pos);
+    float depth = 1.0 - colour.rgba.a;
+//    if (depth >= 1.0) discard;
+    gl_FragDepth = depth;
+    return colour;
 //    return Colour(Rgba(1.0, 0.0, 0.0, 1.0), INDEX_INVALID);
 }
 )";
@@ -952,6 +960,19 @@ void BrushDabProgram::render(const std::vector<Stroke::Point> &points, const Bru
 
     QOpenGLShaderProgram &program = this->program();
     program.bind();
+
+    GLuint stencilTexture;
+    glGenTextures(1, &stencilTexture);
+    glBindTexture(GL_TEXTURE_2D, stencilTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, dest->width(), dest->height(), 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, stencilTexture, 0);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+    glDepthMask(true);
+    glClearDepthf(1.0f);
+    glDepthRangef(0.0f, 1.0f);
+    glClear(GL_DEPTH_BUFFER_BIT);
 
     Mat4 matrix = worldToBuffer * dab.transform();
 
@@ -984,7 +1005,9 @@ void BrushDabProgram::render(const std::vector<Stroke::Point> &points, const Bru
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, 0);
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
 
-    //glTextureBarrier();
+    glDisable(GL_DEPTH_TEST);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+    glDeleteTextures(1, &stencilTexture);
 }
 
 QString PatternProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const

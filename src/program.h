@@ -439,7 +439,7 @@ public:
     virtual ~ContourStencilProgram() override {
         glDeleteBuffers(1, &storageBuffer);
     }
-    void render(const std::vector<Vec2> &points, const Colour &colour, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const destPalette);
+    void render(const std::vector<Stroke::Point> &points, const Colour &colour, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const destPalette);
     void postRender();
 
 protected:

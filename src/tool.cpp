@@ -56,6 +56,22 @@ void BrushTool::end(EditingContext &context, const Mat4 &viewTransform) {
             Mat4 bufferToClip = bufferNode->viewportTransform();
             qDebug() << strokePoints[0].pos << worldToBuffer * strokePoints[0].pos << (bufferToClip * worldToBuffer) * strokePoints[0].pos;
 
+//            ContourStencilProgram *const stencilProgram = new ContourStencilProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
+//            stencilProgram->render(points, context.colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
+
+//            Model *const model = new Model(GL_TRIANGLE_STRIP, {2}, {
+//                                                                    boundsMin.x(), boundsMin.y(),
+//                                                                    boundsMax.x(), boundsMin.y(),
+//                                                                    boundsMin.x(), boundsMax.y(),
+//                                                                    boundsMax.x(), boundsMax.y()},
+//                                           {{0, 1, 2, 3}}, {4});
+//            SingleColourModelProgram *const modelProgram = new SingleColourModelProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode(), context.composeMode());
+//            modelProgram->render(model, context.colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
+//            delete modelProgram;
+
+//            stencilProgram->postRender();
+//            delete stencilProgram;
+
             BrushDabProgram *brushDabProgram = new BrushDabProgram(context.brush().dab.type, context.brush().dab.metric, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode(), context.composeMode());
             brushDabProgram->render(strokePoints, context.brush().dab, context.colour(), worldToBuffer, bufferToClip, &bufferNode->buffer, state.palette);
 
@@ -194,14 +210,14 @@ void ContourTool::end(EditingContext &context, const Mat4 &viewTransform)
         if (bufferNode) {
             Vec2 boundsMin = Vec2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
             Vec2 boundsMax = Vec2(-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity());
-            std::vector<Vec2> points;
+//            std::vector<Vec2> points;
             auto iterator = context.toolStroke.points.begin();
             while (iterator != context.toolStroke.points.end()) {
                 boundsMin.setX(std::min(boundsMin.x(), iterator->pos.x()));
                 boundsMin.setY(std::min(boundsMin.y(), iterator->pos.y()));
                 boundsMax.setX(std::max(boundsMax.x(), iterator->pos.x()));
                 boundsMax.setY(std::max(boundsMax.y(), iterator->pos.y()));
-                points.push_back(iterator->pos);
+//                points.push_back(iterator->pos);
                 ++iterator;
             }
 
@@ -209,7 +225,7 @@ void ContourTool::end(EditingContext &context, const Mat4 &viewTransform)
             bufferNode->buffer.bindFramebuffer();
 
             ContourStencilProgram *const stencilProgram = new ContourStencilProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
-            stencilProgram->render(points, context.colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
+            stencilProgram->render(context.toolStroke.points, context.colour(), bufferNode->viewportTransform() * state.transform.inverted(), &bufferNode->buffer, state.palette);
 
             Model *const model = new Model(GL_TRIANGLE_STRIP, {2}, {
                                                                        boundsMin.x(), boundsMin.y(),

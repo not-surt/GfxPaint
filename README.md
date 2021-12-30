@@ -30,7 +30,7 @@ Build requirements:
 -   C++20
 -   GCC/CLANG (maybe other compilers)
 
-Build with Qt Creator/qmake for Linux and maybe Windows if you have a c++20 compiler.
+Build with Qt Creator/qmake for Linux/Windows if you have a C++20 compiler.
 No unbundled external dependencies.
 
 Philosophy
@@ -44,10 +44,12 @@ Philosophy
 -   Mixed image format scenes. Can have different image formats for each buffer. Can mix and match indexed and truecolour buffers.
 -   Palettes are discrete nodes. There may be many in a scene and can be shared by multiple buffers.
 -   Palettes not limited to 256 colours.
+-   Arbitrary pixel aspect ratio per node.
+-   Non-destructive transform and postprocessing.
 -   Tool transformation spaces. Tools can operate in various transformation spaces: object, aspect-corected object space, world space, view space.
     eg. Rotate view and draw rectangle in view space for a rotate rectangle.
     eg. For non-square aspect ratios draw a circle in aspect-corected object space for correct proportions.
 
 License
 -------
-Licensed under LGPL3 with the exception of the contents of the thirdparty directory.
+Source code licensed under LGPL3 with the exception of the contents of the thirdparty directory.
