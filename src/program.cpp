@@ -915,7 +915,7 @@ uniform mat4 bufferToClip;
 
 uniform mat4 object;
 
-out layout(location = 0) vec2 pos;
+out vec2 pos;
 
 void main(void)
 {
@@ -934,13 +934,15 @@ void main(void)
         src += common;
         src += RenderManager::brushDabShaderPart("srcDab", type, metric);
         src += R"(
-in layout(location = 0) vec2 pos;
+in vec2 pos;
 
 Colour src(void) {
     Colour colour = srcDab(pos);
-    float depth = 1.0 - colour.rgba.a;
+//    float depth = 1.0 - colour.rgba.a;
 //    if (depth >= 1.0) discard;
-    gl_FragDepth = depth;
+    float dist = length(pos);
+    gl_FragDepth = dist;
+//    gl_FragDepth = 0.5 + rand(gl_FragCoord.xy) * 0.0125;
     return colour;
 //    return Colour(Rgba(1.0, 0.0, 0.0, 1.0), INDEX_INVALID);
 }
@@ -964,11 +966,11 @@ void BrushDabProgram::render(const std::vector<Stroke::Point> &points, const Bru
     GLuint stencilTexture;
     glGenTextures(1, &stencilTexture);
     glBindTexture(GL_TEXTURE_2D, stencilTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, dest->width(), dest->height(), 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, stencilTexture, 0);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, dest->width(), dest->height(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, stencilTexture, 0);
 
     glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
+    glDepthFunc(GL_LEQUAL);
     glDepthMask(true);
     glClearDepthf(1.0f);
     glDepthRangef(0.0f, 1.0f);
@@ -1006,7 +1008,7 @@ void BrushDabProgram::render(const std::vector<Stroke::Point> &points, const Bru
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
 
     glDisable(GL_DEPTH_TEST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
     glDeleteTextures(1, &stencilTexture);
 }
 
@@ -1106,8 +1108,6 @@ void ColourPlaneProgram::render(const Colour &colour, const int xComponent, cons
     }
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-
-    //glTextureBarrier();
 }
 
 QString ColourPaletteProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
@@ -1118,7 +1118,6 @@ QString ColourPaletteProgram::generateSource(QOpenGLShader::ShaderTypeBit stage)
     case QOpenGLShader::Vertex: {
         src += RenderManager::headerShaderPart();
         src += RenderManager::attributelessShaderPart(AttributelessModel::ClipQuad);
-//        src += RenderManager::vertexMainShaderPart();
         src += R"(
 uniform mat4 matrix;
 
@@ -1134,7 +1133,7 @@ void main(void) {
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
         if (paletteFormat.isValid()) {
-            src += fileToString(":/shaders/palette.glsl");
+            src += RenderManager::resourceShaderPart("palette.glsl");
             src += RenderManager::paletteShaderPart("srcPalPalette", 0, paletteFormat);
         }
         src += RenderManager::colourPaletteShaderPart("srcPal");
@@ -1231,7 +1230,7 @@ QString ColourConversionProgram::generateSource(QOpenGLShader::ShaderTypeBit sta
     switch(stage) {
     case QOpenGLShader::Compute: {
         src += RenderManager::headerShaderPart();
-        src += fileToString(":/shaders/ColorSpaces.inc.glsl");
+        src += RenderManager::resourceShaderPart("ColorSpaces.inc.glsl");
         src +=
 R"(
 layout(std430, binding = 0) buffer storageData

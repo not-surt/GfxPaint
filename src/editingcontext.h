@@ -13,6 +13,34 @@ namespace GfxPaint {
 
 class EditingContext {
 public:
+    enum class ToolId {
+        Invalid = -1,
+        Pixel,
+        Brush,
+        RectLined,
+        RectFilled,
+        EllipseLined,
+        EllipseFilled,
+        Contour,
+        FillPour,
+        FillFlood,
+        FillReplace,
+        PickColourNode,
+        PickColourScene,
+        PickNode,
+        TransformPan,
+        TransformZoom,
+        TransformRotate,
+        TransformRotoZoom,
+        // Modeless tools
+        WheelZoom,
+        WheelRotate,
+        TransformOverrideView,
+        TransformOverrideObject,
+        TransformOverrideBrush,
+        SnappingOverrideOn,
+        SnappingOverrideOff,
+    };
     enum class TransformTarget {
         View,
         Object,
@@ -27,23 +55,15 @@ public:
     };
     static const std::map<ToolSpace, QString> toolSpaceNames;
 
-    struct BufferNodeContext {
-        BrushDabProgram *const dabProgram;
+    struct NodeEditingContext {
+        PixelLineProgram *const pixelLineProgram;
+        BrushDabProgram *const brushDabProgram;
         ColourPickProgram *const colourPickProgram;
-        BrushDabProgram *const dabStrokeBufferProgram;
-        Buffer *const workBuffer;
-        Buffer *const strokeBuffer;
+        Buffer *const restoreBuffer;
+        std::map<std::string, Program *> programs;
 
-        BufferNodeContext(BrushDabProgram *const dabProgram, ColourPickProgram *const colourPickProgram, BrushDabProgram *const dabStrokeBufferProgram, Buffer *const workBuffer, Buffer *const strokeBuffer)
-            : dabProgram(dabProgram), colourPickProgram(colourPickProgram), dabStrokeBufferProgram(dabStrokeBufferProgram), workBuffer(workBuffer), strokeBuffer(strokeBuffer)
-        {}
-        ~BufferNodeContext() {
-            delete dabProgram;
-            delete colourPickProgram;
-            delete dabStrokeBufferProgram;
-            delete workBuffer;
-            delete strokeBuffer;
-        }
+        NodeEditingContext(EditingContext *const context, Node *const node, Tool *const tool, PixelLineProgram *const pixelLineProgram, BrushDabProgram *const brushDabProgram, ColourPickProgram *const colourPickProgram, Buffer *const restoreBuffer);
+        ~NodeEditingContext();
     };
 
     explicit EditingContext(Scene &scene);
@@ -52,6 +72,10 @@ public:
 
     void update();
 
+    void setSelectedToolId(const ToolId selectedToolId) {
+        m_selectedToolId = selectedToolId;
+        update();
+    }
     void setSpace(const ToolSpace toolSpace) { m_toolSpace = toolSpace; }
     void setBlendMode(const int blendMode) {
         m_blendMode = blendMode;
@@ -71,14 +95,15 @@ public:
         update();
     }
 
+    const ToolId &selectedToolId() const { return m_selectedToolId; }
     const ToolSpace &space() const { return m_toolSpace; }
     const int &blendMode() const { return m_blendMode; }
     const int &composeMode() const { return m_composeMode; }
     const Brush &brush() const { return m_brush; }
     const Colour colour() const { return m_colour; }
     Buffer *palette() const { return m_palette; }
-    BufferNodeContext *bufferNodeContext(Node *const node) const {
-        return m_bufferNodeContexts.value(node);
+    NodeEditingContext *nodeEditingContext(Node *const node) const {
+        return m_nodeEditingContexts.value(node);
     }
     QHash<Node *, Traversal::State> &states() { return m_states; }
     QItemSelectionModel &selectionModel() { return m_selectionModel; }
@@ -106,13 +131,14 @@ struct EditingContext {
 
 private:
     Scene &scene;
+    ToolId m_selectedToolId;
     ToolSpace m_toolSpace;
     int m_blendMode;
     int m_composeMode;
     Brush m_brush;
     Colour m_colour;    
     Buffer *m_palette;
-    QHash<Node *, BufferNodeContext *> m_bufferNodeContexts;
+    QHash<Node *, NodeEditingContext *> m_nodeEditingContexts;
     QHash<Node *, Traversal::State> m_states;
     QItemSelectionModel m_selectionModel;
     QList<Node *> m_selectedNodes;

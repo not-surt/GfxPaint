@@ -36,8 +36,7 @@ Editor::Editor(Scene &scene, QWidget *parent) :
     cameraTransform(),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
     m_selectedToolId(defaultTool),
-    selectedToolStack{},
-    activatedToolStack{}
+    selectedToolStack{}, activatedToolStack{}
 {
     init();
 }
@@ -170,7 +169,7 @@ bool Editor::event(QEvent *const event)
 
         if (inputStateChanged) {
             selectedToolStack.clear();
-            if (m_selectedToolId != ToolId::Invalid) {
+            if (m_selectedToolId != EditingContext::ToolId::Invalid) {
                 auto pair = std::make_pair(InputState(), m_selectedToolId);
                 selectedToolStack.push_front(pair);
             }
@@ -391,12 +390,12 @@ void Editor::render()
     }
 
     for (Node *node : m_editingContext.selectedNodes()) {
-        const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
+        const EditingContext::NodeEditingContext *const bufferNodeContext = m_editingContext.nodeEditingContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        if (bufferNode && bufferNodeContext->workBuffer) {
+        if (bufferNode && bufferNodeContext->restoreBuffer) {
             // Draw on-canvas tool preview
             if (cursorOver && onCanvasPreviewTool) {
-                bufferNodeContext->workBuffer->copy(bufferNode->buffer);
+                bufferNodeContext->restoreBuffer->copy(bufferNode->buffer);
                 ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
                 bufferNode->buffer.bindFramebuffer();
                 glDisable(GL_DEPTH_TEST);
@@ -415,13 +414,13 @@ void Editor::render()
     scene.render(widgetBuffer, false, nullptr, viewportTransform * cameraTransform, &m_editingContext.states());
 
     for (Node *node : m_editingContext.selectedNodes()) {
-        const EditingContext::BufferNodeContext *const bufferNodeContext = m_editingContext.bufferNodeContext(node);
+        const EditingContext::NodeEditingContext *const bufferNodeContext = m_editingContext.nodeEditingContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        if (bufferNode && bufferNodeContext->workBuffer) {
+        if (bufferNode && bufferNodeContext->restoreBuffer) {
             // Undraw on-canvas tool preview
             if (cursorOver && onCanvasPreviewTool) {
 //                bufferNodeContext->workBuffer->clear();
-                bufferNode->buffer.copy(*bufferNodeContext->workBuffer);
+                bufferNode->buffer.copy(*bufferNodeContext->restoreBuffer);
             }
         }
     }
@@ -534,7 +533,7 @@ Mat4 Editor::toolSpace(EditingContext &context, const Mat4 &viewTransform, Buffe
 
 void Editor::drawDab(EditingContext &context, const Mat4 &viewTransform, const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 &worldPos)
 {
-    Q_ASSERT( context.bufferNodeContext(&node));
+    Q_ASSERT( context.nodeEditingContext(&node));
 
     const Traversal::State &state = context.states().value(&node);
 
@@ -549,7 +548,7 @@ void Editor::drawDab(EditingContext &context, const Mat4 &viewTransform, const B
     worldSpaceOffsetTransform.translate(worldPos);
 
     const Buffer *const palette = state.palette;
-    EditingContext::BufferNodeContext *const bufferNodeContext = context.bufferNodeContext(&node);
+    EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(&node);
 //    bufferNodeContext->dabProgram->render(context.toolStroke.points, dab, colour, node.viewportTransform() * state.transform.inverted() * worldSpaceOffsetTransform * (toolSpaceOffsetTransform * toolSpaceTransform).inverted() * node.pixelAspectRatioTransform().inverted(), &node.buffer, palette);
 }
 
@@ -582,7 +581,7 @@ void Editor::updateContext()
     emit paletteChanged(palette);
 }
 
-void Editor::setSelectedToolId(const Editor::ToolId tool)
+void Editor::setSelectedToolId(const EditingContext::ToolId tool)
 {
     if (m_selectedToolId != tool) {
         m_selectedToolId = tool;

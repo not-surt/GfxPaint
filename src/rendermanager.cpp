@@ -311,8 +311,8 @@ QString RenderManager::headerShaderPart()
     QString src;
     src += qApp->renderManager.glslVersionString();
     src += qApp->renderManager.glslPrecisionString();
-    src += fileToString(":/shaders/types.glsl");
-    src += fileToString(":/shaders/util.glsl");
+    src += resourceShaderPart("types.glsl");
+    src += resourceShaderPart("util.glsl");
     const auto keys = colourSpaceInfo.keys();
     for (auto key : keys) {
         QString str =
@@ -512,7 +512,7 @@ float $NAMEBrush(const vec2 pos) {
     };
     QString src;
     if (type == Brush::Dab::Type::Distance) {
-        src += fileToString(":/shaders/distance.glsl");
+        src += RenderManager::resourceShaderPart("distance.glsl");
     }
     src += types[type];
     src +=
@@ -550,9 +550,9 @@ Colour $NAME(const vec2 pos) {
 QString RenderManager::colourPlaneShaderPart(const QString &name, const ColourSpace colourSpace, const bool useXAxis, const bool useYAxis, const bool quantise, const GLint quantisePaletteTextureLocation, const Buffer::Format quantisePaletteFormat)
 {
     QString src;
-    src += fileToString(":/shaders/ColorSpaces.inc.glsl");
+    src += RenderManager::resourceShaderPart("ColorSpaces.inc.glsl");
     if (quantise) {
-        src += fileToString(":/shaders/palette.glsl");
+        src += RenderManager::resourceShaderPart("palette.glsl");
         src += paletteShaderPart("quantise", quantisePaletteTextureLocation, quantisePaletteFormat);
     }
     src +=
@@ -656,9 +656,9 @@ Colour src(void) {
 QString RenderManager::standardFragmentMainShaderPart(const Buffer::Format format, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat, const int blendMode, const int composeMode)
 {
     QString src;
-    src += fileToString(":/shaders/compositing.glsl");
-    src += fileToString(":/shaders/blending.glsl");
-    if (indexed && paletteFormat.isValid()) src += fileToString(":/shaders/palette.glsl");
+    src += RenderManager::resourceShaderPart("compositing.glsl");
+    src += RenderManager::resourceShaderPart("blending.glsl");
+    if (indexed && paletteFormat.isValid()) src += RenderManager::resourceShaderPart("palette.glsl");
     src +=
 R"(
 uniform Colour srcTransparent;

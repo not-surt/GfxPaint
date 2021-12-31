@@ -480,7 +480,7 @@ protected:
 
 class LineProgram : public RenderProgram {
 public:
-    struct Point {
+    struct alignas(16) Point {
         alignas(8) Vec2 pos;
         alignas(4) GLfloat width;
         alignas(4) GLfloat lineAbsPos;
@@ -600,11 +600,11 @@ public:
     void render(const std::vector<Stroke::Point> &points, const Brush::Dab &dab, const Colour &colour, const Mat4 &worldToBuffer, const Mat4 &bufferToClip, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
-    struct UniformData {
-        mat4 matrix alignas(16);
-        Colour colour alignas(16);
-        GLfloat hardness alignas(4);
-        GLfloat alpha alignas(4);
+    struct alignas(16) UniformData {
+        alignas(16) mat4 matrix;
+        alignas(16) Colour colour;
+        alignas(4) GLfloat hardness;
+        alignas(4) GLfloat alpha;
     };
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -651,9 +651,9 @@ public:
     void render(const Colour &colour, const int xComponent, const int yComponent, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const quantisePalette);
 
 protected:
-    struct UniformData {
-        Colour colour alignas(16);
-        ivec2 components alignas(8);
+    struct alignas(16) UniformData {
+        alignas(16) Colour colour;
+        alignas(8) ivec2 components;
     };
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -726,8 +726,8 @@ public:
     Colour pick(const Buffer *const palette, const QSize &cells, const Vec2 &pos);
 
 protected:
-    struct StorageData {
-        Colour colour alignas(16);
+    struct alignas(16)StorageData {
+        alignas(16) Colour colour;
     };
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -754,8 +754,8 @@ public:
     Colour convert(const Colour &colour);
 
 protected:
-    struct StorageData {
-        Colour colour alignas(16);
+    struct alignas(16) StorageData {
+        alignas(16) Colour colour;
     };
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
@@ -781,8 +781,8 @@ public:
     Colour pick(const Buffer *const src, const Buffer *const srcPalette, const Vec2 &pos);
 
 protected:
-    struct StorageData {
-        Colour colour alignas(16);
+    struct alignas(16) StorageData {
+        alignas(16) Colour colour;
     };
 
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;

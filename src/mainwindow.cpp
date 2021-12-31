@@ -241,7 +241,7 @@ void MainWindow::writeSettings(QSettings &settings) const
             settings.setValue("document", qApp->documentManager.documents().indexOf(&editor->scene));
 
             settings.setValue("state", static_cast<int>(subWindow->windowState()));
-            // Ugly hack to work around broken normalGeometry
+            // TODO: Ugly hack to work around broken normalGeometry
             QRect actualNormalGeometry;
             if (subWindow->windowState() & ~(Qt::WindowNoState | Qt::WindowActive)) {
                 Qt::WindowStates state = subWindow->windowState();
@@ -251,6 +251,7 @@ void MainWindow::writeSettings(QSettings &settings) const
             }
             else actualNormalGeometry = subWindow->normalGeometry();
             settings.setValue("geometry", actualNormalGeometry);
+//            settings.setValue("geometry", subWindow->normalGeometry());
         }
     }
     settings.endArray();
@@ -611,7 +612,7 @@ void MainWindow::activateEditor(Editor *const editor)
             MultiToolButton *const toolButton = new MultiToolButton();
             QAction *defaultAction = nullptr;
             ui->menuTool->addSeparator();
-            for (const Editor::ToolId id : group.first) {
+            for (const EditingContext::ToolId id : group.first) {
                 const Editor::ToolInfo &info = activeEditor->toolInfo.at(id);
                 QAction *action = new QAction();
                 action->setText(info.name);
@@ -632,7 +633,7 @@ void MainWindow::activateEditor(Editor *const editor)
             toolButton->setDefaultAction(defaultAction);
             ui->toolToolBar->addWidget(centringWidget(toolButton));
         }
-        activeEditorConnections << QObject::connect(activeEditor, &Editor::selectedToolIdChanged, this, [this](const Editor::ToolId toolId){
+        activeEditorConnections << QObject::connect(activeEditor, &Editor::selectedToolIdChanged, this, [this](const EditingContext::ToolId toolId){
             toolIdToAction.at(toolId)->setChecked(true);
         });
         activeEditorConnections << QObject::connect(&toolGroup, &QActionGroup::triggered, this, [this](QAction *const action){

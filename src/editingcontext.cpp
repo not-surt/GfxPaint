@@ -4,6 +4,19 @@
 
 namespace GfxPaint {
 
+EditingContext::NodeEditingContext::NodeEditingContext(EditingContext *const context, Node *const node, Tool *const tool, PixelLineProgram * const pixelLineProgram, BrushDabProgram * const brushDabProgram, ColourPickProgram * const colourPickProgram, Buffer * const restoreBuffer)
+    : pixelLineProgram(pixelLineProgram), brushDabProgram(brushDabProgram), colourPickProgram(colourPickProgram), restoreBuffer(restoreBuffer)/*,
+    programs(tool->nodePrograms(*context, node))*/
+{
+}
+
+EditingContext::NodeEditingContext::~NodeEditingContext() {
+    delete pixelLineProgram;
+    delete brushDabProgram;
+    delete colourPickProgram;
+    delete restoreBuffer;
+}
+
 const std::map<EditingContext::TransformTarget, QString> EditingContext::transformTargetNames{
     {TransformTarget::View, "View"},
     {TransformTarget::Object, "Object"},
@@ -24,7 +37,7 @@ EditingContext::EditingContext(Scene &scene) :
     m_colour{{0.0, 0.0, 0.0, 1.0}, INDEX_INVALID},
     toolStroke{}, toolMode(0), transformTarget(TransformTarget::View),
     m_palette(nullptr),
-    m_bufferNodeContexts(),
+    m_nodeEditingContexts(),
     m_selectionModel(qApp->documentManager.documentModel(&scene)),
     m_selectedNodes()
 {
@@ -38,7 +51,7 @@ EditingContext::EditingContext(EditingContext &other) :
     m_colour(other.m_colour),
     toolStroke(other.toolStroke), toolMode(other.toolMode), transformTarget(other.transformTarget),
     m_palette(other.m_palette),
-    m_bufferNodeContexts(),
+    m_nodeEditingContexts(),
     m_selectionModel(other.m_selectionModel.model()),
     m_selectedNodes(other.m_selectedNodes)
 {
@@ -48,11 +61,15 @@ EditingContext::EditingContext(EditingContext &other) :
 EditingContext::~EditingContext()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    qDeleteAll(m_bufferNodeContexts);
+    qDeleteAll(m_nodeEditingContexts);
 }
 
 void EditingContext::update()
 {
+    for (auto i = m_nodeEditingContexts.constBegin(); i != m_nodeEditingContexts.constEnd(); ++i) {
+        auto const &node = i.key();
+        auto const &nodeEditingContext = i.value();
+    }
     m_states.clear();
     m_selectedNodes.clear();
     for (auto index : m_selectionModel.selectedRows()) {
@@ -64,19 +81,18 @@ void EditingContext::update()
     scene.render(nullptr, false, nullptr, Mat4(), &m_states);
 
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    QHash<Node *, BufferNodeContext *> oldNodeContexts = m_bufferNodeContexts;
-    m_bufferNodeContexts.clear();
+    QHash<Node *, NodeEditingContext *> oldNodeContexts = m_nodeEditingContexts;
+    m_nodeEditingContexts.clear();
     for (Node *node : m_selectedNodes) {
+        Traversal::State &state = m_states[node];
+        Tool *const tool = nullptr;
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
-            Traversal::State &state = m_states[node];
-            const Buffer::Format strokeBufferFormat(Buffer::Format::ComponentType::Float, 4, 4);
-            m_bufferNodeContexts.insert(bufferNode, new BufferNodeContext(
+            m_nodeEditingContexts.insert(bufferNode, new NodeEditingContext(this, node, tool,
+                new PixelLineProgram(bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_blendMode, m_composeMode),
                 new BrushDabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_blendMode, m_composeMode),
                 new ColourPickProgram(bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format()),
-                new BrushDabProgram(m_brush.dab.type, m_brush.dab.metric, strokeBufferFormat, false, Buffer::Format(), m_blendMode, m_composeMode),
-                new Buffer(bufferNode->buffer),
-                new Buffer(bufferNode->buffer.size(), strokeBufferFormat)
+                new Buffer(bufferNode->buffer)
             ));
         }
     }

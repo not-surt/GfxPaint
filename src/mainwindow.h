@@ -103,8 +103,8 @@ protected:
     QActionGroup toolSpaceGroup;
     QActionGroup blendGroup;
     QActionGroup composeGroup;
-    std::map<Editor::ToolId, QAction *> toolIdToAction;
-    std::map<QAction *, Editor::ToolId> actionToToolId;
+    std::map<EditingContext::ToolId, QAction *> toolIdToAction;
+    std::map<QAction *, EditingContext::ToolId> actionToToolId;
     QActionGroup tabPositionsGroup;
     Scene *activeDocument;
     Editor *activeEditor;
