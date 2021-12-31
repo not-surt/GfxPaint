@@ -4,6 +4,9 @@
 #include <QVBoxLayout>
 #include <QFile>
 #include <QTextStream>
+#include <string>
+#include <regex>
+
 #include "application.h"
 #include "types.h"
 
@@ -138,11 +141,10 @@ Buffer bufferFromImageFile(const QString &filename, Buffer *const palette, Colou
     return buffer;
 }
 
-void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements)
+void stringMultiReplace(QString &string, const std::map<QString, QString> &replacements)
 {
-    const auto keys = replacements.keys();
-    for (const auto &key : keys)
-        string.replace(key, replacements[key]);
+    for (const auto &key : replacements)
+        string.replace(key.first, key.second);
 }
 
 float stairstep(const float value, const float size) {

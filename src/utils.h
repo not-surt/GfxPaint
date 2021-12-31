@@ -51,7 +51,7 @@ protected:
 */
 QString fileToString(const QString &path);
 
-void stringMultiReplace(QString &string, const QMap<QString, QString> &replacements);
+void stringMultiReplace(QString &string, const std::map<QString, QString> &replacements);
 
 Mat4 viewportToClipTransform(const QSize size);
 

@@ -34,7 +34,7 @@ const Mat4 RenderManager::flipTransform = ([](){
     return matrix;
     })();
 
-const QMap<ColourSpaceConversion, QString> RenderManager::colourSpaceConversionShaderFunctionNames = {
+const std::map<ColourSpaceConversion, QString> RenderManager::colourSpaceConversionShaderFunctionNames = {
     {{ColourSpace::RGB, ColourSpace::sRGB}, "rgb_to_srgb"},
     {{ColourSpace::RGB, ColourSpace::XYZ}, "rgb_to_xyz"},
     {{ColourSpace::RGB, ColourSpace::xyY}, "rgb_to_xyY"},
@@ -259,9 +259,8 @@ RenderManager::~RenderManager()
     {
         ContextBinder contextBinder(&context, &surface);
 
-        qDeleteAll(models);
-
-        qDeleteAll(programs);
+        models.clear();
+        programs.clear();
 
         logger.stopLogging();
 
@@ -282,7 +281,7 @@ QSurfaceFormat RenderManager::defaultFormat()
 QString RenderManager::glslVersionString() const
 {
     QString src;
-    src+= "#version " + QString::number(surface.format().majorVersion()) + QString::number(surface.format().minorVersion()) + "0" + (surface.format().renderableType() == QSurfaceFormat::OpenGLES ? " es" : " core") + "\n";
+    src += "#version " + QString::number(surface.format().majorVersion()) + QString::number(surface.format().minorVersion()) + "0" + (surface.format().renderableType() == QSurfaceFormat::OpenGLES ? " es" : " core") + "\n";
     return src;
 }
 
@@ -317,19 +316,6 @@ QString RenderManager::headerShaderPart()
     src += qApp->renderManager.glslPrecisionString();
     src += resourceShaderPart("types.glsl");
     src += resourceShaderPart("util.glsl");
-    const auto keys = colourSpaceInfo.keys();
-    for (auto key : keys) {
-        QString str =
-R"(
-vec3 $COLOURSPACE_to_$COLOURSPACE(vec3 rgb) {
-    return rgb;
-}
-)";
-        stringMultiReplace(str, {
-            {"$COLOURSPACE", colourSpaceInfo[key].funcName},
-        });
-        src += str;
-    }
     return src;
 }
 
@@ -340,9 +326,27 @@ QString RenderManager::resourceShaderPart(const QString &filename)
     return src;
 }
 
+QString RenderManager::colourSpaceShaderPart()
+{
+    QString src;
+    src += resourceShaderPart("ColorSpaces.inc.glsl");
+    for (const auto &[key, value] : colourSpaceInfo) {
+        QString str = R"(
+vec3 $COLOURSPACE_to_$COLOURSPACE(vec3 rgb) {
+    return rgb;
+}
+)";
+        stringMultiReplace(str, {
+            {"$COLOURSPACE", value.funcName},
+        });
+        src += str;
+    }
+    return src;
+}
+
 QString RenderManager::attributelessShaderPart(const AttributelessModel model)
 {
-    const QMap<AttributelessModel, QString> models = {
+    const std::map<AttributelessModel, QString> models = {
         { AttributelessModel::SingleVertex, R"(
 const vec2 vertices[1] = vec2[](
     vec2(0.0, 0.0)
@@ -371,15 +375,14 @@ const vec2 vertices[4] = vec2[](
         },
     };
     QString src;
-    src += models[model];
+    src += models.at(model);
     return src;
 }
 
 QString RenderManager::vertexMainShaderPart()
 {
     QString src;
-    src +=
-R"(
+    src += R"(
 uniform mat4 transform;
 uniform mat4 object;
 
@@ -397,8 +400,9 @@ void main(void) {
 QString RenderManager::patternShaderPart(const QString &name, const Pattern pattern)
 {
     QString src;
-    src +=
-R"(
+    switch (pattern) {
+    case Pattern::Checkers: {
+    src += R"(
 const float base = 7.0 / 16.0;
 const float offset = 1.0 / 16.0;
 const float light = base + offset;
@@ -412,6 +416,10 @@ Colour $NAME(const vec2 pos) {
     return Colour(alternate ? lightColour : darkColour, INDEX_INVALID);
 }
 )";
+    } break;
+    case Pattern::Bricks: {
+    } break;
+    }
     stringMultiReplace(src, {
         {"$NAME", name},
     });
@@ -421,8 +429,7 @@ Colour $NAME(const vec2 pos) {
 QString RenderManager::paletteShaderPart(const QString &name, const GLint paletteTextureLocation, const Buffer::Format paletteFormat)
 {
     QString src;
-    src +=
-R"(
+    src += R"(
 uniform layout(location = $LOCATION) $SAMPLER_TYPE $NAMEPaletteTexture;
 
 vec4 $NAMEPalette(const uint index) {
@@ -445,8 +452,7 @@ QString RenderManager::bufferShaderPart(const QString &name, const GLint uniform
 
     QString src;
     if (indexed && paletteFormat.isValid()) src += paletteShaderPart(name, paletteTextureLocation, paletteFormat);
-    src +=
-R"(
+    src += R"(
 uniform layout(location = $TEXTURE_LOCATION) $SAMPLER_TYPE $NAMETexture;
 
 layout(std140, binding = $UNIFORM_BLOCK_BINDING) uniform $NAMEUniformData {
@@ -458,19 +464,16 @@ Colour $NAME(const vec2 pos) {
     Colour colour = COLOUR_INVALID;
 //    Colour transparent = $NAMEData.transparent;
 )";
-    if (indexed && paletteFormat.isValid()) src +=
-R"(
+    if (indexed && paletteFormat.isValid()) src += R"(
     colour.index = texelFetch($NAMETexture, ivec2(floor(pos)), 0).x;
 //    colour.rgba = (colour.index == transparent.index ? vec4(0.0) : $NAMEPalette(colour.index));
     colour.rgba = $NAMEPalette(colour.index);
 )";
-    else if (indexed && !paletteFormat.isValid()) src +=
-R"(
+    else if (indexed && !paletteFormat.isValid()) src += R"(
     float grey = toUnit(texelFetch($NAMETexture, ivec2(floor(pos)), 0).x, $SCALAR_VALUE_TYPE($FORMAT_SCALE));
     colour.rgba = (colour.index == transparent.index ? vec4(0.0) : vec4(vec3(grey), 1.0));
 )";
-    else src +=
-R"(
+    else src += R"(
     vec4 texelRgba = toUnit(texelFetch($NAMETexture, ivec2(floor(pos)), 0), $SCALAR_VALUE_TYPE($FORMAT_SCALE));
 //    colour.rgba = (texelRgba == transparent.rgba ? vec4(0.0) : texelRgba);
 //    if (transparent.rgba != RGBA_INVALID) {
@@ -480,8 +483,7 @@ R"(
         colour.rgba =  texelRgba;
 //    }
 )";
-    src +=
-R"(
+    src += R"(
     return colour;
 }
 )";
@@ -498,16 +500,14 @@ R"(
 
 QString RenderManager::brushDabShaderPart(const QString &name, const Brush::Dab::Type type, const int metric)
 {
-    const QMap<Brush::Dab::Type, QString> types = {
-        { Brush::Dab::Type::Distance,
-R"(
+    const std::map<Brush::Dab::Type, QString> types = {
+        { Brush::Dab::Type::Distance, R"(
 float $NAMEBrush(const vec2 pos) {
     return $METRIC(pos);
 }
 )"
         },
-        { Brush::Dab::Type::Buffer,
-R"(
+        { Brush::Dab::Type::Buffer, R"(
 float $NAMEBrush(const vec2 pos) {
     return 0.0;
 }
@@ -516,11 +516,10 @@ float $NAMEBrush(const vec2 pos) {
     };
     QString src;
     if (type == Brush::Dab::Type::Distance) {
-        src += RenderManager::resourceShaderPart("distance.glsl");
+        src += resourceShaderPart("distance.glsl");
     }
-    src += types[type];
-    src +=
-R"(
+    src += types.at(type);
+    src += R"(
 layout(std140, binding = 0) uniform Data {
     mat4 matrix;
     Colour colour;
@@ -554,13 +553,12 @@ Colour $NAME(const vec2 pos) {
 QString RenderManager::colourPlaneShaderPart(const QString &name, const ColourSpace colourSpace, const bool useXAxis, const bool useYAxis, const bool quantise, const GLint quantisePaletteTextureLocation, const Buffer::Format quantisePaletteFormat)
 {
     QString src;
-    src += RenderManager::resourceShaderPart("ColorSpaces.inc.glsl");
+    src += colourSpaceShaderPart();
     if (quantise) {
-        src += RenderManager::resourceShaderPart("palette.glsl");
+        src += resourceShaderPart("palette.glsl");
         src += paletteShaderPart("quantise", quantisePaletteTextureLocation, quantisePaletteFormat);
     }
-    src +=
-R"(
+    src += R"(
 layout(std140, binding = 0) uniform Data {
     Colour colour;
     ivec2 components;
@@ -569,16 +567,13 @@ layout(std140, binding = 0) uniform Data {
 vec4 colourPlane(const vec4 colour, const ivec2 components, const vec2 pos) {
     vec4 col = colour;
 )";
-    if (useXAxis) src +=
-R"(
+    if (useXAxis) src += R"(
     col[components[0]] = pos.x;
 )";
-    if (useYAxis) src +=
-R"(
+    if (useYAxis) src += R"(
     col[components[1]] = pos.y;
 )";
-    src +=
-R"(
+    src += R"(
     return col;
 }
 
@@ -589,13 +584,11 @@ Colour $NAME(const vec2 pos) {
     col = colourPlane(col, data.components, pos);
     col = vec4($COLOURSPACE_to_rgb(col.rgb), col.a);
 )";
-    if (quantise && quantisePaletteFormat.isValid()) src +=
-R"(
+    if (quantise && quantisePaletteFormat.isValid()) src += R"(
     index = quantiseBruteForce(quantisePaletteTexture, uint($PALETTE_FORMAT_SCALE), vec4(col.rgb, 1.0), 0.5, INDEX_INVALID);
     col = vec4(quantisePalette(index).rgb, col.a);
 )";
-    src +=
-R"(
+    src += R"(
     return Colour(col, index);
 }
 )";
@@ -610,8 +603,7 @@ R"(
 QString RenderManager::colourPaletteShaderPart(const QString &name)
 {
     QString src;
-    src +=
-R"(
+    src += R"(
 uniform ivec2 cells;
 
 ivec2 posCell(const ivec2 cells, const vec2 pos) {
@@ -660,11 +652,10 @@ Colour src(void) {
 QString RenderManager::standardFragmentMainShaderPart(const Buffer::Format format, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat, const int blendMode, const int composeMode)
 {
     QString src;
-    src += RenderManager::resourceShaderPart("compositing.glsl");
-    src += RenderManager::resourceShaderPart("blending.glsl");
-    if (indexed && paletteFormat.isValid()) src += RenderManager::resourceShaderPart("palette.glsl");
-    src +=
-R"(
+    src += resourceShaderPart("compositing.glsl");
+    src += resourceShaderPart("blending.glsl");
+    if (indexed && paletteFormat.isValid()) src += resourceShaderPart("palette.glsl");
+    src += R"(
 uniform Colour srcTransparent;
 //uniform Colour destTransparent;
 
@@ -684,28 +675,24 @@ void main(void) {
     vec4 blended = blend(destColour.rgba, srcColour.rgba);
     vec4 composed = compose(destColour.rgba, blended);
 )";
-    if (indexed && paletteFormat.isValid()) src +=
-R"(
+    if (indexed && paletteFormat.isValid()) src += R"(
     fragment = $VALUE_TYPE(quantiseBruteForce(destPaletteTexture, uint($PALETTE_FORMAT_SCALE), composed, 0.5, destData.transparent.index));
 )";
-    else if (indexed && !paletteFormat.isValid()) src +=
-R"(
+    else if (indexed && !paletteFormat.isValid()) src += R"(
     fragment = $VALUE_TYPE(fromUnit((composed.r + composed.g + composed.b) / 3.0, $SCALAR_VALUE_TYPE($FORMAT_SCALE)));
 )";
-    else src +=
-R"(
+    else src += R"(
     fragment = $VALUE_TYPE(fromUnit(composed, $SCALAR_VALUE_TYPE($FORMAT_SCALE)));
 )";
-    src +=
-R"(
+    src += R"(
 }
 )";
     stringMultiReplace(src, {
         {"$VALUE_TYPE", format.shaderValueType()},
         {"$FORMAT_SCALE", QString::number(format.scale())},
         {"$PALETTE_FORMAT_SCALE", QString::number(indexed && paletteFormat.isValid() ? paletteFormat.scale() : 1.0)},
-        {"$BLEND_MODE", RenderManager::blendModes[blendMode].functionName},
-        {"$COMPOSE_MODE", RenderManager::composeModes[composeMode].functionName},
+        {"$BLEND_MODE", blendModes[blendMode].functionName},
+        {"$COMPOSE_MODE", composeModes[composeMode].functionName},
         {"$SCALAR_VALUE_TYPE", format.shaderScalarValueType()},
     });
     return src;
@@ -714,8 +701,7 @@ R"(
 QString RenderManager::widgetFragmentMainShaderPart()
 {
     QString src;
-    src +=
-R"(
+    src += R"(
 out layout(location = 0) vec4 fragment;
 
 void main(void) {

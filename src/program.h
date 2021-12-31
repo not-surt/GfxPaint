@@ -6,6 +6,7 @@
 #include <typeindex>
 #include <QOpenGLShaderProgram>
 #include <deque>
+#include <functional>
 
 #include "types.h"
 #include "buffer.h"
@@ -378,7 +379,14 @@ protected:
 
 class BoundedPrimitiveProgram : public RenderProgram {
 public:
-    using RenderProgram::RenderProgram;
+    BoundedPrimitiveProgram(const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode)
+    {
+        updateKey(typeid(this), {});
+    }
+    BoundedPrimitiveProgram(const BoundedPrimitiveProgram &other) :
+        RenderProgram(other)
+    {}
 
     void render(const std::array<Vec2, 2> &points, const Colour &colour, const Mat4 &toolSpaceTransform, const Mat4 &worldToClip, Buffer *const dest, const Buffer *const destPalette);
 };
@@ -406,6 +414,14 @@ protected:
 class RectProgram : public BoundedDistancePrimitiveProgram {
 public:
     using BoundedDistancePrimitiveProgram::BoundedDistancePrimitiveProgram;
+    RectProgram(const bool filled, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        BoundedDistancePrimitiveProgram(filled, destFormat, destIndexed, destPaletteFormat, blendMode, composeMode)
+    {
+        updateKey(typeid(this), {});
+    }
+    RectProgram(const RectProgram &other) :
+        BoundedDistancePrimitiveProgram(other)
+    {}
 
 protected:
     virtual QString generateDistanceSource() const override;
@@ -414,6 +430,14 @@ protected:
 class EllipseProgram : public BoundedDistancePrimitiveProgram {
 public:
     using BoundedDistancePrimitiveProgram::BoundedDistancePrimitiveProgram;
+    EllipseProgram(const bool filled, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
+        BoundedDistancePrimitiveProgram(filled, destFormat, destIndexed, destPaletteFormat, blendMode, composeMode)
+    {
+        updateKey(typeid(this), {});
+    }
+    EllipseProgram(const EllipseProgram &other) :
+        BoundedDistancePrimitiveProgram(other)
+    {}
 
 protected:
     virtual QString generateDistanceSource() const override;
@@ -514,15 +538,15 @@ protected:
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 };
 
-class PatternProgram : public Program {
+class BackgroundCheckersProgram : public Program {
 public:
-    PatternProgram(const Pattern pattern, const Buffer::Format destFormat, const int blendMode) :
+    BackgroundCheckersProgram(const Pattern pattern, const Buffer::Format destFormat, const int blendMode) :
         Program(),
         pattern(pattern), destFormat(destFormat), blendMode(blendMode)
     {
         updateKey(typeid(this), {static_cast<int>(pattern), static_cast<int>(destFormat.componentType), destFormat.componentSize, destFormat.componentCount, blendMode});
     }
-    PatternProgram(const PatternProgram &other) :
+    BackgroundCheckersProgram(const BackgroundCheckersProgram &other) :
         Program(other),
         pattern(other.pattern), destFormat(other.destFormat), blendMode(other.blendMode)
     {
@@ -726,10 +750,6 @@ public:
     Colour pick(const Buffer *const palette, const QSize &cells, const Vec2 &pos);
 
 protected:
-    struct alignas(16)StorageData {
-        alignas(16) Colour colour;
-    };
-
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 
     const Buffer::Format format;
@@ -754,10 +774,6 @@ public:
     Colour convert(const Colour &colour);
 
 protected:
-    struct alignas(16) StorageData {
-        alignas(16) Colour colour;
-    };
-
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 
     const ColourSpace from;
@@ -781,10 +797,6 @@ public:
     Colour pick(const Buffer *const src, const Buffer *const srcPalette, const Vec2 &pos);
 
 protected:
-    struct alignas(16) StorageData {
-        alignas(16) Colour colour;
-    };
-
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 
     const Buffer::Format format;
@@ -799,9 +811,8 @@ public:
     {
     }
     ~ProgramManager() {
-        const auto keys = programs.keys();
-        for (const auto &key : keys) {
-            delete programs.value(key).first;
+        for (auto &[key, value] : programs) {
+            delete value.first;
         }
     }
 
@@ -812,21 +823,23 @@ public:
     QOpenGLShaderProgram *grab(const Program::Key &key, std::function<QOpenGLShaderProgram *()> createFunc = nullptr) {
         Q_ASSERT(contains(key) || createFunc);
         if (!contains(key)) {
-            programs.insert(key, std::make_pair(createFunc(), 0));
+            qDebug() << "Compile program:" << key.first.name() << key.second;////////////////////////
+            programs[key] = std::make_pair(createFunc(), 0);
         }
         programs[key].second++;
-        return programs.value(key).first;
+        return programs[key].first;
     }
     void release(const Program::Key &key) {
         Q_ASSERT(programs.contains(key));
         programs[key].second--;
-        if (programs.value(key).second == 0) {
-            delete programs.take(key).first;
+        if (programs[key].second == 0) {
+            delete programs[key].first;
+            programs.erase(key);
         }
     }
 
 protected:
-    QMap<Program::Key, std::pair<QOpenGLShaderProgram *, int>> programs;
+    std::map<Program::Key, std::pair<QOpenGLShaderProgram *, int>> programs;
 };
 
 } // namespace GfxPaint

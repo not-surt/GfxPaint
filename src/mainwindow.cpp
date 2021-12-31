@@ -552,8 +552,17 @@ void MainWindow::activateEditor(Editor *const editor)
     auto actions = ui->toolToolBar->actions();
     ui->menuTool->clear();
     ui->toolToolBar->clear();
+
+    for (auto action : blendGroup.actions()) {
+        blendGroup.removeAction(action);
+    }
     ui->menuBlend->clear();
+
+    for (auto action : composeGroup.actions()) {
+        composeGroup.removeAction(action);
+    }
     ui->menuCompose->clear();
+
     ui->undoView->setStack(nullptr);
     qDeleteAll(actions);
     activeEditor = editor;
@@ -660,6 +669,7 @@ void MainWindow::activateEditor(Editor *const editor)
             ui->menuBlend->addAction(action);
             blendGroup.addAction(action);
         }
+        blendGroup.actions()[activeEditor->blendMode()]->setChecked(true);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::blendModeChanged, this, [this](const int blendMode){
             Q_ASSERT(blendMode >= 0 && blendMode < blendGroup.actions().size());
             blendGroup.actions().at(blendMode)->setChecked(true);
@@ -678,6 +688,7 @@ void MainWindow::activateEditor(Editor *const editor)
             ui->menuCompose->addAction(action);
             composeGroup.addAction(action);
         }
+        composeGroup.actions()[activeEditor->composeMode()]->setChecked(true);
         activeEditorConnections << QObject::connect(activeEditor, &Editor::composeModeChanged, this, [this](const int composeMode){
             Q_ASSERT(composeMode >= 0 && composeMode < blendGroup.actions().size());
             composeGroup.actions().at(composeMode)->setChecked(true);

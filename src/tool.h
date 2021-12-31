@@ -18,7 +18,7 @@ class Node;
 class Tool {
 public:
     Tool() {}
-    virtual std::unordered_map<std::string, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const { return {}; }
+    virtual std::map<QString, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const { return {}; }
     virtual void begin(EditingContext &context, const Mat4 &viewTransform) {}
     virtual void update(EditingContext &context, const Mat4 &viewTransform) {}
     virtual void end(EditingContext &context, const Mat4 &viewTransform) {}
@@ -35,7 +35,7 @@ public:
 class PixelTool : public Tool {
 public:
     using Tool::Tool;
-    virtual std::unordered_map<std::string, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
+    virtual std::map<QString, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
     virtual void end(EditingContext &context, const Mat4 &viewTransform) override;
     virtual void onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
 };
@@ -43,7 +43,7 @@ public:
 class BrushTool : public Tool {
 public:
     using Tool::Tool;
-    virtual std::unordered_map<std::string, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
+    virtual std::map<QString, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
     virtual void end(EditingContext &context, const Mat4 &viewTransform) override;
     virtual void onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
 };
@@ -69,7 +69,7 @@ public:
     explicit RectTool() :
         PrimitiveTool()
     {}
-    virtual std::unordered_map<std::string, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
+    virtual std::map<QString, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
     virtual void end(EditingContext &context, const Mat4 &viewTransform) override;
     virtual void onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
     virtual void onTopPreview(Editor &editor, EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
@@ -80,7 +80,7 @@ public:
     explicit EllipseTool() :
         PrimitiveTool()
     {}
-    virtual std::unordered_map<std::string, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
+    virtual std::map<QString, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
     virtual void end(EditingContext &context, const Mat4 &viewTransform) override;
     virtual void onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
     virtual void onTopPreview(Editor &editor, EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
@@ -91,7 +91,7 @@ public:
     explicit ContourTool() :
         Tool()
     {}
-    virtual std::unordered_map<std::string, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
+    virtual std::map<QString, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
     virtual void end(EditingContext &context, const Mat4 &viewTransform) override;
     virtual void onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
     virtual void onTopPreview(Editor &editor, EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
@@ -107,7 +107,7 @@ public:
     explicit ColourPickTool() :
         Tool()
     {}
-    virtual std::unordered_map<std::string, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
+    virtual std::map<QString, Program *> nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const override;
     virtual void begin(EditingContext &context, const Mat4 &viewTransform) override;
     virtual void update(EditingContext &context, const Mat4 &viewTransform) override;
     virtual bool updatesContext() const override { return true; }

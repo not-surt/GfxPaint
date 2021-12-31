@@ -8,7 +8,7 @@ namespace GfxPaint {
 ColourComponentsPlaneWidget::ColourComponentsPlaneWidget(const ColourSpace colourSpace, const int xComponent, const int yComponent, const bool quantise, const Buffer::Format quantisePaletteFormat, QWidget *const parent) :
     RenderedWidget(parent),
     colourSpace(colourSpace), xComponent(xComponent), yComponent(yComponent), quantise(quantise), quantisePaletteFormat(quantisePaletteFormat),
-    program(nullptr), markerProgram(nullptr),
+    program(nullptr),
     m_pos(0.0, 0.0), m_colour{},
     m_palette(nullptr)
 {
@@ -25,7 +25,6 @@ ColourComponentsPlaneWidget::~ColourComponentsPlaneWidget()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     delete program;
-    delete markerProgram;
 }
 
 void ColourComponentsPlaneWidget::mouseEvent(QMouseEvent *event)
@@ -49,10 +48,10 @@ void ColourComponentsPlaneWidget::setColour(const Colour &colour)
 
 void ColourComponentsPlaneWidget::setPalette(const Buffer *const palette)
 {
-    QList<Program *> oldPrograms = {program};
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+    std::list<Program *> oldPrograms = {program};
     program = new ColourPlaneProgram(colourSpace, xComponent >= 0, yComponent >= 0, RenderedWidget::format, 0, quantise, quantisePaletteFormat);
-    qDeleteAll(oldPrograms);
+    oldPrograms.clear();
     if (m_palette != palette) {
         m_palette = palette;
         if (quantise) update();
@@ -72,12 +71,6 @@ void ColourComponentsPlaneWidget::initializeGL()
 {
     RenderedWidget::initializeGL();
 
-    {
-        ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-        QList<Program *> oldPrograms = {markerProgram};
-        markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-        qDeleteAll(oldPrograms);
-    }
     setPalette(m_palette);
 }
 
@@ -99,6 +92,8 @@ void ColourComponentsPlaneWidget::render()
             markerTransform.rotate(90.0f);
         }
     }
+
+    VertexColourModelProgram *const markerProgram = static_cast<VertexColourModelProgram *>(qApp->renderManager.programs["marker"]);
     markerProgram->render(markerModel, markerTransform, widgetBuffer, nullptr);
 }
 

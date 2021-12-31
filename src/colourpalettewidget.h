@@ -55,7 +55,6 @@ protected:
     Index dragStartIndex, dragEndIndex;
 
     ColourPaletteProgram *program;
-    VertexColourModelProgram *markerProgram;
     ColourPalettePickProgram *pickProgram;
     ColourPaletteProgram *selectionProgram;
 

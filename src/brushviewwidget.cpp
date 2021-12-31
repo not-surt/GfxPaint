@@ -21,9 +21,9 @@ BrushViewWidget::~BrushViewWidget()
 void BrushViewWidget::setBrush(const Brush &brush)
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    QList<Program *> oldPrograms = {program};
+    std::list<Program *> oldPrograms = {program};
     program = new BrushDabProgram(brush.dab.type, brush.dab.metric, RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    qDeleteAll(oldPrograms);
+    oldPrograms.clear();
 
     this->brush = brush;
     update();

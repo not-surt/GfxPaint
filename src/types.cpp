@@ -2,7 +2,7 @@
 
 namespace GfxPaint {
 
-QMap<ColourSpace, ColourSpaceInfo> colourSpaceInfo = {
+std::map<ColourSpace, ColourSpaceInfo> colourSpaceInfo = {
     {ColourSpace::RGB, {"RGB", "rgb", 3, {"Red", "Green", "Blue"}, {{0.0, 1.0}, {0.0, 1.0}, {0.0, 1.0}}}},
     {ColourSpace::sRGB, {"sRGB", "srgb", 3, {"Red", "Green", "Blue"}, {{0.0, 1.0}, {0.0, 1.0}, {0.0, 1.0}}}},
     {ColourSpace::XYZ, {"XYZ", "xyz", 3, {"X", "Y", "Z"}, {{0.0, 1.0}, {0.0, 1.0}, {0.0, 1.0}}}},

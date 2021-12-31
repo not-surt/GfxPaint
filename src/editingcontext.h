@@ -63,7 +63,7 @@ public:
 
     std::unordered_map<Node *, Traversal::State> &states() { return m_states; }
     QItemSelectionModel &selectionModel() { return m_selectionModel; }
-    QList<Node *> &selectedNodes() { return m_selectedNodes; }
+    std::vector<Node *> &selectedNodes() { return m_selectedNodes; }
 
     Scene &scene;
     ToolId selectedToolId;
@@ -78,9 +78,9 @@ public:
     Buffer *palette;
     std::unordered_map<Node *, Traversal::State> m_states;
     QItemSelectionModel m_selectionModel;
-    QList<Node *> m_selectedNodes;
+    std::vector<Node *> m_selectedNodes;
     std::unordered_map<Node *, Buffer *> selectedNodeRestoreBuffers;
-    std::unordered_map<Node *, std::unordered_map<std::string, Program *>> selectedNodePrograms;
+    std::unordered_map<Node *, std::map<QString, Program *>> selectedNodePrograms;
 };
 
 } // namespace GfxPaint

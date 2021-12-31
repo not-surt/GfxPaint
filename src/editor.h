@@ -268,6 +268,11 @@ public:
     EditingContext::TransformTarget transformTarget() const { return m_editingContext.transformTarget; }
     Mat4 transform() const { return cameraTransform; }
 
+    EditingContext::ToolId selectedToolId() { return m_editingContext.selectedToolId; }
+    EditingContext::ToolSpace toolSpace() { return m_editingContext.toolSpace; }
+    int blendMode() { return m_editingContext.blendMode; }
+    int composeMode() { return m_editingContext.composeMode; }
+
 public slots:
     void setBrush(const GfxPaint::Brush &brush);
     void setColour(const GfxPaint::Colour &colour);

@@ -20,7 +20,7 @@ ColourSlidersWidget::ColourSlidersWidget(QWidget *parent) :
     ui->colourSpaceComboBox->clear();
     auto iterator = colourSpaceInfo.begin();
     while (iterator != colourSpaceInfo.end()) {
-        ui->colourSpaceComboBox->insertItem(static_cast<int>(iterator.key()), iterator.value().label);
+        ui->colourSpaceComboBox->insertItem(static_cast<int>(iterator->first), iterator->second.label);
         ++iterator;
     }
     ui->colourSpaceComboBox->setCurrentIndex(0);

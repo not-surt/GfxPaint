@@ -11,12 +11,14 @@
 #include <QOpenGLFramebufferObject>
 #include <QStack>
 #include <QJsonObject>
-//#include <png.h>
+#include <unordered_set>
 
 #include "buffer.h"
 #include "node.h"
 
 namespace GfxPaint {
+
+class Editor;
 
 class Traversal
 {
@@ -114,6 +116,8 @@ public:
     void render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const Mat4 &viewTransform, std::unordered_map<Node *, Traversal::State> * const saveStates = nullptr);
 
     Node root;
+
+    std::unordered_map<const Buffer *, std::unordered_set<const Editor *>> bufferEditors;
 
 protected:
     QFile file;

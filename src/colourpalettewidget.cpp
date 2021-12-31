@@ -10,7 +10,7 @@ ColourPaletteWidget::ColourPaletteWidget(QWidget *const parent) :
     m_swatchSize(16, 16), m_fitSwatchSize(true),
     leftIndex(INDEX_INVALID), rightIndex(INDEX_INVALID),
     dragStartIndex(INDEX_INVALID), dragEndIndex(INDEX_INVALID),
-    program(nullptr), markerProgram(nullptr), pickProgram(nullptr), selectionProgram(nullptr),
+    program(nullptr), pickProgram(nullptr), selectionProgram(nullptr),
     m_palette(nullptr), m_selection(nullptr), m_ordering(nullptr)
 {
     updatePaletteLayout();
@@ -20,7 +20,6 @@ ColourPaletteWidget::~ColourPaletteWidget()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     delete program;
-    delete markerProgram;
     delete pickProgram;
     delete selectionProgram;
     delete m_selection;
@@ -87,7 +86,6 @@ bool ColourPaletteWidget::event(QEvent *const event)
 void ColourPaletteWidget::setPalette(const Buffer *const palette)
 {
     m_palette = palette;
-    QList<Program *> oldPrograms = {program, selectionProgram, pickProgram};
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     if (m_palette) {
         delete m_selection;
@@ -96,16 +94,17 @@ void ColourPaletteWidget::setPalette(const Buffer *const palette)
         delete m_ordering;
         m_ordering = new Buffer(m_palette->size(), BufferData::Format(BufferData::Format::ComponentType::UInt, 4, 1));
         m_ordering->clearUInt();
+        std::list<Program *> oldPrograms = {program, selectionProgram, pickProgram};
         program = new ColourPaletteProgram(RenderedWidget::format, 0, m_palette->format());
         selectionProgram = new ColourPaletteProgram(RenderedWidget::format, 0, m_selection->format());
         pickProgram = new ColourPalettePickProgram(m_palette->format());
+        oldPrograms.clear();
     }
     else {
         program = nullptr;
         selectionProgram = nullptr;
         pickProgram = nullptr;
     }
-    qDeleteAll(oldPrograms);
 //    update();
     updateGeometry();
 }
@@ -146,12 +145,6 @@ void ColourPaletteWidget::initializeGL()
 {
     RenderedWidget::initializeGL();
 
-    {
-        ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-        QList<Program *> oldPrograms = {markerProgram};
-        markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-        qDeleteAll(oldPrograms);
-    }
     setPalette(m_palette);
 }
 
@@ -163,6 +156,8 @@ void ColourPaletteWidget::render()
         Mat4 markerTransform;
 
         program->render(m_palette, cells, RenderManager::unitToClipTransform, widgetBuffer);
+
+        VertexColourModelProgram *const markerProgram = static_cast<VertexColourModelProgram *>(qApp->renderManager.programs["marker"]);
 
         const QPoint leftCell = QPoint(leftIndex % cells.width(), leftIndex / cells.width());
         markerTransform = RenderManager::unitToClipTransform;

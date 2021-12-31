@@ -38,7 +38,7 @@ protected:
 
     Buffer *widgetBuffer;
 
-    PatternProgram *patternProgram;
+    BackgroundCheckersProgram *patternProgram;
     RenderedWidgetProgram *widgetProgram;
 
     QBasicTimer repaintTimer;

@@ -59,7 +59,7 @@ public:
     static const Mat4 unitToClipTransform;
     static const Mat4 clipToUnitTransform;
     static const Mat4 flipTransform;
-    static const QMap<ColourSpaceConversion, QString> colourSpaceConversionShaderFunctionNames;
+    static const std::map<ColourSpaceConversion, QString> colourSpaceConversionShaderFunctionNames;
     static const QList<DistanceMetricInfo> distanceMetrics;
     static const QList<BlendModeInfo> blendModes;
     static const QList<ComposeModeInfo> composeModes;
@@ -70,9 +70,9 @@ public:
     QOpenGLDebugLogger logger;
     QOpenGLVertexArrayObject vao;
 
-    QMap<QString, Model *> models;
+    std::map<QString, Model *> models;
     ProgramManager programManager;
-    QMap<QString, Program *> programs;
+    std::map<QString, Program *> programs;
 
     explicit RenderManager();
     virtual ~RenderManager();
@@ -84,6 +84,7 @@ public:
 
     static QString headerShaderPart();
     static QString resourceShaderPart(const QString &filename);
+    static QString colourSpaceShaderPart();
     static QString attributelessShaderPart(const AttributelessModel model);
     static QString modelVertexMainShaderPart();
     static QString vertexMainShaderPart();

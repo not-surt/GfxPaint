@@ -51,7 +51,7 @@ EditingContext::~EditingContext()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     selectedNodeRestoreBuffers.clear();
-    for (auto programs : selectedNodePrograms) {
+    for (auto &programs : selectedNodePrograms) {
         programs.second.clear();
     }
     selectedNodePrograms.clear();
@@ -61,10 +61,10 @@ void EditingContext::update(Editor &editor)
 {
     m_states.clear();
     m_selectedNodes.clear();
-    for (auto index : m_selectionModel.selectedRows()) {
+    for (const auto &index : m_selectionModel.selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
         m_states[node] = Traversal::State();
-        m_selectedNodes.append(node);
+        m_selectedNodes.push_back(node);
     }
     // Update node states (non render)
     scene.render(nullptr, false, nullptr, Mat4(), &m_states);

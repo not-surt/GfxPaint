@@ -151,7 +151,7 @@ QString SingleColourModelProgram::generateSource(QOpenGLShader::ShaderTypeBit st
         src += RenderManager::headerShaderPart();
         src += R"(
 uniform Rgba colour;
-uniform mat4 matrix;
+uniform mat4 worldToClip;
 
 in layout(location = 0) vec2 pos;
 
@@ -164,7 +164,7 @@ out VertexOut {
 
 void main(void) {
     vOut.colour = colour;
-    gl_Position = matrix * vec4(pos, 0.0, 1.0);
+    gl_Position = worldToClip * vec4(pos, 0.0, 1.0);
 }
 )";
     }break;
@@ -195,7 +195,7 @@ void SingleColourModelProgram::render(Model *const model, const Colour &colour, 
     program.bind();
 
     glUniform4fv(program.uniformLocation("colour"), 1, colour.rgba.data());
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, worldToClip.constData());
+    glUniformMatrix4fv(program.uniformLocation("worldToClip"), 1, false, worldToClip.constData());
 
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
 
@@ -211,7 +211,7 @@ QString VertexColourModelProgram::generateSource(QOpenGLShader::ShaderTypeBit st
         src += RenderManager::headerShaderPart();
         src +=
             R"(
-uniform mat4 matrix;
+uniform mat4 worldToClip;
 
 in layout(location = 0) vec2 vertexPos;
 in layout(location = 1) vec4 vertexColour;
@@ -222,7 +222,7 @@ out layout(location = 1) vec4 colour;
 void main(void) {
     pos = vec2(0.0, 0.0);
     colour = vertexColour;
-    gl_Position = matrix * vec4(vertexPos, 0.0, 1.0);
+    gl_Position = worldToClip * vec4(vertexPos, 0.0, 1.0);
 }
 )";
     }break;
@@ -252,7 +252,7 @@ void VertexColourModelProgram::render(Model *const model, const Mat4 &worldToCli
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, worldToClip.constData());
+    glUniformMatrix4fv(program.uniformLocation("worldToClip"), 1, false, worldToClip.constData());
 
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
 
@@ -646,7 +646,7 @@ in VertexOut {
     Index index;
 } gIn[];
 
-uniform mat4 matrix;
+uniform mat4 worldToClip;
 
 // Unused to stop complaining about unmatching input in frag
 out layout(location = 0) vec2 pos;
@@ -667,12 +667,12 @@ void createEndPoint(const vec2 point0, const vec2 vector0, const vec2 point1, co
     float t0, t1;
     bool hasIntersection = intersectRays(point0, vector0, point1, vector1, intersection, t0, t1);
     if (hasIntersection) {
-        gl_Position = matrix * vec4(intersection, 0.0, 1.0);
+        gl_Position = worldToClip * vec4(intersection, 0.0, 1.0);
 //    gOut.linePos = gIn[1].linePos;
 //    gOut.segmentPos = 0.0/*gOut.segmentLength * -startAU*/;
     }
     else {
-        gl_Position = matrix * vec4(point0, 0.0, 1.0);
+        gl_Position = worldToClip * vec4(point0, 0.0, 1.0);
 //    gOut.linePos = gIn[1].linePos;
 //    gOut.segmentPos = 0.0/*gOut.segmentLength * -startAU*/;
     }
@@ -712,14 +712,14 @@ void main(void)
     gOut.index = gIn[1].index;
     gOut.uv = vec2(0.0, 0.0);
     createEndPoint(startPointA, segmentVector, prevEndPointA, prevSegmentVector);
-    gl_Position = matrix * vec4(gIn[1].pos, 0.0, 1.0);
+    gl_Position = worldToClip * vec4(gIn[1].pos, 0.0, 1.0);
     gOut.uv = vec2(0.0, 0.5);
     EmitVertex();
     gOut.rgba = gIn[2].rgba;
     gOut.index = gIn[2].index;
     gOut.uv = vec2(1.0, 0.0);
     createEndPoint(endPointA, segmentVector, nextStartPointA, nextSegmentVector);
-    gl_Position = matrix * vec4(gIn[2].pos, 0.0, 1.0);
+    gl_Position = worldToClip * vec4(gIn[2].pos, 0.0, 1.0);
     gOut.uv = vec2(1.0, 0.5);
     EmitVertex();
     EndPrimitive();
@@ -728,14 +728,14 @@ void main(void)
     gOut.index = gIn[1].index;
     gOut.uv = vec2(0.0, 1.0);
     createEndPoint(startPointB, segmentVector, prevEndPointB, prevSegmentVector);
-    gl_Position = matrix * vec4(gIn[1].pos, 0.0, 1.0);
+    gl_Position = worldToClip * vec4(gIn[1].pos, 0.0, 1.0);
     gOut.uv = vec2(0.0, 0.5);
     EmitVertex();
     gOut.rgba = gIn[2].rgba;
     gOut.index = gIn[2].index;
     gOut.uv = vec2(1.0, 1.0);
     createEndPoint(endPointB, segmentVector, nextStartPointB, nextSegmentVector);
-    gl_Position = matrix * vec4(gIn[2].pos, 0.0, 1.0);
+    gl_Position = worldToClip * vec4(gIn[2].pos, 0.0, 1.0);
     gOut.uv = vec2(1.0, 0.5);
     EmitVertex();
     EndPrimitive();
@@ -778,7 +778,7 @@ void LineProgram::render(const std::vector<LineProgram::Point> &points, const Co
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, worldToClip.constData());
+    glUniformMatrix4fv(program.uniformLocation("worldToClip"), 1, false, worldToClip.constData());
 
     qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
 
@@ -1005,7 +1005,7 @@ void BrushDabProgram::render(const std::vector<Stroke::Point> &points, const Bru
     glDeleteTextures(1, &stencilTexture);
 }
 
-QString PatternProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
+QString BackgroundCheckersProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
     QString src;
 
@@ -1014,13 +1014,13 @@ QString PatternProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
         src += RenderManager::headerShaderPart();
         src += RenderManager::attributelessShaderPart(AttributelessModel::ClipQuad);
         src += R"(
-uniform mat4 matrix;
+uniform mat4 worldToClip;
 
 out layout(location = 0) vec2 pos;
 
 void main(void) {
     vec2 vertexPos = vertices[gl_VertexID];
-    pos = vec3(matrix * vec4(vertexPos, 0.0, 1.0)).xy;
+    pos = vec3(worldToClip * vec4(vertexPos, 0.0, 1.0)).xy;
     gl_Position = vec4(vertexPos, 0.0, 1.0);
 }
 )";
@@ -1031,7 +1031,7 @@ void main(void) {
         src += RenderManager::patternShaderPart("srcPattern", Pattern::Checkers);
         src += RenderManager::standardInputFragmentShaderPart("srcPattern");
         src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, false, 0, Buffer::Format());
-        //src += RenderManager::fragmentMainShaderPart(destFormat);
+        //src += RenderManager::standardFragmentMainShaderPart(destFormat);
         src += RenderManager::widgetFragmentMainShaderPart();
     }break;
     default: break;
@@ -1040,11 +1040,11 @@ void main(void) {
     return src;
 }
 
-void PatternProgram::render(const Mat4 &transform)
+void BackgroundCheckersProgram::render(const Mat4 &transform)
 {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, transform.inverted().constData());
+    glUniformMatrix4fv(program.uniformLocation("worldToClip"), 1, false, transform.inverted().constData());
 
     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
@@ -1112,14 +1112,14 @@ QString ColourPaletteProgram::generateSource(QOpenGLShader::ShaderTypeBit stage)
         src += RenderManager::headerShaderPart();
         src += RenderManager::attributelessShaderPart(AttributelessModel::ClipQuad);
         src += R"(
-uniform mat4 matrix;
+uniform mat4 worldToClip;
 
 out layout(location = 0) vec2 pos;
 
 void main(void) {
     vec2 vertexPos = vertices[gl_VertexID];
     pos = vertexPos;
-    gl_Position = matrix * vec4(vertexPos, 0.0, 1.0);
+    gl_Position = worldToClip * vec4(vertexPos, 0.0, 1.0);
 }
 )";
     }break;
@@ -1148,7 +1148,7 @@ void ColourPaletteProgram::render(const Buffer *const palette, const QSize &cell
         QOpenGLShaderProgram &program = this->program();
         program.bind();
 
-        glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, RenderManager::unitToClipTransform.constData());
+        glUniformMatrix4fv(program.uniformLocation("worldToClip"), 1, false, RenderManager::unitToClipTransform.constData());
         glUniform2i(program.uniformLocation("cells"), cells.width(), cells.height());
 
         qApp->renderManager.bindBufferShaderPart(program, "srcPalPalette", 0, palette);
@@ -1193,27 +1193,25 @@ Colour ColourPalettePickProgram::pick(const Buffer *const palette, const QSize &
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, RenderManager::unitToClipTransform.constData());
     glUniform2i(program.uniformLocation("cells"), cells.width(), cells.height());
 
     qApp->renderManager.bindBufferShaderPart(program, "srcPalPalette", 0, palette);
 
-//    glUniform2fv(program.uniformLocation("pos"), 1, (GLfloat *)&pos);
-    glUniform2f(program.uniformLocation("pos"), pos.x(), pos.y());
+    glUniform2fv(program.uniformLocation("pos"), 1, (GLfloat *)&pos);
+//    glUniform2f(program.uniformLocation("pos"), pos.x(), pos.y());
 
-    StorageData storageData;
+    Colour colour;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(storageData), &storageData, GL_STREAM_READ);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Colour), &colour, GL_STREAM_READ);
 
     glDispatchCompute(1, 1, 1);
 
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-//    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), &storageData);
-    void *mapping = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), GL_MAP_READ_BIT);
-    memcpy(&storageData, mapping, sizeof(storageData));
+    void *const mapping = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(Colour), GL_MAP_READ_BIT);
+    memcpy(&colour, mapping, sizeof(Colour));
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
-    return storageData.colour;
+    return colour;
 }
 
 QString ColourConversionProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
@@ -1251,21 +1249,21 @@ Colour ColourConversionProgram::convert(const Colour &colour) {
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    StorageData storageData;
-    storageData.colour = colour;
+    Colour convert;
+    convert = colour;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(storageData), &storageData, GL_STREAM_READ);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Colour), &convert, GL_STREAM_READ);
 
     glDispatchCompute(1, 1, 1);
 
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-//    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), &storageData);
-    void *mapping = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), GL_MAP_READ_BIT);
-    Q_ASSERT(mapping != nullptr); // Why sometimes null?
-    memcpy(&storageData, mapping, sizeof(storageData));
+    void *const mapping = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(Colour), GL_MAP_READ_BIT);
+    // TODO: Why sometimes null?
+    Q_ASSERT(mapping != nullptr);
+    memcpy(&convert, mapping, sizeof(Colour));
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
-    return storageData.colour;
+    return convert;
 }
 
 QString ColourPickProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
@@ -1301,30 +1299,27 @@ Colour ColourPickProgram::pick(const Buffer *const src, const Buffer *const srcP
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    //    glUniform2f(2, pos.x(), pos.y());
-    //    glUniform2fv(2, 1, (GLfloat *)&pos);
-    //    glUniform2f(2, pos.x(), pos.y());
-    glUniform2f(program.uniformLocation("pos"), pos.x(), pos.y());
-    //    glUniform2f(program.uniformLocation("pos"), 40, 5);
+    glUniform2fv(program.uniformLocation("pos"), 1, (GLfloat *)&pos);
+//    glUniform2f(program.uniformLocation("pos"), pos.x(), pos.y());
+
     qApp->renderManager.bindIndexedBufferShaderPart(program, "srcBuffer", 0, src, indexed, 1, srcPalette);
 
-    StorageData storageData;
+    Colour colour;
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(storageData), &storageData, GL_STREAM_READ);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, sizeof(Colour), &colour, GL_STREAM_READ);
 
     glDispatchCompute(1, 1, 1);
 
     glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-    //    glGetBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), &storageData);
-    void *mapping = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(storageData), GL_MAP_READ_BIT);
-    memcpy(&storageData, mapping, sizeof(storageData));
+    void *const mapping = glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(Colour), GL_MAP_READ_BIT);
+    memcpy(&colour, mapping, sizeof(Colour));
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
     // TODO: paint colour glitchy with valid index
     // problem with struct padding? No, indices are valid
 //    storageData.colour.index = INDEX_INVALID;//////////////////////////////////////////
 //    storageData.colour.index = 7;//////////////////////////////////////////
 //    qDebug() << storageData.colour.index;/////////////////////////
-    return storageData.colour;
+    return colour;
 }
 
 } // namespace GfxPaint

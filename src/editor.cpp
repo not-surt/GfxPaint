@@ -164,7 +164,7 @@ bool Editor::event(QEvent *const event)
         }
 
         const Vec2 cursorViewportPos = mouseTransform * cursorPos;
-        const Vec2 cursorWorldPos = cameraTransform.inverted() * (mouseTransform * cursorPos);
+        const Vec2 cursorWorldPos = cameraTransform.inverted() * cursorViewportPos;
 
         if (inputStateChanged) {
             selectedToolStack.clear();
@@ -435,7 +435,6 @@ void Editor::render()
                 glDisable(GL_DEPTH_TEST);
                 glDisable(GL_BLEND);
 
-                const Vec2 point = cameraTransform.inverted() * mouseTransform * cursorPos;
                 m_editingContext.toolMode = onCanvasPreviewMode;
                 onCanvasPreviewTool->onCanvasPreview(m_editingContext, transform(), onCanvasPreviewIsActive);
             }
@@ -483,14 +482,14 @@ void Editor::render()
 //    BrushDabProgram *brushDabProgram = new BrushDabProgram(m_editingContext.brush().dab.type, m_editingContext.brush().dab.metric, RenderedWidget::format, false, Buffer::Format(), m_editingContext.blendMode(), m_editingContext.composeMode());
 //    brushDabProgram->render(strokePoints, m_editingContext.brush().dab, m_editingContext.colour(), viewportTransform * cameraTransform, Mat4(), widgetBuffer, nullptr);
 
-    SmoothQuadProgram *smoothQuadProgram = new SmoothQuadProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
-    std::vector<vec2> smoothQuadPoints{
-        {16.0, 16.0f},
-        {160.0, 16.0f},
-        {160.0, 160.0f},
-        {66.0, 100.0f},
-   };
-    smoothQuadProgram->render(smoothQuadPoints, viewportTransform * cameraTransform, widgetBuffer, nullptr);
+//    SmoothQuadProgram *smoothQuadProgram = new SmoothQuadProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+//    std::vector<vec2> smoothQuadPoints{
+//        {16.0, 16.0f},
+//        {160.0, 16.0f},
+//        {160.0, 160.0f},
+//        {66.0, 100.0f},
+//   };
+//    smoothQuadProgram->render(smoothQuadPoints, viewportTransform * cameraTransform, widgetBuffer, nullptr);
 
     Tool *onTopPreviewTool = nullptr;
     bool onTopPreviewIsActive = false;

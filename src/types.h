@@ -144,6 +144,7 @@ enum class AttributelessModel {
 
 enum class Pattern {
     Checkers,
+    Bricks,
 };
 
 enum class ColourSpace {
@@ -162,11 +163,11 @@ struct ColourSpaceInfo {
     QString label;
     QString funcName;
     int componentCount;
-    QStringList componentLabels;
-    QList<std::pair<qreal, qreal>> componentRanges;
+    std::vector<QString> componentLabels;
+    std::vector<std::pair<float, float>> componentRanges;
 };
 
-extern QMap<ColourSpace, ColourSpaceInfo> colourSpaceInfo;
+extern std::map<ColourSpace, ColourSpaceInfo> colourSpaceInfo;
 
 } // namespace GfxPaint
 

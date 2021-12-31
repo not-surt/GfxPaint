@@ -56,7 +56,7 @@ void RenderedWidget::initializeGL()
         delete old;
 
         old = patternProgram;
-        patternProgram = new PatternProgram(Pattern::Checkers, format, 0);
+        patternProgram = new BackgroundCheckersProgram(Pattern::Checkers, format, 0);
         delete old;
     }
 }

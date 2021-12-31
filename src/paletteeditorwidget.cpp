@@ -19,7 +19,7 @@ PaletteEditorWidget::PaletteEditorWidget(QWidget *parent) :
     ui->colourSpaceComboBox->clear();
     auto iterator = colourSpaceInfo.begin();
     while (iterator != colourSpaceInfo.end()) {
-        ui->colourSpaceComboBox->insertItem(static_cast<int>(iterator.key()), iterator.value().label);
+        ui->colourSpaceComboBox->insertItem(static_cast<int>(iterator->first), iterator->second.label);
         ++iterator;
     }
     ui->colourSpaceComboBox->setCurrentIndex(0);
@@ -78,7 +78,7 @@ void PaletteEditorWidget::updateColourSpaceComponentComboBox()
     ui->colourSpaceComponentComboBox->blockSignals(true);
     ui->colourSpaceComponentComboBox->clear();
     const ColourSpace colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
-    for (int i = 0; i < colourSpaceInfo[colourSpace].componentLabels.length(); ++i) {
+    for (int i = 0; i < colourSpaceInfo[colourSpace].componentLabels.size(); ++i) {
         ui->colourSpaceComponentComboBox->insertItem(i, colourSpaceInfo[colourSpace].componentLabels[i]);
     }
     ui->colourSpaceComponentComboBox->setCurrentIndex(componentIndex);

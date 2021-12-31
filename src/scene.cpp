@@ -18,6 +18,7 @@ Traversal::State::~State() {
 
 Scene::Scene(const QString &filename) :
     root(),
+    bufferEditors(),
     file(),
     m_filename(filename),
     m_modified(false)
@@ -25,6 +26,7 @@ Scene::Scene(const QString &filename) :
 
 Scene::Scene(const Scene &other) :
     root(other.root),
+    bufferEditors(other.bufferEditors),
     m_filename(other.m_filename),
     m_modified(other.m_modified)
 {}

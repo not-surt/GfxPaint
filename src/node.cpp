@@ -71,15 +71,23 @@ AbstractBufferNode::AbstractBufferNode(const AbstractBufferNode &other) :
 BufferNode::BufferNode(const Buffer &buffer, const bool indexed, const int blendMode, const int composeMode, const Colour &transparent, const QSizeF &pixelAspectRatio, const QSizeF &scrollScale) :
     SpatialNode(), AbstractBufferNode(buffer, indexed),
     blendMode(blendMode), composeMode(composeMode), transparent(transparent),
-    pixelAspectRatio(pixelAspectRatio), scrollScale(scrollScale)
+    pixelAspectRatio(pixelAspectRatio), scrollScale(scrollScale),
+    program(nullptr)
 {
 }
 
 BufferNode::BufferNode(const BufferNode &other) :
     SpatialNode(other), AbstractBufferNode(other),
     blendMode(other.blendMode), composeMode(other.composeMode), transparent(other.transparent),
-    scrollScale(other.scrollScale)
+    pixelAspectRatio(other.pixelAspectRatio), scrollScale(other.scrollScale),
+    program(nullptr)
 {
+}
+
+BufferNode::~BufferNode()
+{
+    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+    delete program;
 }
 
 Node *BufferNode::createFromFile(const QString &filename)
@@ -146,10 +154,11 @@ void BufferNode::render(Traversal &traversal)
             palette = traversal.paletteStack.top();
             paletteFormat = palette->format();
         }
-        // TODO: don't create new program for every render
-        BufferProgram program(buffer.format(), indexed, paletteFormat, renderTarget.buffer->format(), renderTarget.indexed, renderTarget.palette ? renderTarget.palette->format() : Buffer::Format(), 0, 3);
+        std::list<Program *> oldPrograms = {program};
+        program = new BufferProgram(buffer.format(), indexed, paletteFormat, renderTarget.buffer->format(), renderTarget.indexed, renderTarget.palette ? renderTarget.palette->format() : Buffer::Format(), 0, 3);
+        oldPrograms.clear();
         renderTarget.buffer->bindFramebuffer();
-        program.render(&buffer, palette, transparent, renderTarget.transform * transform, renderTarget.buffer, renderTarget.palette, Colour{});
+        program->render(&buffer, palette, transparent, renderTarget.transform * transform, renderTarget.buffer, renderTarget.palette, Colour{});
     }
 }
 

@@ -6,7 +6,7 @@
 
 namespace GfxPaint {
 
-std::unordered_map<std::string, Program *> PixelTool::nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const
+std::map<QString, Program *> PixelTool::nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const
 {
     BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
     if (bufferNode) {
@@ -48,7 +48,7 @@ void PixelTool::onCanvasPreview(EditingContext &context, const Mat4 &viewTransfo
     }
 }
 
-std::unordered_map<std::string, Program *> BrushTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
+std::map<QString, Program *> BrushTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
 {
     BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
     if (bufferNode) {
@@ -110,14 +110,13 @@ void BrushTool::onCanvasPreview(EditingContext &context, const Mat4 &viewTransfo
     }
 }
 
-std::unordered_map<std::string, Program *> RectTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
+std::map<QString, Program *> RectTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
 {
     const PrimitiveTool::Mode primitiveMode = static_cast<PrimitiveTool::Mode>(context.toolMode);
     BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
     if (bufferNode) {
         return {
             {"render", new RectProgram(primitiveMode == PrimitiveTool::Mode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode, context.composeMode)},
-            {"marker", new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault)},
         };
     }
     else return {};
@@ -125,8 +124,6 @@ std::unordered_map<std::string, Program *> RectTool::nodePrograms(EditingContext
 
 void RectTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
-    const PrimitiveTool::Mode primitiveMode = static_cast<PrimitiveTool::Mode>(context.toolMode);
-
     update(context, viewTransform);
     for (Node *node : context.selectedNodes()) {
         auto &programs = context.selectedNodePrograms[node];
@@ -169,14 +166,13 @@ void RectTool::onTopPreview(Editor &editor, EditingContext &context, const Mat4 
     }
 }
 
-std::unordered_map<std::string, Program *> EllipseTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
+std::map<QString, Program *> EllipseTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
 {
     const PrimitiveTool::Mode primitiveMode = static_cast<PrimitiveTool::Mode>(context.toolMode);
     BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
     if (bufferNode) {
         return {
             {"render", new EllipseProgram(primitiveMode == PrimitiveTool::Mode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode, context.composeMode)},
-            {"marker", new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault)},
         };
     }
     else return {};
@@ -184,8 +180,6 @@ std::unordered_map<std::string, Program *> EllipseTool::nodePrograms(EditingCont
 
 void EllipseTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
-    const PrimitiveTool::Mode primitiveMode = static_cast<PrimitiveTool::Mode>(context.toolMode);
-
     update(context, viewTransform);
     for (Node *node : context.selectedNodes()) {
         auto &programs = context.selectedNodePrograms[node];
@@ -225,14 +219,13 @@ void EllipseTool::onTopPreview(Editor &editor, EditingContext &context, const Ma
     }
 }
 
-std::unordered_map<std::string, Program *> ContourTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
+std::map<QString, Program *> ContourTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
 {
     BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
     if (bufferNode) {
         return {
             {"stencil", new ContourStencilProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault)},
             {"colour", new SingleColourModelProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode, context.composeMode)},
-            {"marker", new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault)},
         };
     }
     else return {};
@@ -302,7 +295,7 @@ void ContourTool::onTopPreview(Editor &editor, EditingContext &context, const Ma
     }
 }
 
-std::unordered_map<std::string, Program *> ColourPickTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
+std::map<QString, Program *> ColourPickTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
 {
     BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
     if (bufferNode) {
