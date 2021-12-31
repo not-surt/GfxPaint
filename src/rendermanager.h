@@ -72,6 +72,7 @@ public:
 
     QMap<QString, Model *> models;
     ProgramManager programManager;
+    QMap<QString, Program *> programs;
 
     explicit RenderManager();
     virtual ~RenderManager();

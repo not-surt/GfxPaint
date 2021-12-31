@@ -1,21 +1,9 @@
 #include "editingcontext.h"
 
 #include "application.h"
+#include "editor.h"
 
 namespace GfxPaint {
-
-EditingContext::NodeEditingContext::NodeEditingContext(EditingContext *const context, Node *const node, Tool *const tool, PixelLineProgram * const pixelLineProgram, BrushDabProgram * const brushDabProgram, ColourPickProgram * const colourPickProgram, Buffer * const restoreBuffer)
-    : pixelLineProgram(pixelLineProgram), brushDabProgram(brushDabProgram), colourPickProgram(colourPickProgram), restoreBuffer(restoreBuffer)/*,
-    programs(tool->nodePrograms(*context, node))*/
-{
-}
-
-EditingContext::NodeEditingContext::~NodeEditingContext() {
-    delete pixelLineProgram;
-    delete brushDabProgram;
-    delete colourPickProgram;
-    delete restoreBuffer;
-}
 
 const std::map<EditingContext::TransformTarget, QString> EditingContext::transformTargetNames{
     {TransformTarget::View, "View"},
@@ -32,26 +20,27 @@ const std::map<EditingContext::ToolSpace, QString> EditingContext::toolSpaceName
 
 EditingContext::EditingContext(Scene &scene) :
     scene(scene),
-    m_toolSpace(ToolSpace::Object), m_blendMode{0}, m_composeMode{RenderManager::composeModeDefault},
-    m_brush(),
-    m_colour{{0.0, 0.0, 0.0, 1.0}, INDEX_INVALID},
-    toolStroke{}, toolMode(0), transformTarget(TransformTarget::View),
-    m_palette(nullptr),
-    m_nodeEditingContexts(),
+    selectedToolId(ToolId::Pixel),
+    toolMode(0), toolSpace(ToolSpace::Object), toolStroke{},
+    transformTarget(TransformTarget::View),
+    blendMode{0}, composeMode{RenderManager::composeModeDefault},
+    brush(),
+    colour{{0.0, 0.0, 0.0, 1.0}, INDEX_INVALID},
+    palette(nullptr),
     m_selectionModel(qApp->documentManager.documentModel(&scene)),
     m_selectedNodes()
 {
-    update();
 }
 
 EditingContext::EditingContext(EditingContext &other) :
     scene(other.scene),
-    m_toolSpace(other.m_toolSpace), m_blendMode(other.m_blendMode), m_composeMode(other.m_composeMode),
-    m_brush(other.m_brush),
-    m_colour(other.m_colour),
-    toolStroke(other.toolStroke), toolMode(other.toolMode), transformTarget(other.transformTarget),
-    m_palette(other.m_palette),
-    m_nodeEditingContexts(),
+    selectedToolId(other.selectedToolId),
+    toolMode(other.toolMode), toolSpace(other.toolSpace), toolStroke(other.toolStroke),
+    transformTarget(other.transformTarget),
+    blendMode(other.blendMode), composeMode(other.composeMode),
+    brush(other.brush),
+    colour(other.colour),
+    palette(other.palette),
     m_selectionModel(other.m_selectionModel.model()),
     m_selectedNodes(other.m_selectedNodes)
 {
@@ -61,42 +50,41 @@ EditingContext::EditingContext(EditingContext &other) :
 EditingContext::~EditingContext()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    qDeleteAll(m_nodeEditingContexts);
+    selectedNodeRestoreBuffers.clear();
+    for (auto programs : selectedNodePrograms) {
+        programs.second.clear();
+    }
+    selectedNodePrograms.clear();
 }
 
-void EditingContext::update()
+void EditingContext::update(Editor &editor)
 {
-    for (auto i = m_nodeEditingContexts.constBegin(); i != m_nodeEditingContexts.constEnd(); ++i) {
-        auto const &node = i.key();
-        auto const &nodeEditingContext = i.value();
-    }
     m_states.clear();
     m_selectedNodes.clear();
     for (auto index : m_selectionModel.selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
-        m_states.insert(node, Traversal::State());
+        m_states[node] = Traversal::State();
         m_selectedNodes.append(node);
     }
     // Update node states (non render)
     scene.render(nullptr, false, nullptr, Mat4(), &m_states);
 
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-    QHash<Node *, NodeEditingContext *> oldNodeContexts = m_nodeEditingContexts;
-    m_nodeEditingContexts.clear();
+    auto oldSelectedNodeRestoreBuffers = selectedNodeRestoreBuffers;
+    selectedNodeRestoreBuffers.clear();
+    auto oldSelectedNodePrograms = selectedNodePrograms;
+    selectedNodePrograms.clear();
     for (Node *node : m_selectedNodes) {
         Traversal::State &state = m_states[node];
-        Tool *const tool = nullptr;
+        Tool *const tool = editor.toolInfo.at(selectedToolId).tool;
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
-            m_nodeEditingContexts.insert(bufferNode, new NodeEditingContext(this, node, tool,
-                new PixelLineProgram(bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_blendMode, m_composeMode),
-                new BrushDabProgram(m_brush.dab.type, m_brush.dab.metric, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), m_blendMode, m_composeMode),
-                new ColourPickProgram(bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format()),
-                new Buffer(bufferNode->buffer)
-            ));
+            selectedNodeRestoreBuffers[bufferNode] = new Buffer(bufferNode->buffer);
+            selectedNodePrograms[bufferNode] = tool->nodePrograms(*this, node, state);
         }
     }
-    qDeleteAll(oldNodeContexts);
+    oldSelectedNodeRestoreBuffers.clear();
+    oldSelectedNodePrograms.clear();
 }
 
 } // namespace GfxPaint

@@ -38,7 +38,7 @@ public:
         bool rendering;
     };
 
-    QHash<Node *, Traversal::State> *saveStates;
+    std::unordered_map<Node *, Traversal::State> *saveStates;
 
     QStack<RenderTarget> renderTargetStack;
     QStack<Mat4> transformStack;
@@ -110,8 +110,8 @@ public:
     }
     static void beforeChildren(Node *const node, Traversal &traversal);
     static void afterChildren(Node *const node, Traversal &traversal);
-    void renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const Mat4 &viewTransform, const Mat4 &parentTransform, QHash<Node *, Traversal::State> * const saveStates = nullptr);
-    void render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const Mat4 &viewTransform, QHash<Node *, Traversal::State> * const saveStates = nullptr);
+    void renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const Mat4 &viewTransform, const Mat4 &parentTransform, std::unordered_map<Node *, Traversal::State> * const saveStates = nullptr);
+    void render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const Mat4 &viewTransform, std::unordered_map<Node *, Traversal::State> * const saveStates = nullptr);
 
     Node root;
 

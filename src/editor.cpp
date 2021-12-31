@@ -35,7 +35,6 @@ Editor::Editor(Scene &scene, QWidget *parent) :
     m_editingContext(scene),
     cameraTransform(),
     inputState{}, cursorPos(), cursorDelta(), cursorOver{false}, wheelDelta{}, pressure{}, rotation{}, tilt{}, quaternion{},
-    m_selectedToolId(defaultTool),
     selectedToolStack{}, activatedToolStack{}
 {
     init();
@@ -169,8 +168,8 @@ bool Editor::event(QEvent *const event)
 
         if (inputStateChanged) {
             selectedToolStack.clear();
-            if (m_selectedToolId != EditingContext::ToolId::Invalid) {
-                auto pair = std::make_pair(InputState(), m_selectedToolId);
+            if (m_editingContext.selectedToolId != EditingContext::ToolId::Invalid) {
+                auto pair = std::make_pair(InputState(), m_editingContext.selectedToolId);
                 selectedToolStack.push_front(pair);
             }
             for (const auto &[trigger, id] : toolSelectors) {
@@ -326,11 +325,11 @@ QString Editor::label() const
 
 void Editor::activeEditingContextUpdated()
 {
-    emit brushChanged(m_editingContext.brush());
+    emit brushChanged(m_editingContext.brush);
     emit transformTargetChanged(m_editingContext.transformTarget);
     emit transformChanged(cameraTransform);
-    emit colourChanged(m_editingContext.colour());
-    emit paletteChanged(m_editingContext.palette());
+    emit colourChanged(m_editingContext.colour);
+    emit paletteChanged(m_editingContext.palette);
     updateContext();
 }
 
@@ -356,19 +355,55 @@ void Editor::duplicateSelectedNodes()
 
 }
 
+void Editor::setSelectedToolId(const EditingContext::ToolId toolId)
+{
+    if (m_editingContext.selectedToolId != toolId) {
+        m_editingContext.selectedToolId = toolId;
+        m_editingContext.update(*this);
+        emit selectedToolIdChanged(toolId);
+    }
+}
+
+void Editor::setToolSpace(const EditingContext::ToolSpace toolSpace)
+{
+    if (m_editingContext.toolSpace != toolSpace) {
+        m_editingContext.toolSpace = toolSpace;
+        emit toolSpaceChanged(toolSpace);
+    }
+}
+
+void Editor::setBlendMode(const int blendMode)
+{
+    if (m_editingContext.blendMode != blendMode) {
+        m_editingContext.blendMode = blendMode;
+        m_editingContext.update(*this);
+        emit blendModeChanged(blendMode);
+    }
+}
+
+void Editor::setComposeMode(const int composeMode)
+{
+    if (m_editingContext.composeMode != composeMode) {
+        m_editingContext.composeMode = composeMode;
+        m_editingContext.update(*this);
+        emit composeModeChanged(composeMode);
+    }
+}
+
 void Editor::setBrush(const Brush &brush)
 {
-    if (m_editingContext.brush() != brush) {
-        m_editingContext.setBrush(brush);
-        emit brushChanged(m_editingContext.brush());
+    if (m_editingContext.brush != brush) {
+        m_editingContext.brush = brush;
+        m_editingContext.update(*this);
+        emit brushChanged(brush);
     }
 }
 
 void Editor::setColour(const Colour &colour)
 {
-    if (m_editingContext.colour() != colour) {
-        m_editingContext.setColour(colour);
-        emit colourChanged(m_editingContext.colour());
+    if (m_editingContext.colour != colour) {
+        m_editingContext.colour = colour;
+        emit colourChanged(colour);
     }
 }
 
@@ -390,19 +425,17 @@ void Editor::render()
     }
 
     for (Node *node : m_editingContext.selectedNodes()) {
-        const EditingContext::NodeEditingContext *const bufferNodeContext = m_editingContext.nodeEditingContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        if (bufferNode && bufferNodeContext->restoreBuffer) {
+        if (bufferNode && m_editingContext.selectedNodeRestoreBuffers[node]) {
             // Draw on-canvas tool preview
             if (cursorOver && onCanvasPreviewTool) {
-                bufferNodeContext->restoreBuffer->copy(bufferNode->buffer);
+                m_editingContext.selectedNodeRestoreBuffers[node]->copy(bufferNode->buffer);
                 ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
                 bufferNode->buffer.bindFramebuffer();
                 glDisable(GL_DEPTH_TEST);
                 glDisable(GL_BLEND);
 
                 const Vec2 point = cameraTransform.inverted() * mouseTransform * cursorPos;
-                const Vec2 snappedPoint = Editor::pixelSnap(m_editingContext, point);
                 m_editingContext.toolMode = onCanvasPreviewMode;
                 onCanvasPreviewTool->onCanvasPreview(m_editingContext, transform(), onCanvasPreviewIsActive);
             }
@@ -414,13 +447,11 @@ void Editor::render()
     scene.render(widgetBuffer, false, nullptr, viewportTransform * cameraTransform, &m_editingContext.states());
 
     for (Node *node : m_editingContext.selectedNodes()) {
-        const EditingContext::NodeEditingContext *const bufferNodeContext = m_editingContext.nodeEditingContext(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        if (bufferNode && bufferNodeContext->restoreBuffer) {
+        if (bufferNode && m_editingContext.selectedNodeRestoreBuffers[node]) {
             // Undraw on-canvas tool preview
             if (cursorOver && onCanvasPreviewTool) {
-//                bufferNodeContext->workBuffer->clear();
-                bufferNode->buffer.copy(*bufferNodeContext->restoreBuffer);
+                bufferNode->buffer.copy(*m_editingContext.selectedNodeRestoreBuffers[node]);
             }
         }
     }
@@ -510,7 +541,7 @@ float Editor::strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point 
 
 Mat4 Editor::toolSpace(EditingContext &context, const Mat4 &viewTransform, BufferNode &node, const EditingContext::ToolSpace space)
 {
-    const Traversal::State &state = context.states().value(&node);
+    const Traversal::State &state = context.states().at(&node);
 
     Mat4 toolSpaceTransform;
     switch (space) {
@@ -529,27 +560,6 @@ Mat4 Editor::toolSpace(EditingContext &context, const Mat4 &viewTransform, Buffe
     } break;
     }
     return toolSpaceTransform;
-}
-
-void Editor::drawDab(EditingContext &context, const Mat4 &viewTransform, const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 &worldPos)
-{
-    Q_ASSERT( context.nodeEditingContext(&node));
-
-    const Traversal::State &state = context.states().value(&node);
-
-    // TODO: move tool space handling to tool
-    const Mat4 toolSpaceTransform = Editor::toolSpace(context, viewTransform, node, context.space());
-
-    const Vec2 toolSpaceOffset = toolSpaceTransform * Vec2(0.0f, 0.0f);
-    Mat4 toolSpaceOffsetTransform;
-    toolSpaceOffsetTransform.translate(-toolSpaceOffset);
-
-    Mat4 worldSpaceOffsetTransform;
-    worldSpaceOffsetTransform.translate(worldPos);
-
-    const Buffer *const palette = state.palette;
-    EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(&node);
-//    bufferNodeContext->dabProgram->render(context.toolStroke.points, dab, colour, node.viewportTransform() * state.transform.inverted() * worldSpaceOffsetTransform * (toolSpaceOffsetTransform * toolSpaceTransform).inverted() * node.pixelAspectRatioTransform().inverted(), &node.buffer, palette);
 }
 
 void Editor::setTransformTarget(const EditingContext::TransformTarget transformTarget)
@@ -571,46 +581,14 @@ void Editor::setTransform(const Mat4 &transform)
 
 void Editor::updateContext()
 {
-    m_editingContext.update();
+    m_editingContext.update(*this);
 
     Buffer *palette = nullptr;
     for (Node *node : m_editingContext.selectedNodes()) {
-        const Traversal::State &state = m_editingContext.states().value(node);
+        const Traversal::State &state = m_editingContext.states().at(node);
         if (state.palette) palette = state.palette;
     }
     emit paletteChanged(palette);
-}
-
-void Editor::setSelectedToolId(const EditingContext::ToolId tool)
-{
-    if (m_selectedToolId != tool) {
-        m_selectedToolId = tool;
-        emit selectedToolIdChanged(m_selectedToolId);
-    }
-}
-
-void Editor::setToolSpace(const EditingContext::ToolSpace toolSpace)
-{
-    if (m_editingContext.space() != toolSpace) {
-        m_editingContext.setSpace(toolSpace);
-        emit toolSpaceChanged(toolSpace);
-    }
-}
-
-void Editor::setBlendMode(const int blendMode)
-{
-    if (m_editingContext.blendMode() != blendMode) {
-        m_editingContext.setBlendMode(blendMode);
-        emit blendModeChanged(blendMode);
-    }
-}
-
-void Editor::setComposeMode(const int composeMode)
-{
-    if (m_editingContext.composeMode() != composeMode) {
-        m_editingContext.setComposeMode(composeMode);
-        emit composeModeChanged(composeMode);
-    }
 }
 
 } // namespace GfxPaint

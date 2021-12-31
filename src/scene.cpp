@@ -124,7 +124,7 @@ void Scene::beforeChildren(Node *const node, Traversal &traversal)
     node->beforeChildren(traversal);
 
     if (traversal.saveStates && traversal.saveStates->contains(node)) {
-        traversal.saveStates->insert(node, traversal.state());
+        (*traversal.saveStates)[node] = traversal.state();
     }
 }
 
@@ -133,7 +133,7 @@ void Scene::afterChildren(Node *const node, Traversal &traversal)
     node->afterChildren(traversal);
 }
 
-void Scene::renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const Mat4 &viewTransform, const Mat4 &parentTransform, QHash<Node *, Traversal::State> *const saveStates)
+void Scene::renderSubGraph(Node *const node, Buffer *const buffer, const bool indexed, const Buffer *const palette, const Mat4 &viewTransform, const Mat4 &parentTransform, std::unordered_map<Node *, Traversal::State> *const saveStates)
 {
     Traversal traversal;
 
@@ -152,7 +152,7 @@ void Scene::renderSubGraph(Node *const node, Buffer *const buffer, const bool in
     if (buffer) traversal.renderTargetStack.pop();
 }
 
-void Scene::render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const Mat4 &viewTransform, QHash<Node *, Traversal::State> *const saveStates)
+void Scene::render(Buffer *const buffer, const bool indexed, const Buffer *const palette, const Mat4 &viewTransform, std::unordered_map<Node *, Traversal::State> *const saveStates)
 {
     renderSubGraph(&root, buffer, indexed, palette, viewTransform, Mat4(), saveStates);
 }

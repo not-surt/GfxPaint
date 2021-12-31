@@ -561,17 +561,17 @@ void MainWindow::activateEditor(Editor *const editor)
         ui->sessionEditorWidget->selectionModel()->select(qApp->documentManager.documentModelIndex(&activeEditor->scene), QItemSelectionModel::ClearAndSelect);
 
         activeEditorConnections << QObject::connect(ui->dabEditorWidget, &DabEditorWidget::dabChanged, this, [this](const Brush::Dab &dab){
-            Brush brush = activeEditor->editingContext().brush();
+            Brush brush = activeEditor->editingContext().brush;
             brush.dab = dab;
             activeEditor->setBrush(brush);
         });
         activeEditorConnections << QObject::connect(ui->strokeEditorWidget, &StrokeEditorWidget::strokeChanged, this, [this](const Brush::Stroke &stroke){
-            Brush brush = activeEditor->editingContext().brush();
+            Brush brush = activeEditor->editingContext().brush;
             brush.stroke = stroke;
             activeEditor->setBrush(brush);
         });
         activeEditorConnections << QObject::connect(activeEditor, &Editor::brushChanged, this, [this](const Brush &brush){
-            activeEditor->editingContext().setBrush(brush);
+            activeEditor->editingContext().brush = brush;
             ui->dabEditorWidget->setDab(brush.dab);
             ui->strokeEditorWidget->setStroke(brush.stroke);
         });
@@ -643,11 +643,11 @@ void MainWindow::activateEditor(Editor *const editor)
             toolSpaceGroup.actions().at(static_cast<int>(toolSpace))->setChecked(true);
         });
         activeEditorConnections << QObject::connect(&toolSpaceGroup, &QActionGroup::triggered, this, [this](QAction *const action){
-            activeEditor->editingContext().setSpace(static_cast<EditingContext::ToolSpace>(action->data().toInt()));
+            activeEditor->editingContext().toolSpace = static_cast<EditingContext::ToolSpace>(action->data().toInt());
         });
-        const int space = static_cast<int>(activeEditor->editingContext().space());
-        if (space >= 0 && space < toolSpaceGroup.actions().size()) {
-            toolSpaceGroup.actions().at(space)->setChecked(true);
+        const int toolSpace = static_cast<int>(activeEditor->editingContext().toolSpace);
+        if (toolSpace >= 0 && toolSpace < toolSpaceGroup.actions().size()) {
+            toolSpaceGroup.actions().at(toolSpace)->setChecked(true);
         }
 
         blendGroup.setExclusive(true);

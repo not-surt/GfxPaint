@@ -41,23 +41,23 @@ public:
     {
     }
     virtual void undo() override {
-        for (Node *node : context.selectedNodes()) {
-            const EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(node);
-            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-            if (bufferNode && bufferNodeContext && bufferNodeContext->restoreBuffer) {
-                bufferNode->buffer.copy(*bufferNodeContext->restoreBuffer);
-            }
-        }
+//        for (Node *node : context.selectedNodes()) {
+//            const EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(node);
+//            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+//            if (bufferNode && bufferNodeContext && bufferNodeContext->restoreBuffer) {
+//                bufferNode->buffer.copy(*bufferNodeContext->restoreBuffer);
+//            }
+//        }
     }
     virtual void redo() override {
-        for (Node *node : context.selectedNodes()) {
-            const EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(node);
-            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-            if (bufferNode && bufferNodeContext && bufferNodeContext->restoreBuffer) {
-                bufferNodeContext->restoreBuffer->copy(bufferNode->buffer);
-                //        tool->end(cursorViewportPos, point, mode);
-            }
-        }
+//        for (Node *node : context.selectedNodes()) {
+//            const EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(node);
+//            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+//            if (bufferNode && bufferNodeContext && bufferNodeContext->restoreBuffer) {
+//                bufferNodeContext->restoreBuffer->copy(bufferNode->buffer);
+//                //        tool->end(cursorViewportPos, point, mode);
+//            }
+//        }
     }
 
     Tool *const tool;
@@ -147,15 +147,15 @@ public:
         default: return target;
         }
     }
+    // TODO: delete? doing it in shaders?
     static Vec2 pixelSnap(EditingContext &context, const Vec2 target) {
-        const Brush::Dab &dab = context.brush().dab;
+        const Brush::Dab &dab = context.brush.dab;
         const float offsetX = pixelSnapOffset(dab.pixelSnapX, target.x(), dab.size.x());
         const float offsetY = pixelSnapOffset(dab.pixelSnapY, target.y(), dab.size.y());
         return snap({offsetX, offsetY}, {1.0f, 1.0f}, target);
     }
     static float strokeSegmentDabs(const Stroke::Point &start, const Stroke::Point &end, const Vec2 &brushSize, const Vec2 &absoluteSpacing, const Vec2 &proportionalSpacing, const float offset, Stroke &output);
     static Mat4 toolSpace(EditingContext &context, const Mat4 &viewTransform, BufferNode &node, const EditingContext::ToolSpace space);
-    static void drawDab(EditingContext &context, const Mat4 &viewTransform, const Brush::Dab &dab, const Colour &colour, BufferNode &node, const Vec2 &worldPos);
 
     Scene &scene;
     SceneModel &model;
@@ -274,7 +274,7 @@ public slots:
     void setTransformTarget(const EditingContext::TransformTarget transformTarget);
     void setTransform(const GfxPaint::Mat4 &transform);
     void updateContext();
-    void setSelectedToolId(const GfxPaint::EditingContext::ToolId tool);
+    void setSelectedToolId(const GfxPaint::EditingContext::ToolId toolId);
     void setToolSpace(const GfxPaint::EditingContext::ToolSpace toolSpace);
     void setBlendMode(const int blendMode);
     void setComposeMode(const int composeMode);
@@ -285,7 +285,7 @@ signals:
     void paletteChanged(GfxPaint::Buffer *const palette);
     void transformTargetChanged(const EditingContext::TransformTarget transformTarget);
     void transformChanged(const GfxPaint::Mat4 &transform);
-    void selectedToolIdChanged(const GfxPaint::EditingContext::ToolId tool);
+    void selectedToolIdChanged(const GfxPaint::EditingContext::ToolId toolId);
     void toolSpaceChanged(const GfxPaint::EditingContext::ToolSpace toolSpace);
     void blendModeChanged(const int blendMode);
     void composeModeChanged(const int composeMode);
@@ -308,7 +308,6 @@ protected:
     Vec2 tilt;
     QQuaternion quaternion;
 
-    EditingContext::ToolId m_selectedToolId;
     std::deque<std::pair<InputState, EditingContext::ToolId>> selectedToolStack;
     std::deque<std::pair<InputState, EditingContext::ToolId>> activatedToolStack;
 };

@@ -4,6 +4,7 @@
 #include <cstring>
 #include "utils.h"
 #include "application.h"
+#include "renderedwidget.h"
 
 namespace GfxPaint {
 
@@ -132,7 +133,7 @@ RenderManager::RenderManager() :
     surface(), context(),
     logger(),
     vao(),
-    models(), programManager()
+    models(), programManager(), programs()
 {
     // Create offscreen render context
     // OpenGL ES
@@ -238,7 +239,6 @@ RenderManager::RenderManager() :
             3, 4, 5,
         }, {3, 3,});
 
-
     models["paletteMouseMarker"] = new Model(GL_TRIANGLES, {2, 4,}, {
             0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
             0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
@@ -250,6 +250,8 @@ RenderManager::RenderManager() :
             0, 1, 2,
             3, 4, 5,
         }, {3, 3,});
+
+    programs["marker"] = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
 }
 
 RenderManager::~RenderManager()
@@ -258,6 +260,8 @@ RenderManager::~RenderManager()
         ContextBinder contextBinder(&context, &surface);
 
         qDeleteAll(models);
+
+        qDeleteAll(programs);
 
         logger.stopLogging();
 

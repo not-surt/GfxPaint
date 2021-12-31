@@ -6,24 +6,23 @@
 
 namespace GfxPaint {
 
-std::map<std::string, Program *> PixelTool::nodePrograms(EditingContext &context, Node *const node) const
+std::unordered_map<std::string, Program *> PixelTool::nodePrograms(EditingContext &context, Node *const node, const Traversal::State &state) const
 {
-    std::map<std::string, Program *> programs;
-    const Traversal::State &state = context.states().value(node);
     BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
     if (bufferNode) {
-        programs["render"] = new PixelLineProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode(), context.composeMode());
+        return {{"render", new PixelLineProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode, context.composeMode)}};
     }
-    return programs;
+    else return {};
 }
 
 void PixelTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
     for (Node *node : context.selectedNodes()) {
-        const Traversal::State &state = context.states().value(node);
+        auto &programs = context.selectedNodePrograms[node];
+        const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        const EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(node);
         if (bufferNode) {
+            Buffer *const restoreBuffer = context.selectedNodeRestoreBuffers[node];
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
@@ -32,9 +31,8 @@ void PixelTool::end(EditingContext &context, const Mat4 &viewTransform)
             // Buffer to clip
             Mat4 bufferToClip = bufferNode->viewportTransform();
 
-//            PixelLineProgram *pixelLineProgram = new PixelLineProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode(), context.composeMode());
-            PixelLineProgram *pixelLineProgram = bufferNodeContext->pixelLineProgram;
-            pixelLineProgram->render(context.toolStroke.points, context.colour(), worldToBuffer, bufferToClip, bufferNodeContext->restoreBuffer, state.palette);
+            PixelLineProgram *pixelLineProgram = static_cast<PixelLineProgram *>(context.selectedNodePrograms[node]["render"]);
+            pixelLineProgram->render(context.toolStroke.points, context.colour, worldToBuffer, bufferToClip, restoreBuffer, state.palette);
         }
     }
 }
@@ -50,13 +48,23 @@ void PixelTool::onCanvasPreview(EditingContext &context, const Mat4 &viewTransfo
     }
 }
 
+std::unordered_map<std::string, Program *> BrushTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
+{
+    BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+    if (bufferNode) {
+        return {{"render", new BrushDabProgram(context.brush.dab.type, context.brush.dab.metric, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode, context.composeMode)}};
+    }
+    else return {};
+}
+
 void BrushTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
     for (Node *node : context.selectedNodes()) {
-        const Traversal::State &state = context.states().value(node);
+        auto &programs = context.selectedNodePrograms[node];
+        const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        const EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(node);
         if (bufferNode) {
+            Buffer *const restoreBuffer = context.selectedNodeRestoreBuffers[node];
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
@@ -65,9 +73,8 @@ void BrushTool::end(EditingContext &context, const Mat4 &viewTransform)
             // Buffer to clip
             Mat4 bufferToClip = bufferNode->viewportTransform();
 
-//            BrushDabProgram *brushDabProgram = new BrushDabProgram(context.brush().dab.type, context.brush().dab.metric, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode(), context.composeMode());
-            BrushDabProgram *brushDabProgram = bufferNodeContext->brushDabProgram;
-            brushDabProgram->render(context.toolStroke.points, context.brush().dab, context.colour(), worldToBuffer, bufferToClip, bufferNodeContext->restoreBuffer, state.palette);
+            BrushDabProgram *brushDabProgram = static_cast<BrushDabProgram *>(programs["render"]);
+            brushDabProgram->render(context.toolStroke.points, context.brush.dab, context.colour, worldToBuffer, bufferToClip, restoreBuffer, state.palette);
 
 //            const QRectF lastSegmentBounds;
 //            const Brush &brush = context.brush();
@@ -103,26 +110,39 @@ void BrushTool::onCanvasPreview(EditingContext &context, const Mat4 &viewTransfo
     }
 }
 
+std::unordered_map<std::string, Program *> RectTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
+{
+    const PrimitiveTool::Mode primitiveMode = static_cast<PrimitiveTool::Mode>(context.toolMode);
+    BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+    if (bufferNode) {
+        return {
+            {"render", new RectProgram(primitiveMode == PrimitiveTool::Mode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode, context.composeMode)},
+            {"marker", new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault)},
+        };
+    }
+    else return {};
+}
+
 void RectTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
     const PrimitiveTool::Mode primitiveMode = static_cast<PrimitiveTool::Mode>(context.toolMode);
 
     update(context, viewTransform);
     for (Node *node : context.selectedNodes()) {
-        const Traversal::State &state = context.states().value(node);
+        auto &programs = context.selectedNodePrograms[node];
+        const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        const EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(node);
         if (bufferNode) {
+            Buffer *const restoreBuffer = context.selectedNodeRestoreBuffers[node];
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
 //            const Mat4 toolSpaceTransform = state.transform.inverted(); // World-space to object-space
 //            const Mat4 toolSpaceTransform = Mat4(); // World-space to world-space
 //            const Mat4 toolSpaceTransform = viewTransform; // World-space to view-space
-            Mat4 toolSpaceTransform = Editor::toolSpace(context, viewTransform, *bufferNode, context.space());
-            RectProgram *const program = new RectProgram(primitiveMode == PrimitiveTool::Mode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode(), context.composeMode());
-            program->render({context.toolStroke.points.front().pos, context.toolStroke.points.back().pos}, context.colour(), toolSpaceTransform, bufferNode->viewportTransform() * state.transform.inverted(), bufferNodeContext->restoreBuffer, state.palette);
-            delete program;
+            Mat4 toolSpaceTransform = Editor::toolSpace(context, viewTransform, *bufferNode, context.toolSpace);
+            RectProgram *program = static_cast<RectProgram *>(programs["render"]);
+            program->render({context.toolStroke.points.front().pos, context.toolStroke.points.back().pos}, context.colour, toolSpaceTransform, bufferNode->viewportTransform() * state.transform.inverted(), restoreBuffer, state.palette);
         }
     }
 }
@@ -139,15 +159,27 @@ void RectTool::onTopPreview(Editor &editor, EditingContext &context, const Mat4 
     if (isActive) {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
         Model *const markerModel = qApp->renderManager.models["planeMarker"];
-        VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        VertexColourModelProgram *const markerProgram = static_cast<VertexColourModelProgram *>(qApp->renderManager.programs["marker"]);
         Mat4 markerTransform = editor.getViewportTransform();
         const Vec2 viewportPoint = viewTransform * context.toolStroke.points[0].pos;
         markerTransform.translate(viewportPoint.toVector3D());
         float markerSize = 16.0f;
         markerTransform.scale(markerSize, markerSize);
         markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
-        delete markerProgram;
     }
+}
+
+std::unordered_map<std::string, Program *> EllipseTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
+{
+    const PrimitiveTool::Mode primitiveMode = static_cast<PrimitiveTool::Mode>(context.toolMode);
+    BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+    if (bufferNode) {
+        return {
+            {"render", new EllipseProgram(primitiveMode == PrimitiveTool::Mode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode, context.composeMode)},
+            {"marker", new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault)},
+        };
+    }
+    else return {};
 }
 
 void EllipseTool::end(EditingContext &context, const Mat4 &viewTransform)
@@ -156,17 +188,17 @@ void EllipseTool::end(EditingContext &context, const Mat4 &viewTransform)
 
     update(context, viewTransform);
     for (Node *node : context.selectedNodes()) {
-        const Traversal::State &state = context.states().value(node);
+        auto &programs = context.selectedNodePrograms[node];
+        const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        const EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(node);
         if (bufferNode) {
+            Buffer *const restoreBuffer = context.selectedNodeRestoreBuffers[node];
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
-            Mat4 toolSpaceTransform = Editor::toolSpace(context, viewTransform, *bufferNode, context.space());
-            EllipseProgram *const program = new EllipseProgram(primitiveMode == PrimitiveTool::Mode::Filled, bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode(), context.composeMode());
-            program->render({context.toolStroke.points.front().pos, context.toolStroke.points.back().pos}, context.colour(), toolSpaceTransform, bufferNode->viewportTransform() * state.transform.inverted(), bufferNodeContext->restoreBuffer, state.palette);
-            delete program;
+            Mat4 toolSpaceTransform = Editor::toolSpace(context, viewTransform, *bufferNode, context.toolSpace);
+            EllipseProgram *program = static_cast<EllipseProgram *>(programs["render"]);
+            program->render({context.toolStroke.points.front().pos, context.toolStroke.points.back().pos}, context.colour, toolSpaceTransform, bufferNode->viewportTransform() * state.transform.inverted(), restoreBuffer, state.palette);
         }
     }
 }
@@ -183,25 +215,38 @@ void EllipseTool::onTopPreview(Editor &editor, EditingContext &context, const Ma
     if (isActive) {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
         Model *const markerModel = qApp->renderManager.models["planeMarker"];
-        VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        VertexColourModelProgram *const markerProgram = static_cast<VertexColourModelProgram *>(qApp->renderManager.programs["marker"]);
         Mat4 markerTransform = editor.getViewportTransform();
         const Vec2 viewportPoint = viewTransform * context.toolStroke.points[0].pos;
         markerTransform.translate(viewportPoint.toVector3D());
         float markerSize = 16.0f;
         markerTransform.scale(markerSize, markerSize);
         markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
-        delete markerProgram;
     }
+}
+
+std::unordered_map<std::string, Program *> ContourTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
+{
+    BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+    if (bufferNode) {
+        return {
+            {"stencil", new ContourStencilProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault)},
+            {"colour", new SingleColourModelProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode, context.composeMode)},
+            {"marker", new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault)},
+        };
+    }
+    else return {};
 }
 
 void ContourTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
     update(context, viewTransform);
     for (Node *node : context.selectedNodes()) {
-        const Traversal::State &state = context.states().value(node);
+        auto &programs = context.selectedNodePrograms[node];
+        const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-        const EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(node);
         if (bufferNode) {
+            Buffer *const restoreBuffer = context.selectedNodeRestoreBuffers[node];
             Vec2 boundsMin = Vec2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
             Vec2 boundsMax = Vec2(-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity());
 //            std::vector<Vec2> points;
@@ -218,21 +263,19 @@ void ContourTool::end(EditingContext &context, const Mat4 &viewTransform)
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
 
-            ContourStencilProgram *const stencilProgram = new ContourStencilProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), 0, RenderManager::composeModeDefault);
-            stencilProgram->render(context.toolStroke.points, context.colour(), bufferNode->viewportTransform() * state.transform.inverted(), bufferNodeContext->restoreBuffer, state.palette);
+            ContourStencilProgram *stencilProgram = static_cast<ContourStencilProgram *>(programs["stencil"]);
+            stencilProgram->render(context.toolStroke.points, bufferNode->viewportTransform() * state.transform.inverted(), restoreBuffer);
 
-            Model *const model = new Model(GL_TRIANGLE_STRIP, {2}, {
-                                                                       boundsMin.x(), boundsMin.y(),
-                                                                       boundsMax.x(), boundsMin.y(),
-                                                                       boundsMin.x(), boundsMax.y(),
-                                                                       boundsMax.x(), boundsMax.y()},
-                                           {{0, 1, 2, 3}}, {4});
-            SingleColourModelProgram *const modelProgram = new SingleColourModelProgram(bufferNode->buffer.format(), state.palette != nullptr, state.palette != nullptr ? state.palette->format() : Buffer::Format(), context.blendMode(), context.composeMode());
-            modelProgram->render(model, context.colour(), bufferNode->viewportTransform() * state.transform.inverted(), bufferNodeContext->restoreBuffer, state.palette);
-            delete modelProgram;
+            Model model = {GL_TRIANGLE_STRIP, {2}, {
+                            boundsMin.x(), boundsMin.y(),
+                            boundsMax.x(), boundsMin.y(),
+                            boundsMin.x(), boundsMax.y(),
+                            boundsMax.x(), boundsMax.y()},
+                           {{0, 1, 2, 3}}, {4}};
+            SingleColourModelProgram *modelProgram = static_cast<SingleColourModelProgram *>(programs["colour"]);
+            modelProgram->render(&model, context.colour, bufferNode->viewportTransform() * state.transform.inverted(), restoreBuffer, state.palette);
 
             stencilProgram->postRender();
-            delete stencilProgram;
         }
     }
 }
@@ -249,15 +292,23 @@ void ContourTool::onTopPreview(Editor &editor, EditingContext &context, const Ma
     if (isActive) {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
         Model *const markerModel = qApp->renderManager.models["planeMarker"];
-        VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        VertexColourModelProgram *const markerProgram = static_cast<VertexColourModelProgram *>(qApp->renderManager.programs["marker"]);
         Mat4 markerTransform = editor.getViewportTransform();
         const Vec2 viewportPoint = viewTransform * context.toolStroke.points[0].pos;
         markerTransform.translate(viewportPoint.toVector3D());
         float markerSize = 16.0f;
         markerTransform.scale(markerSize, markerSize);
         markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
-        delete markerProgram;
     }
+}
+
+std::unordered_map<std::string, Program *> ColourPickTool::nodePrograms(EditingContext &context, Node * const node, const Traversal::State &state) const
+{
+    BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+    if (bufferNode) {
+        return {{"pick", new ColourPickProgram(bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format())}};
+    }
+    else return {};
 }
 
 void ColourPickTool::begin(EditingContext &context, const Mat4 &viewTransform)
@@ -268,13 +319,14 @@ void ColourPickTool::begin(EditingContext &context, const Mat4 &viewTransform)
 void ColourPickTool::update(EditingContext &context, const Mat4 &viewTransform)
 {
     for (Node *node : context.selectedNodes()) {
-        const Traversal::State &state = context.states().value(node);
-        EditingContext::NodeEditingContext *const bufferNodeContext = context.nodeEditingContext(node);
+        auto &programs = context.selectedNodePrograms[node];
+        const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
             const Vec2 bufferPoint = state.transform.inverted() * context.toolStroke.points.back().pos;
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
-            context.setColour(bufferNodeContext->colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, bufferPoint));
+            ColourPickProgram *colourPickProgram = static_cast<ColourPickProgram *>(programs["pick"]);
+            context.colour = colourPickProgram->pick(&bufferNode->buffer, bufferNode->indexed ? state.palette : nullptr, bufferPoint);
         }
     }
 }
@@ -312,7 +364,7 @@ void PanTool::update(EditingContext &context, const Mat4 &viewTransform)
     }
     else {
         for (Node *node : context.selectedNodes()) {
-            const Traversal::State &state = context.states().value(node);
+            const Traversal::State &state = context.states().at(node);
             if (context.transformTarget == EditingContext::TransformTarget::Object) {
                 SpatialNode *const spatialNode = dynamic_cast<SpatialNode *>(node);
                 if (spatialNode) {
@@ -345,7 +397,7 @@ void RotoZoomTool::update(EditingContext &context, const Mat4 &viewTransform)
     }
     else {
         for (Node *node : context.selectedNodes()) {
-            const Traversal::State &state = context.states().value(node);
+            const Traversal::State &state = context.states().at(node);
             if (context.transformTarget == EditingContext::TransformTarget::Object) {
                 SpatialNode *const spatialNode = dynamic_cast<SpatialNode *>(node);
                 if (spatialNode) {
@@ -365,12 +417,11 @@ void RotoZoomTool::onTopPreview(Editor &editor, EditingContext &context, const M
     if (isActive) {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
         Model *const markerModel = qApp->renderManager.models["planeMarker"];
-        VertexColourModelProgram *const markerProgram = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
+        VertexColourModelProgram *const markerProgram = static_cast<VertexColourModelProgram *>(qApp->renderManager.programs["marker"]);
         Mat4 markerTransform = editor.getViewportTransform();
         float markerSize = 16.0f;
         markerTransform.scale(markerSize, markerSize);
         markerProgram->render(markerModel, markerTransform, editor.getWidgetBuffer(), nullptr);
-        delete markerProgram;
     }
 }
 

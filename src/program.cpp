@@ -422,18 +422,15 @@ layout (triangle_strip, max_vertices = 3) out;
 
 in Point point[];
 
-uniform mat4 matrix;
-
-// Unused to stop complaining about unmatching input in frag
-out layout(location = 0) vec2 pos;
+uniform mat4 worldToClip;
 
 void main(void)
 {
-    gl_Position = matrix * vec4(storageData.points[0].pos, 0.0, 1.0);
+    gl_Position = worldToClip * vec4(storageData.points[0].pos, 0.0, 1.0);
     EmitVertex();
-    gl_Position = matrix * vec4(point[0].pos, 0.0, 1.0);
+    gl_Position = worldToClip * vec4(point[0].pos, 0.0, 1.0);
     EmitVertex();
-    gl_Position = matrix * vec4(point[1].pos, 0.0, 1.0);
+    gl_Position = worldToClip * vec4(point[1].pos, 0.0, 1.0);
     EmitVertex();
     EndPrimitive();
 }
@@ -441,17 +438,14 @@ void main(void)
     }break;
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
-        src += common;
         src += R"(
-uniform Rgba rgba;
-uniform Index index;
+//layout(location = 0) out vec4 rgba;
 
-Colour src(void) {
-    return Colour(rgba, index);
+void main(void)
+{
+//    rgba = vec4(1.0);
 }
 )";
-        src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
-        src += RenderManager::standardFragmentMainShaderPart(destFormat, destIndexed, 1, destPaletteFormat, blendMode, composeMode);
     }break;
     default: break;
     }
@@ -459,7 +453,7 @@ Colour src(void) {
     return src;
 }
 
-void ContourStencilProgram::render(const std::vector<Stroke::Point> &points, const Colour &colour, const Mat4 &worldToClip, Buffer *const dest, const Buffer * const destPalette)
+void ContourStencilProgram::render(const std::vector<Stroke::Point> &points, const Mat4 &worldToClip, Buffer *const dest)
 {
     if (points.size() < 2) return;
 
@@ -484,8 +478,7 @@ void ContourStencilProgram::render(const std::vector<Stroke::Point> &points, con
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    glUniformMatrix4fv(program.uniformLocation("matrix"), 1, false, worldToClip.constData());
-    qApp->renderManager.bindIndexedBufferShaderPart(program, "dest", 0, dest, destIndexed, 1, destPalette);
+    glUniformMatrix4fv(program.uniformLocation("worldToClip"), 1, false, worldToClip.constData());
 
     glDrawArraysInstanced(GL_LINES, 1, 2, points.size() - 2);
 
