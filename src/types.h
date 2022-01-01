@@ -116,6 +116,11 @@ public:
     void scale(const QVector2D &vector) { QMatrix4x4::scale(vector.x(), vector.y(), 1.0f); }
     using QMatrix4x4::translate;
     void translate(const QVector2D &vector) { QMatrix4x4::translate(vector.toVector3D()); }
+    mat4 mat4() const {
+        GfxPaint::mat4 mat;
+        memcpy(&mat, data(), sizeof(GfxPaint::mat4));
+        return mat;
+    }
 private:
     QPoint map(const QPoint &point) const;
     QPointF map(const QPointF &point) const;

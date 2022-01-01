@@ -170,6 +170,7 @@ DISTFILES += \
     LICENSE \
     README.md \
     TODO \
-    screenshot.png
+    screenshot.png \
+    shaders/fragment.glsl
 
 RC_ICONS = GfxPaint.ico

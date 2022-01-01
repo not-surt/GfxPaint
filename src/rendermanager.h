@@ -10,10 +10,16 @@
 #include <QOpenGLShaderProgram>
 #include <QOpenGLBuffer>
 #include <QOpenGLVertexArrayObject>
+#include <set>
+
 #include "buffer.h"
 #include "brush.h"
 #include "types.h"
 #include "program.h"
+
+namespace tcpp {
+class StringInputStream;
+}
 
 namespace GfxPaint {
 
@@ -82,6 +88,13 @@ public:
     QString glslVersionString() const;
     QString glslPrecisionString() const;
 
+//    static QString preprocessGlslInclude(const QString &path, const QString &src, std::set<QString> &includes);
+//    static QString preprocessGlslSource(const QString &src);
+
+    static const QString shadersPath;
+    void addGlslIncludes(const std::vector<QString> &systemIncludes, const std::vector<QString> &localIncludes = {});
+    QString preprocessGlsl(const QString &src) const;
+
     static QString headerShaderPart();
     static QString resourceShaderPart(const QString &filename);
     static QString colourSpaceShaderPart();
@@ -89,7 +102,6 @@ public:
     static QString modelVertexMainShaderPart();
     static QString vertexMainShaderPart();
     static QString patternShaderPart(const QString &name, const Pattern pattern);
-    static QString brushDabShaderPart(const QString &name, const Brush::Dab::Type type, const int metric);
     static QString paletteShaderPart(const QString &name, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString bufferShaderPart(const QString &name, const GLint uniformBlockBinding, const GLint bufferTextureLocation, const Buffer::Format bufferFormat, const bool indexed, const GLint paletteTextureLocation, const Buffer::Format paletteFormat);
     static QString standardInputFragmentShaderPart(const QString &name);
@@ -101,6 +113,10 @@ public:
 
     void bindBufferShaderPart(QOpenGLShaderProgram &program, const QString &name, const GLint bufferTextureLocation, const Buffer *const buffer);
     void bindIndexedBufferShaderPart(QOpenGLShaderProgram &program, const QString &name, const GLint bufferTextureLocation, const Buffer *const buffer, const bool indexed, const GLint paletteTextureLocation, const Buffer *const palette);
+
+private:
+    std::map<std::string, tcpp::StringInputStream *> systemIncludeStreams;
+    std::map<std::string, tcpp::StringInputStream *> localIncludeStreams;
 };
 
 } // namespace GfxPaint

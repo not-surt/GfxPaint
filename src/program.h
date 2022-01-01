@@ -595,48 +595,30 @@ class BrushDabProgram : public RenderProgram {
 public:
     BrushDabProgram(const Brush::Dab::Type type, const int metric, const Buffer::Format destFormat, const bool destIndexed, const Buffer::Format destPaletteFormat, const int blendMode, const int composeMode) :
         RenderProgram(destFormat, destIndexed, destPaletteFormat, blendMode, composeMode),
-        type(type), metric(metric),
-        uniformData{},
-        storageBuffer(0)
+        type(type), metric(metric), storageBuffer(0)
     {
         updateKey(typeid(this), {static_cast<int>(type), metric});
 
-        glGenBuffers(1, &uniformBuffer);
-        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
         glGenBuffers(1, &storageBuffer);
     }
     BrushDabProgram(const BrushDabProgram &other) :
         RenderProgram(other),
-        type(other.type), metric(other.metric),
-        uniformData{}
+        type(other.type), metric(other.metric)
     {
-        glGenBuffers(1, &uniformBuffer);
-        glBindBuffer(GL_UNIFORM_BUFFER, uniformBuffer);
-        glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_DYNAMIC_DRAW);
         glGenBuffers(1, &storageBuffer);
     }
     virtual ~BrushDabProgram() override {
-        glDeleteBuffers(1, &uniformBuffer);
         glDeleteBuffers(1, &storageBuffer);
     }
 
     void render(const std::vector<Stroke::Point> &points, const Brush::Dab &dab, const Colour &colour, const Mat4 &worldToBuffer, const Mat4 &bufferToClip, Buffer *const dest, const Buffer *const destPalette);
 
 protected:
-    struct alignas(16) UniformData {
-        alignas(16) mat4 matrix;
-        alignas(16) Colour colour;
-        alignas(4) GLfloat hardness;
-        alignas(4) GLfloat alpha;
-    };
-
     virtual QString generateSource(QOpenGLShader::ShaderTypeBit stage) const override;
 
     const Brush::Dab::Type type;
     const int metric;
 
-    UniformData uniformData;
     GLuint storageBuffer;
 };
 

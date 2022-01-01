@@ -161,11 +161,11 @@ void ColourPlaneWidget::updateColourSpace()
     const ColourSpace &colourSpace = static_cast<ColourSpace>(ui->colourSpaceComboBox->currentIndex());
 
     {
-        const QList<Program *> oldPrograms = {fromRGBConversionProgram, toRGBConversionProgram};
+        std::list<Program *> oldPrograms = {fromRGBConversionProgram, toRGBConversionProgram};
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
         fromRGBConversionProgram = new ColourConversionProgram(ColourSpace::RGB, colourSpace);
         toRGBConversionProgram = new ColourConversionProgram(colourSpace, ColourSpace::RGB);
-        qDeleteAll(oldPrograms);
+        oldPrograms.clear();
     }
     const int componentIndex = (ui->xYComponentsComboBox->currentIndex() >= 0 ? ui->xYComponentsComboBox->currentIndex() : 0);
     ui->xYComponentsComboBox->blockSignals(true);

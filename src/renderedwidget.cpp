@@ -49,15 +49,10 @@ void RenderedWidget::initializeGL()
     {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
 
-        Program *old;
-
-        old = widgetProgram;
+        std::list<Program *> oldPrograms = {widgetProgram, patternProgram};
         widgetProgram = new RenderedWidgetProgram(format, false, Buffer::Format());
-        delete old;
-
-        old = patternProgram;
         patternProgram = new BackgroundCheckersProgram(Pattern::Checkers, format, 0);
-        delete old;
+        oldPrograms.clear();
     }
 }
 
@@ -74,7 +69,7 @@ void RenderedWidget::resizeGL(int w, int h)
     Mat4 originTransform;
     memcpy(originTransform.data(), data, sizeof(data));
     mouseTransform = originTransform.inverted();
-    viewportTransform = Mat4(GfxPaint::viewportToClipTransform({w, h})) * originTransform;
+    viewportTransform = GfxPaint::viewportToClipTransform({w, h}) * originTransform;
 
     {
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
@@ -105,12 +100,13 @@ void RenderedWidget::paintGL()
 //    const float time = timer.elapsed() / 1000.0f;
     const float time = qApp->time();
     const float degreesPerSecond = 45.0f;
-    Mat4 backgroundTransform;
-    backgroundTransform.scale(16.0f, 16.0f);
-    backgroundTransform.rotate(time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
-    backgroundTransform.translate(0.0f, 1.0f);
-    backgroundTransform.rotate(-time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
-    patternProgram->render(RenderManager::flipTransform * viewportTransform * backgroundTransform);
+    Mat4 transform;
+    transform.scale(16.0f, 16.0f);
+    transform.rotate(time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
+    transform.translate(0.0f, 1.0f);
+    transform.rotate(-time * degreesPerSecond, {0.0f, 0.0f, 1.0f});
+    transform = viewportTransform * transform;
+    patternProgram->render(RenderManager::flipTransform * transform);
 
     // Draw buffer
     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);

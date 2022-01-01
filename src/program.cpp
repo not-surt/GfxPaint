@@ -25,6 +25,10 @@ QOpenGLShaderProgram &Program::program() {
 
 QOpenGLShaderProgram *Program::createProgram() const
 {
+    const QString &src = RenderManager::resourceShaderPart("fragment.glsl");
+    qDebug() << "SRC?" << src;
+    qApp->renderManager.preprocessGlsl(src);
+
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     QOpenGLShaderProgram *program = new QOpenGLShaderProgram();
 
@@ -872,6 +876,22 @@ struct Point {
     float age;
     float distance;
 };
+layout(std430, binding = 0) buffer StorageData
+{
+    Point points[];
+};
+
+struct Dab {
+    float hardness;
+    float opacity;
+};
+layout(std140, binding = 0) uniform UniformData {
+    uniform mat4 object;
+    uniform mat4 worldToBuffer;
+    uniform mat4 bufferToClip;
+    Colour colour;
+    Dab dab;
+};
 )";
 
     QString src;
@@ -881,16 +901,8 @@ struct Point {
         src += RenderManager::headerShaderPart();
         src += common;
         src += R"(
-layout(std430, binding = 0) buffer StorageData
-{
-    Point points[];
-} storageData;
-
-uniform mat4 worldToBuffer;
-uniform mat4 bufferToClip;
-
 void main(void) {
-    Point point = storageData.points[gl_InstanceID];
+    Point point = points[gl_InstanceID];
     gl_Position = bufferToClip * (worldToBuffer * vec4(point.pos, 0.0, 1.0));
 }
 )";
@@ -902,11 +914,6 @@ void main(void) {
         src += R"(
 layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
-
-uniform mat4 worldToBuffer;
-uniform mat4 bufferToClip;
-
-uniform mat4 object;
 
 out vec2 pos;
 
@@ -924,20 +931,50 @@ void main(void)
     }break;
     case QOpenGLShader::Fragment: {
         src += RenderManager::headerShaderPart();
+        src += RenderManager::resourceShaderPart("distance.glsl");
         src += common;
-        src += RenderManager::brushDabShaderPart("srcDab", type, metric);
         src += R"(
 in vec2 pos;
 
+)";
+        if (type == Brush::Dab::Type::Distance) {
+            src += QString(R"(
+float dabDistance(const vec2 pos) {
+    return %1(pos);
+}
+)").arg(RenderManager::distanceMetrics[metric].functionName);
+            src += R"(
+Colour dabColour(const vec2 pos) {
+    float weight;
+    weight = clamp(1.0 - dabDistance(pos), 0.0, 1.0);
+    weight = clamp(weight * (1.0 / (1.0 - dab.hardness)), 0.0, 1.0);
+    weight *= dab.opacity;
+    float alpha = colour.rgba.a * weight;
+    uint index = INDEX_INVALID;
+    if (alpha == colour.rgba.a) {
+        index = colour.index;
+    }
+    return Colour(vec4(colour.rgba.rgb, alpha), INDEX_INVALID);
+}
+)";
+        }
+        else if (type == Brush::Dab::Type::Buffer) {
+            src += R"(
+float dabDistance(const vec2 pos) {
+    return distanceChebyshev(pos);
+}
+
+Colour dabColour(const vec2 pos) {
+    return COLOUR_INVALID;
+}
+)";
+        }
+        src += R"(
 Colour src(void) {
-    Colour colour = srcDab(pos);
-//    float depth = 1.0 - colour.rgba.a;
-//    if (depth >= 1.0) discard;
-    float dist = length(pos);
-    gl_FragDepth = dist;
-//    gl_FragDepth = 0.5 + rand(gl_FragCoord.xy) * 0.0125;
+    Colour colour = dabColour(pos);
+    gl_FragDepth = pow(dabDistance(pos), 2.0);
+//    if (gl_FragDepth >= 1.0) discard;
     return colour;
-//    return Colour(Rgba(1.0, 0.0, 0.0, 1.0), INDEX_INVALID);
 }
 )";
         src += RenderManager::bufferShaderPart("dest", 0, 0, destFormat, destIndexed, 1, destPaletteFormat);
@@ -969,26 +1006,28 @@ void BrushDabProgram::render(const std::vector<Stroke::Point> &points, const Bru
     glDepthRangef(0.0f, 1.0f);
     glClear(GL_DEPTH_BUFFER_BIT);
 
-    Mat4 matrix = worldToBuffer * dab.transform();
-
-    memcpy(&uniformData.matrix, matrix.constData(), sizeof(uniformData.matrix));
-    uniformData.colour = colour;
-    uniformData.hardness = static_cast<GLfloat>(dab.hardness);
-    uniformData.alpha = static_cast<GLfloat>(dab.opacity);
-
+    struct alignas(16) Dab {
+        GLfloat hardness;
+        GLfloat opacity;
+    };
+    struct alignas(16) UniformData {
+        mat4 object;
+        mat4 worldToBuffer;
+        mat4 bufferToClip;
+        Colour colour;
+        Dab dab;
+    } uniformData{
+        dab.transform().mat4(),
+        worldToBuffer.mat4(),
+        bufferToClip.mat4(),
+        colour,
+        {
+             dab.hardness,
+             dab.opacity,
+        },
+    };
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, uniformBuffer);
-    glBufferData(GL_UNIFORM_BUFFER, sizeof(uniformData), &uniformData, GL_DYNAMIC_DRAW);
-
-    Mat4 objectMatrix;
-    objectMatrix.scale(1.0, 1.0);
-    glUniformMatrix4fv(program.uniformLocation("object"), 1, false, (objectMatrix * matrix).constData());
-
-    glUniformMatrix4fv(program.uniformLocation("worldToBuffer"), 1, false, worldToBuffer.constData());
-    glUniformMatrix4fv(program.uniformLocation("bufferToClip"), 1, false, bufferToClip.constData());
-
-    glUniform4fv(program.uniformLocation("srcDabColour"), 1, colour.rgba.data());
-    glUniform1f(program.uniformLocation("srcDabHardness"), static_cast<GLfloat>(dab.hardness));
-    glUniform1f(program.uniformLocation("srcDabOpacity"), static_cast<GLfloat>(dab.opacity));
+    glBufferData(GL_UNIFORM_BUFFER, sizeof(UniformData), &uniformData, GL_STATIC_DRAW);
 
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(Stroke::Point), points.data(), GL_STATIC_DRAW);

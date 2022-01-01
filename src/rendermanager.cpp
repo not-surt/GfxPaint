@@ -1,7 +1,13 @@
 #include "rendermanager.h"
 
+#include <QDirIterator>
 #include <QFileInfo>
+#include <QRegularExpression>
 #include <cstring>
+#include <iostream>
+
+#define TCPP_IMPLEMENTATION
+#include "tcppLibrary.hpp"
 #include "utils.h"
 #include "application.h"
 #include "renderedwidget.h"
@@ -127,13 +133,15 @@ const QList<RenderManager::ComposeModeInfo> RenderManager::composeModes = {
     {"Xor", "porterDuffXor"},
 };
 const int RenderManager::composeModeDefault = 3;
+const QString RenderManager::shadersPath = ":/shaders";
 
 RenderManager::RenderManager() :
     OpenGL(),
     surface(), context(),
     logger(),
     vao(),
-    models(), programManager(), programs()
+    models(), programManager(), programs(),
+    systemIncludeStreams{}, localIncludeStreams{}
 {
     // Create offscreen render context
     // OpenGL ES
@@ -251,11 +259,26 @@ RenderManager::RenderManager() :
             3, 4, 5,
         }, {3, 3,});
 
+    std::vector<QString> systemIncludes = {};
+    QDirIterator it(shadersPath, QDirIterator::Subdirectories);
+    while (it.hasNext()) {
+        const QFileInfo fileInfo = it.fileInfo();
+        const QString &extension = fileInfo.suffix();
+        if (!fileInfo.isDir() && QString::compare(extension, "glsl", Qt::CaseInsensitive) == 0) {
+            systemIncludes.push_back(fileInfo.filePath());
+        }
+        it.next();
+    }
+    addGlslIncludes(systemIncludes, {});
+
     programs["marker"] = new VertexColourModelProgram(RenderedWidget::format, false, Buffer::Format(), 0, RenderManager::composeModeDefault);
 }
 
 RenderManager::~RenderManager()
 {
+    systemIncludeStreams.clear();
+    localIncludeStreams.clear();
+
     {
         ContextBinder contextBinder(&context, &surface);
 
@@ -289,25 +312,100 @@ QString RenderManager::glslPrecisionString() const
 {
     QString src;
     if (surface.format().renderableType() == QSurfaceFormat::OpenGLES) {
-        src += R"(
-precision highp float;
-precision highp int;
-precision highp sampler2D;
-precision highp isampler2D;
-precision highp usampler2D;
-precision highp sampler3D;
-precision highp isampler3D;
-precision highp usampler3D;
-precision highp image2D;
-precision highp iimage2D;
-precision highp uimage2D;
-precision highp imageBuffer;
-precision highp iimageBuffer;
-precision highp uimageBuffer;
-)";
+        src += resourceShaderPart("precision.glsl");
     }
     return src;
 }
+
+void RenderManager::addGlslIncludes(const std::vector<QString> &systemIncludes, const std::vector<QString> &localIncludes)
+{
+    const auto includeName = [](const QString &path){
+        const QFileInfo fileInfo(path);
+        const QDir shadersDir(shadersPath);
+        const QString &relativeDir = shadersDir.relativeFilePath(fileInfo.path());
+        return (relativeDir != "." ? relativeDir + "/" : "") + fileInfo.completeBaseName();
+    };
+    for (const QString &path : systemIncludes) {
+        const QString &include = includeName(path);
+        const QString &src = resourceShaderPart(path);
+        systemIncludeStreams[include.toStdString()] = new tcpp::StringInputStream(src.toStdString());
+    }
+    for (const QString &path : localIncludes) {
+        const QString &include = includeName(path);
+        const QString &src = resourceShaderPart(path);
+        localIncludeStreams[include.toStdString()] = new tcpp::StringInputStream(src.toStdString());
+    }
+}
+
+QString RenderManager::preprocessGlsl(const QString &src) const
+{
+    tcpp::StringInputStream input(src.toStdString());
+    tcpp::Lexer lexer(input);
+
+    bool result = true;
+
+    const auto &system = systemIncludeStreams;
+    const auto &local = localIncludeStreams;
+
+    tcpp::Preprocessor preprocessor(lexer,
+        [&result](const tcpp::TErrorInfo &errorInfo) {
+            qDebug() << "GLSL preprocessor error:" << QString::fromStdString(ErrorTypeToString(errorInfo.mType));
+            result = false;
+        },
+        [&system, &local](const std::string &path, const bool isSystemInclude) {
+            qDebug() << QString::fromStdString(path);
+            Q_ASSERT(system.contains(path));
+            if (isSystemInclude) {
+                return system.at(path);
+            }
+            else {
+                return local.at(path);
+            }
+        });
+
+    const std::string &output = preprocessor.Process();
+    qDebug().noquote() << "Here!" << src << result << QString::fromStdString(output);////////////////////////
+    return QString::fromStdString(output);
+}
+
+//QString RenderManager::preprocessGlslInclude(const QString &path, const QString &src, std::set<QString> &includes)
+//{
+//}
+
+//// TODO: use proper preproccessor
+//QString RenderManager::preprocessGlslSource(const QString &src)
+//{
+//    std::set<QString> includes;
+//    QString string;
+
+////    qDebug() << "Source:";
+////    qDebug().noquote() << src;
+//    qDebug() << "Preprocess:";
+
+//    auto hasPragmaOnce = [](const QString &src) {
+//        const QString &pragmaStatementString = R"(#[\s]+pragma[\s]+once)";
+//        QRegularExpression pragmaStatement(pragmaStatementString, QRegularExpression::CaseInsensitiveOption);
+//        return pragmaStatement.match(src).hasMatch();
+//    };
+
+//    const QString &includeStatementString = R"((#[\s]+include[\s]+\"([^\"]+)\"))";
+//    QRegularExpression includeStatement(includeStatementString, QRegularExpression::CaseInsensitiveOption);
+//    QRegularExpressionMatchIterator it = includeStatement.globalMatch(src);
+//    while (it.hasNext()) {
+//        QRegularExpressionMatch match = it.next();
+//        const qsizetype lineStart = match.capturedStart(1);
+//        const qsizetype lineEnd = match.capturedEnd(1);
+//        const QString path = match.captured(2);
+//        const QString &includeSrc = resourceShaderPart(path);
+////        qDebug() << path << before << after;//////////////////////////////////////
+////        if (hasPragmaOnce(includeSrc) && !includes.contains(path)) {
+////            // insert src
+////            includes.insert(path);
+////        }
+//    }
+
+//    return string;
+//}
 
 QString RenderManager::headerShaderPart()
 {
@@ -494,58 +592,6 @@ Colour $NAME(const vec2 pos) {
         {"$FORMAT_SCALE", QString::number(bufferFormat.scale())},
         {"$SCALAR_VALUE_TYPE", bufferFormat.shaderScalarValueType()},
         {"$UNIFORM_BLOCK_BINDING", QString::number(uniformBlockBinding)},
-    });
-    return src;
-}
-
-QString RenderManager::brushDabShaderPart(const QString &name, const Brush::Dab::Type type, const int metric)
-{
-    const std::map<Brush::Dab::Type, QString> types = {
-        { Brush::Dab::Type::Distance, R"(
-float $NAMEBrush(const vec2 pos) {
-    return $METRIC(pos);
-}
-)"
-        },
-        { Brush::Dab::Type::Buffer, R"(
-float $NAMEBrush(const vec2 pos) {
-    return 0.0;
-}
-)"
-        },
-    };
-    QString src;
-    if (type == Brush::Dab::Type::Distance) {
-        src += resourceShaderPart("distance.glsl");
-    }
-    src += types.at(type);
-    src += R"(
-layout(std140, binding = 0) uniform Data {
-    mat4 matrix;
-    Colour colour;
-    float hardness;
-    float opacity;
-} data;
-uniform float $NAMEHardness;
-uniform float $NAMEOpacity;
-uniform vec4 $NAMEColour;
-uniform uint $NAMEIndex;
-Colour $NAME(const vec2 pos) {
-    float weight;
-    weight = clamp(1.0 - $NAMEBrush(pos), 0.0, 1.0);
-    weight = clamp(weight * (1.0 / (1.0 - $NAMEHardness)), 0.0, 1.0);
-    weight *= $NAMEOpacity;
-    float alpha = $NAMEColour.a * weight;
-    uint index = INDEX_INVALID;
-    if (alpha == $NAMEColour.a) {
-        index = $NAMEIndex;
-    }
-    return Colour(vec4($NAMEColour.rgb, alpha), INDEX_INVALID);
-}
-)";
-    stringMultiReplace(src, {
-        {"$NAME", name},
-        {"$METRIC", distanceMetrics[metric].functionName},
     });
     return src;
 }
