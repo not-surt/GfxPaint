@@ -26,8 +26,8 @@ QOpenGLShaderProgram &Program::program() {
 QOpenGLShaderProgram *Program::createProgram() const
 {
     const QString &src = RenderManager::resourceShaderPart("fragment.glsl");
-    qDebug() << "SRC?" << src;
-    qApp->renderManager.preprocessGlsl(src);
+    const QString &preprocessed = qApp->renderManager.preprocessGlsl(src);
+    qDebug().noquote() << "PREPROCESSED:" << preprocessed;
 
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     QOpenGLShaderProgram *program = new QOpenGLShaderProgram();

@@ -1,5 +1,5 @@
-#include <compositing>
-#include <blending>
+#include <compositing.glsl>
+#include <blending.glsl>
 
 uniform Colour srcTransparent;
 //uniform Colour destTransparent;

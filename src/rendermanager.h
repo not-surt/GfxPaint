@@ -84,12 +84,8 @@ public:
     virtual ~RenderManager();
 
     static QSurfaceFormat defaultFormat();
-
-    QString glslVersionString() const;
-    QString glslPrecisionString() const;
-
-//    static QString preprocessGlslInclude(const QString &path, const QString &src, std::set<QString> &includes);
-//    static QString preprocessGlslSource(const QString &src);
+    static bool isOpenGLES();
+    static QString glslVersionString();
 
     static const QString shadersPath;
     void addGlslIncludes(const std::vector<QString> &systemIncludes, const std::vector<QString> &localIncludes = {});

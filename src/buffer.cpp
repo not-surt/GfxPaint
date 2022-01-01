@@ -173,6 +173,7 @@ void BufferData::writePixel(const QPoint &pos, const GLvoid *const pixel)
 
 GLuint BufferData::createTexture(const QSize size, const Format format, const GLvoid *const data)
 {
+    qDebug() << "Creating texture:" << size;////////////////////////////////
     OpenGLFunctions gl;
     gl.initializeOpenGLFunctions();
 

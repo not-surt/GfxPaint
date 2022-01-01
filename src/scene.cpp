@@ -159,4 +159,26 @@ void Scene::render(Buffer *const buffer, const bool indexed, const Buffer *const
     renderSubGraph(&root, buffer, indexed, palette, viewTransform, Mat4(), saveStates);
 }
 
+void Scene::bufferAddEditor(Buffer *const buffer, const Editor *const editor)
+{
+    if (!bufferEditors.contains(buffer)) {
+        bufferEditors[buffer] = {};
+    }
+    auto &set = bufferEditors[buffer];
+    set.insert(editor);
+    // TODO: add extra attachments here!
+}
+
+void Scene::bufferRemoveEditor(Buffer *const buffer, const Editor *const editor)
+{
+    Q_ASSERT(bufferEditors.contains(buffer));
+    auto &set = bufferEditors[buffer];
+    Q_ASSERT(set.contains(editor));
+    set.erase(editor);
+    if (set.empty()) {
+        bufferEditors.erase(buffer);
+    }
+    // TODO: remove extra attachments here!
+}
+
 } // namespace GfxPaint

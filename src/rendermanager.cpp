@@ -291,6 +291,11 @@ RenderManager::~RenderManager()
     }
 }
 
+bool RenderManager::isOpenGLES()
+{
+    return qApp->renderManager.surface.format().renderableType() == QSurfaceFormat::OpenGLES;
+}
+
 QSurfaceFormat RenderManager::defaultFormat()
 {
     QSurfaceFormat format;
@@ -301,19 +306,11 @@ QSurfaceFormat RenderManager::defaultFormat()
     return format;
 }
 
-QString RenderManager::glslVersionString() const
+QString RenderManager::glslVersionString()
 {
     QString src;
-    src += "#version " + QString::number(surface.format().majorVersion()) + QString::number(surface.format().minorVersion()) + "0" + (surface.format().renderableType() == QSurfaceFormat::OpenGLES ? " es" : " core") + "\n";
-    return src;
-}
-
-QString RenderManager::glslPrecisionString() const
-{
-    QString src;
-    if (surface.format().renderableType() == QSurfaceFormat::OpenGLES) {
-        src += resourceShaderPart("precision.glsl");
-    }
+    const auto &format = qApp->renderManager.surface.format();
+    src += "#version " + QString::number(format.majorVersion()) + QString::number(format.minorVersion()) + "0" + (isOpenGLES() ? " es" : " core") + "\n";
     return src;
 }
 
@@ -323,16 +320,17 @@ void RenderManager::addGlslIncludes(const std::vector<QString> &systemIncludes, 
         const QFileInfo fileInfo(path);
         const QDir shadersDir(shadersPath);
         const QString &relativeDir = shadersDir.relativeFilePath(fileInfo.path());
-        return (relativeDir != "." ? relativeDir + "/" : "") + fileInfo.completeBaseName();
+        return (relativeDir != "." ? relativeDir + "/" : "") + fileInfo.fileName();
     };
     for (const QString &path : systemIncludes) {
         const QString &include = includeName(path);
-        const QString &src = resourceShaderPart(path);
+        const QString &src = resourceShaderPart(include);
+        qDebug().noquote() << "SRC:" << include << path << src;
         systemIncludeStreams[include.toStdString()] = new tcpp::StringInputStream(src.toStdString());
     }
     for (const QString &path : localIncludes) {
         const QString &include = includeName(path);
-        const QString &src = resourceShaderPart(path);
+        const QString &src = resourceShaderPart(include);
         localIncludeStreams[include.toStdString()] = new tcpp::StringInputStream(src.toStdString());
     }
 }
@@ -356,6 +354,7 @@ QString RenderManager::preprocessGlsl(const QString &src) const
             qDebug() << QString::fromStdString(path);
             Q_ASSERT(system.contains(path));
             if (isSystemInclude) {
+                qDebug() << "SYSTEM INCLUDE!";////////////////////////////
                 return system.at(path);
             }
             else {
@@ -364,54 +363,16 @@ QString RenderManager::preprocessGlsl(const QString &src) const
         });
 
     const std::string &output = preprocessor.Process();
-    qDebug().noquote() << "Here!" << src << result << QString::fromStdString(output);////////////////////////
     return QString::fromStdString(output);
 }
-
-//QString RenderManager::preprocessGlslInclude(const QString &path, const QString &src, std::set<QString> &includes)
-//{
-//}
-
-//// TODO: use proper preproccessor
-//QString RenderManager::preprocessGlslSource(const QString &src)
-//{
-//    std::set<QString> includes;
-//    QString string;
-
-////    qDebug() << "Source:";
-////    qDebug().noquote() << src;
-//    qDebug() << "Preprocess:";
-
-//    auto hasPragmaOnce = [](const QString &src) {
-//        const QString &pragmaStatementString = R"(#[\s]+pragma[\s]+once)";
-//        QRegularExpression pragmaStatement(pragmaStatementString, QRegularExpression::CaseInsensitiveOption);
-//        return pragmaStatement.match(src).hasMatch();
-//    };
-
-//    const QString &includeStatementString = R"((#[\s]+include[\s]+\"([^\"]+)\"))";
-//    QRegularExpression includeStatement(includeStatementString, QRegularExpression::CaseInsensitiveOption);
-//    QRegularExpressionMatchIterator it = includeStatement.globalMatch(src);
-//    while (it.hasNext()) {
-//        QRegularExpressionMatch match = it.next();
-//        const qsizetype lineStart = match.capturedStart(1);
-//        const qsizetype lineEnd = match.capturedEnd(1);
-//        const QString path = match.captured(2);
-//        const QString &includeSrc = resourceShaderPart(path);
-////        qDebug() << path << before << after;//////////////////////////////////////
-////        if (hasPragmaOnce(includeSrc) && !includes.contains(path)) {
-////            // insert src
-////            includes.insert(path);
-////        }
-//    }
-
-//    return string;
-//}
 
 QString RenderManager::headerShaderPart()
 {
     QString src;
     src += qApp->renderManager.glslVersionString();
-    src += qApp->renderManager.glslPrecisionString();
+    if (isOpenGLES()) {
+        src += resourceShaderPart("precision.glsl");
+    }
     src += resourceShaderPart("types.glsl");
     src += resourceShaderPart("util.glsl");
     return src;
