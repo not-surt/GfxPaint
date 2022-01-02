@@ -111,8 +111,6 @@ public:
     virtual void begin(EditingContext &context, const Mat4 &viewTransform) override;
     virtual void update(EditingContext &context, const Mat4 &viewTransform) override;
     virtual bool updatesContext() const override { return true; }
-
-protected:
 };
 
 class TransformTool : public Tool {

@@ -9,6 +9,5 @@
         <file>brush.glsl</file>
         <file>fragment.glsl</file>
         <file>precision.glsl</file>
-        <file>test/testing.glsl</file>
     </qresource>
 </RCC>

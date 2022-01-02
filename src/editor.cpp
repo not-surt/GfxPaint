@@ -141,20 +141,20 @@ bool Editor::event(QEvent *const event)
         }
 
         if (event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::MouseMove || event->type() == QEvent::NonClientAreaMouseMove) {
-            cursorDelta = Vec2(mouseEvent->localPos()) - cursorPos;
+            cursorDelta = Vec2(mouseEvent->position()) - cursorPos;
             inputStateChanged = true;
         }
         if (event->type() == QEvent::TabletRelease || event->type() == QEvent::TabletMove) {
-            cursorDelta = Vec2(tabletEvent->posF()) - cursorPos;
+            cursorDelta = Vec2(tabletEvent->position()) - cursorPos;
             inputStateChanged = true;
         }
         if (event->type() == QEvent::MouseButtonPress || event->type() == QEvent::MouseButtonRelease || event->type() == QEvent::NonClientAreaMouseButtonRelease || event->type() == QEvent::MouseMove || event->type() == QEvent::NonClientAreaMouseMove) {
-            cursorPos = Vec2(mouseEvent->localPos());
+            cursorPos = Vec2(mouseEvent->position());
             pressure = 1.0f;
             inputStateChanged = true;
         }
         if (event->type() == QEvent::TabletPress || event->type() == QEvent::TabletRelease || event->type() == QEvent::TabletMove) {
-            cursorPos = Vec2(tabletEvent->posF());
+            cursorPos = Vec2(tabletEvent->position());
             pressure = static_cast<float>(tabletEvent->pressure());
             rotation = static_cast<float>(tabletEvent->rotation());
             tilt = {qDegreesToRadians(static_cast<float>(tabletEvent->xTilt())), qDegreesToRadians(static_cast<float>(tabletEvent->yTilt()))};

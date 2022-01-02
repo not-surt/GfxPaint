@@ -17,10 +17,6 @@
 #include "types.h"
 #include "program.h"
 
-namespace tcpp {
-class StringInputStream;
-}
-
 namespace GfxPaint {
 
 class RenderManager : protected OpenGL
@@ -91,8 +87,8 @@ public:
     void bufferRemoveDepthStencilAttachment(Buffer *const buffer, const GLuint texture);
 
     static const QString shadersPath;
-    void addGlslIncludes(const std::vector<QString> &systemIncludes, const std::vector<QString> &localIncludes = {});
-    QString preprocessGlsl(const QString &src, const std::map<QString, QString> &defines) const;
+    void addGlslIncludes(const std::vector<QString> &includes);
+    QString preprocessGlsl(const QString &src, const QString &filename, const std::map<QString, QString> &defines);
 
     static QString headerShaderPart();
     static QString resourceShaderPart(const QString &filename);
@@ -114,8 +110,7 @@ public:
     void bindIndexedBufferShaderPart(QOpenGLShaderProgram &program, const QString &name, const GLint bufferTextureLocation, const Buffer *const buffer, const bool indexed, const GLint paletteTextureLocation, const Buffer *const palette);
 
 private:
-    std::map<std::string, std::string> systemIncludeSources;
-    std::map<std::string, std::string> localIncludeSources;
+    std::map<std::string, std::string> includeSources;
 };
 
 } // namespace GfxPaint

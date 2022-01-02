@@ -25,7 +25,6 @@ layout(std140, binding = 0) uniform UniformData {
     Colour colour;
     Dab dab;
 };
-)";
 
 /////////////////////////
 #if defined(VERTEX_STAGE)
@@ -98,8 +97,8 @@ Colour src(void) {
     return colour;
 }
 
+#define FRAGMENT_MAIN
 #include "fragment.glsl"
-FRAGMENT_MAIN(STANDARD)
 
 //////////////
 #endif //STAGE

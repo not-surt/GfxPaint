@@ -21,13 +21,13 @@ QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-parameter -Wno-unused-variable
 # You can also make your code fail to compile if you use deprecated APIs.
 # In order to do so, uncomment the following line.
 # You can also select to disable deprecated APIs only up to a certain version of Qt.
-DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x051500    # disables all the APIs deprecated before Qt 5.15.0
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x051500    # disables all the APIs deprecated before Qt 5.15.0
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 #PRECOMPILED_HEADER = stable.h
 
-VPATH += src/ thirdparty/
-INCLUDEPATH += src/ thirdparty/include/
+VPATH += src/ thirdparty/src/
+INCLUDEPATH += $$PWD/src/ $$PWD/thirdparty/src/
 
 SOURCES +=\
     application.cpp \
@@ -52,16 +52,17 @@ SOURCES +=\
     rendermanager.cpp \
     scene.cpp \
     sessionmanager.cpp \
-    src/tileseticonmanager.cpp \
+    tileseticonmanager.cpp \
     strokeeditorwidget.cpp \
-    thirdparty/src/qtpropertybrowser/qtbuttonpropertybrowser.cpp \
-    thirdparty/src/qtpropertybrowser/qteditorfactory.cpp \
-    thirdparty/src/qtpropertybrowser/qtgroupboxpropertybrowser.cpp \
-    thirdparty/src/qtpropertybrowser/qtpropertybrowser.cpp \
-    thirdparty/src/qtpropertybrowser/qtpropertybrowserutils.cpp \
-    thirdparty/src/qtpropertybrowser/qtpropertymanager.cpp \
-    thirdparty/src/qtpropertybrowser/qttreepropertybrowser.cpp \
-    thirdparty/src/qtpropertybrowser/qtvariantproperty.cpp \
+    qtpropertybrowser/qtbuttonpropertybrowser.cpp \
+    qtpropertybrowser/qteditorfactory.cpp \
+    qtpropertybrowser/qtgroupboxpropertybrowser.cpp \
+    qtpropertybrowser/qtpropertybrowser.cpp \
+    qtpropertybrowser/qtpropertybrowserutils.cpp \
+    qtpropertybrowser/qtpropertymanager.cpp \
+    qtpropertybrowser/qttreepropertybrowser.cpp \
+    qtpropertybrowser/qtvariantproperty.cpp \
+    simplecpp/simplecpp.cpp \
     transformeditorwidget.cpp \
     transformmodel.cpp \
     types.cpp \
@@ -119,14 +120,15 @@ HEADERS  += \
     frozen/string.h \
     frozen/unordered_map.h \
     frozen/unordered_set.h \
-    thirdparty/src/qtpropertybrowser/qtbuttonpropertybrowser.h \
-    thirdparty/src/qtpropertybrowser/qteditorfactory.h \
-    thirdparty/src/qtpropertybrowser/qtgroupboxpropertybrowser.h \
-    thirdparty/src/qtpropertybrowser/qtpropertybrowser.h \
-    thirdparty/src/qtpropertybrowser/qtpropertybrowserutils_p.h \
-    thirdparty/src/qtpropertybrowser/qtpropertymanager.h \
-    thirdparty/src/qtpropertybrowser/qttreepropertybrowser.h \
-    thirdparty/src/qtpropertybrowser/qtvariantproperty.h \
+    qtpropertybrowser/qtbuttonpropertybrowser.h \
+    qtpropertybrowser/qteditorfactory.h \
+    qtpropertybrowser/qtgroupboxpropertybrowser.h \
+    qtpropertybrowser/qtpropertybrowser.h \
+    qtpropertybrowser/qtpropertybrowserutils_p.h \
+    qtpropertybrowser/qtpropertymanager.h \
+    qtpropertybrowser/qttreepropertybrowser.h \
+    qtpropertybrowser/qtvariantproperty.h \
+    simplecpp/simplecpp.h \
     transformeditorwidget.h \
     transformmodel.h \
     types.h \
@@ -172,6 +174,5 @@ DISTFILES += \
     README.md \
     TODO \
     screenshot.png \
-    shaders/fragment.glsl
 
 RC_ICONS = GfxPaint.ico

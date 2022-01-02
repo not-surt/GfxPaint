@@ -38,9 +38,10 @@ DockWidget::DockWidget(QWidget *const parent, const Qt::WindowFlags &flags) :
 }
 
 void DockWidget::setMenu(QMenu *const menu) {
-    m_menu = menu;
-    titleBar->menuAction()->setMenu(m_menu);
-    titleBar->menuAction()->setEnabled(m_menu != nullptr);
+    // TODO: deprecated functions
+//    m_menu = menu;
+//    titleBar->menuAction()->setMenu(m_menu);
+//    titleBar->menuAction()->setEnabled(m_menu != nullptr);
 }
 
 void DockWidget::setPopup(QWidget *const popup) {

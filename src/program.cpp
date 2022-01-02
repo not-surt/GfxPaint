@@ -856,9 +856,10 @@ void PixelLineProgram::render(const std::vector<Stroke::Point> &points, const Co
 
 QString BrushDabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
-//    const QString &src = RenderManager::resourceShaderPart("fragment.glsl");
-//    const QString &preprocessed = qApp->renderManager.preprocessGlsl(src, {{"VALUE_TYPE", "vec4"}});
-//    qDebug().noquote() << "PREPROCESSED:" << preprocessed;
+    const QString filename = "brush.glsl";
+    const QString &srcy = RenderManager::resourceShaderPart(filename);
+    const QString &preprocessed = qApp->renderManager.preprocessGlsl(srcy, filename, {{"FRAGMENT_STAGE", "1"}, {"BRUSH_DISTANCE", "1"}, {"VALUE_TYPE", "vec4"}, {"SCALAR_VALUE_TYPE", "float"}, {"FORMAT_SCALE", "256.0"}});
+    qDebug().noquote() << "PREPROCESSED:" << preprocessed;
 
     const QString common = R"(
 struct Point {
@@ -985,12 +986,6 @@ void BrushDabProgram::render(const std::vector<Stroke::Point> &points, const Bru
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-//    GLuint stencilTexture;
-//    glGenTextures(1, &stencilTexture);
-//    glBindTexture(GL_TEXTURE_2D, stencilTexture);
-//    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, dest->width(), dest->height(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, stencilTexture, 0);
-
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
     glDepthMask(true);
@@ -1032,8 +1027,6 @@ void BrushDabProgram::render(const std::vector<Stroke::Point> &points, const Bru
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
 
     glDisable(GL_DEPTH_TEST);
-//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
-//    glDeleteTextures(1, &stencilTexture);
 }
 
 QString BackgroundCheckersProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
