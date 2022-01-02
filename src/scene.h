@@ -117,7 +117,7 @@ public:
 
     Node root;
 
-    std::unordered_map<Buffer *, std::unordered_set<const Editor *>> bufferEditors;
+    std::unordered_map<Buffer *, std::pair<GLuint, std::unordered_set<const Editor *>>> bufferEditors;
     void bufferAddEditor(Buffer *const buffer, const Editor *const editor);
     void bufferRemoveEditor(Buffer *const buffer, const Editor *const editor);
 

@@ -120,7 +120,6 @@ public:
     explicit TransformTool(Editor &editor) :
         Tool(), editor(editor)
     {}
-    virtual bool updatesContext() const override { return true; }
     virtual bool updatesViewTransform() const override { return true; }
     virtual bool isUndoable(EditingContext &context) const override;
 

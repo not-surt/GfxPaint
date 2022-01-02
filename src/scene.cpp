@@ -163,22 +163,25 @@ void Scene::bufferAddEditor(Buffer *const buffer, const Editor *const editor)
 {
     if (!bufferEditors.contains(buffer)) {
         bufferEditors[buffer] = {};
+        // add depth stencil attachment
+        bufferEditors[buffer].first = qApp->renderManager.bufferAddDepthStencilAttachment(buffer);
     }
-    auto &set = bufferEditors[buffer];
+    auto &set = bufferEditors[buffer].second;
     set.insert(editor);
-    // TODO: add extra attachments here!
 }
 
 void Scene::bufferRemoveEditor(Buffer *const buffer, const Editor *const editor)
 {
     Q_ASSERT(bufferEditors.contains(buffer));
-    auto &set = bufferEditors[buffer];
+    auto &set = bufferEditors[buffer].second;
     Q_ASSERT(set.contains(editor));
     set.erase(editor);
     if (set.empty()) {
         bufferEditors.erase(buffer);
+        // remove depth stencil attachment
+        qApp->renderManager.bufferRemoveDepthStencilAttachment(buffer, bufferEditors[buffer].first);
+        bufferEditors.erase(buffer);
     }
-    // TODO: remove extra attachments here!
 }
 
 } // namespace GfxPaint

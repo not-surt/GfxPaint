@@ -25,10 +25,6 @@ QOpenGLShaderProgram &Program::program() {
 
 QOpenGLShaderProgram *Program::createProgram() const
 {
-    const QString &src = RenderManager::resourceShaderPart("fragment.glsl");
-    const QString &preprocessed = qApp->renderManager.preprocessGlsl(src);
-    qDebug().noquote() << "PREPROCESSED:" << preprocessed;
-
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     QOpenGLShaderProgram *program = new QOpenGLShaderProgram();
 
@@ -463,18 +459,13 @@ void ContourStencilProgram::render(const std::vector<Stroke::Point> &points, con
 
     Q_ASSERT(QOpenGLContext::currentContext() == &qApp->renderManager.context);
 
-    glGenTextures(1, &stencilTexture);
-    glBindTexture(GL_TEXTURE_2D, stencilTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_STENCIL_INDEX8, dest->width(), dest->height(), 0, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, nullptr);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, stencilTexture, 0);
-
     glEnable(GL_STENCIL_TEST);
     glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
     glStencilFunc(GL_ALWAYS, 0, 0x1u);
     glStencilOp(GL_INVERT, GL_INVERT, GL_INVERT);
-
     glStencilMask(0xffu);
     glClear(GL_STENCIL_BUFFER_BIT);
+
     // Draw stencil
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, storageBuffer);
     glBufferData(GL_SHADER_STORAGE_BUFFER, points.size() * sizeof(Stroke::Point), points.data(), GL_STATIC_DRAW);
@@ -495,9 +486,6 @@ void ContourStencilProgram::render(const std::vector<Stroke::Point> &points, con
 void ContourStencilProgram::postRender()
 {
     glDisable(GL_STENCIL_TEST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
-    glDeleteTextures(1, &stencilTexture);
-    stencilTexture = 0;
 }
 
 QString SmoothQuadProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
@@ -868,6 +856,10 @@ void PixelLineProgram::render(const std::vector<Stroke::Point> &points, const Co
 
 QString BrushDabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
+//    const QString &src = RenderManager::resourceShaderPart("fragment.glsl");
+//    const QString &preprocessed = qApp->renderManager.preprocessGlsl(src, {{"VALUE_TYPE", "vec4"}});
+//    qDebug().noquote() << "PREPROCESSED:" << preprocessed;
+
     const QString common = R"(
 struct Point {
     vec2 pos;
@@ -993,11 +985,11 @@ void BrushDabProgram::render(const std::vector<Stroke::Point> &points, const Bru
     QOpenGLShaderProgram &program = this->program();
     program.bind();
 
-    GLuint stencilTexture;
-    glGenTextures(1, &stencilTexture);
-    glBindTexture(GL_TEXTURE_2D, stencilTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, dest->width(), dest->height(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, stencilTexture, 0);
+//    GLuint stencilTexture;
+//    glGenTextures(1, &stencilTexture);
+//    glBindTexture(GL_TEXTURE_2D, stencilTexture);
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, dest->width(), dest->height(), 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, stencilTexture, 0);
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL);
@@ -1040,8 +1032,8 @@ void BrushDabProgram::render(const std::vector<Stroke::Point> &points, const Bru
     glBindBufferBase(GL_UNIFORM_BUFFER, 0, 0);
 
     glDisable(GL_DEPTH_TEST);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
-    glDeleteTextures(1, &stencilTexture);
+//    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+//    glDeleteTextures(1, &stencilTexture);
 }
 
 QString BackgroundCheckersProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const

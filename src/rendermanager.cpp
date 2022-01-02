@@ -141,7 +141,7 @@ RenderManager::RenderManager() :
     logger(),
     vao(),
     models(), programManager(), programs(),
-    systemIncludeStreams{}, localIncludeStreams{}
+    systemIncludeSources{}, localIncludeSources{}
 {
     // Create offscreen render context
     // OpenGL ES
@@ -276,9 +276,6 @@ RenderManager::RenderManager() :
 
 RenderManager::~RenderManager()
 {
-    systemIncludeStreams.clear();
-    localIncludeStreams.clear();
-
     {
         ContextBinder contextBinder(&context, &surface);
 
@@ -314,55 +311,86 @@ QString RenderManager::glslVersionString()
     return src;
 }
 
+GLuint RenderManager::bufferAddDepthStencilAttachment(Buffer *const buffer)
+{
+    ContextBinder contextBinder(&context, &surface);
+    FramebufferBinder framebufferBinder(GL_FRAMEBUFFER, buffer->framebuffer());
+    GLuint texture = 0;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, buffer->width(), buffer->height(), 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, texture, 0);
+    return texture;
+}
+
+void RenderManager::bufferRemoveDepthStencilAttachment(Buffer *const buffer, const GLuint texture)
+{
+    ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
+    FramebufferBinder framebufferBinder(GL_FRAMEBUFFER, buffer->framebuffer());
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, 0, 0);
+    glDeleteTextures(1, &texture);
+}
+
 void RenderManager::addGlslIncludes(const std::vector<QString> &systemIncludes, const std::vector<QString> &localIncludes)
 {
     const auto includeName = [](const QString &path){
-        const QFileInfo fileInfo(path);
+//        const QFileInfo fileInfo(path);
         const QDir shadersDir(shadersPath);
-        const QString &relativeDir = shadersDir.relativeFilePath(fileInfo.path());
-        return (relativeDir != "." ? relativeDir + "/" : "") + fileInfo.fileName();
+//        const QString &relativeDir = shadersDir.relativeFilePath(fileInfo.path());
+//        return (relativeDir != "." ? relativeDir + "/" : "") + fileInfo.fileName();
+        return shadersDir.relativeFilePath(path);
     };
     for (const QString &path : systemIncludes) {
         const QString &include = includeName(path);
         const QString &src = resourceShaderPart(include);
-        qDebug().noquote() << "SRC:" << include << path << src;
-        systemIncludeStreams[include.toStdString()] = new tcpp::StringInputStream(src.toStdString());
+        systemIncludeSources[include.toStdString()] = src.toStdString();
     }
     for (const QString &path : localIncludes) {
         const QString &include = includeName(path);
         const QString &src = resourceShaderPart(include);
-        localIncludeStreams[include.toStdString()] = new tcpp::StringInputStream(src.toStdString());
+        localIncludeSources[include.toStdString()] = src.toStdString();
     }
 }
 
-QString RenderManager::preprocessGlsl(const QString &src) const
+QString RenderManager::preprocessGlsl(const QString &src, const std::map<QString, QString> &defines = {}) const
 {
-    tcpp::StringInputStream input(src.toStdString());
+    QString definesSrc;
+    for (const auto &[key, value] : defines) {
+        definesSrc += "#define " + key + " " + value + "\n";
+    }
+
+    tcpp::StringInputStream input((definesSrc + src).toStdString());
     tcpp::Lexer lexer(input);
 
     bool result = true;
 
-    const auto &system = systemIncludeStreams;
-    const auto &local = localIncludeStreams;
+    std::set<tcpp::StringInputStream *> streams;
+    const auto &system = systemIncludeSources;
+    const auto &local = localIncludeSources;
 
     tcpp::Preprocessor preprocessor(lexer,
         [&result](const tcpp::TErrorInfo &errorInfo) {
             qDebug() << "GLSL preprocessor error:" << QString::fromStdString(ErrorTypeToString(errorInfo.mType));
             result = false;
         },
-        [&system, &local](const std::string &path, const bool isSystemInclude) {
-            qDebug() << QString::fromStdString(path);
+        [&streams, &system, &local](const std::string &path, const bool isSystemInclude) {
             Q_ASSERT(system.contains(path));
             if (isSystemInclude) {
-                qDebug() << "SYSTEM INCLUDE!";////////////////////////////
-                return system.at(path);
+                tcpp::StringInputStream *stream = new tcpp::StringInputStream(system.at(path));
+                streams.insert(stream);
+                return stream;
             }
             else {
-                return local.at(path);
+                tcpp::StringInputStream *stream = new tcpp::StringInputStream(local.at(path));
+                streams.insert(stream);
+                return stream;
             }
         });
 
     const std::string &output = preprocessor.Process();
+
+    streams.clear();
+
     return QString::fromStdString(output);
 }
 

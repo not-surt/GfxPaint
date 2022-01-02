@@ -60,11 +60,21 @@ EditingContext::~EditingContext()
 void EditingContext::update(Editor &editor)
 {
     m_states.clear();
+    for (const auto &node : m_selectedNodes) {
+        BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+        if (bufferNode) {
+            scene.bufferRemoveEditor(&bufferNode->buffer, &editor);
+        }
+    }
     m_selectedNodes.clear();
     for (const auto &index : m_selectionModel.selectedRows()) {
         Node *node = static_cast<Node *>(index.internalPointer());
         m_states[node] = Traversal::State();
         m_selectedNodes.push_back(node);
+        BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+        if (bufferNode) {
+            scene.bufferAddEditor(&bufferNode->buffer, &editor);
+        }
     }
     // Update node states (non render)
     scene.render(nullptr, false, nullptr, Mat4(), &m_states);
