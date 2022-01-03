@@ -6,6 +6,7 @@
 #include <cstring>
 #include <iostream>
 
+#undef ERROR // for simplecpp to build on windows
 #include "simplecpp/simplecpp.h"
 #include "utils.h"
 #include "application.h"
