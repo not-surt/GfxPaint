@@ -10,9 +10,6 @@
 #include <QProgressDialog>
 #include <QFileDialog>
 #include <QProgressBar>
-#if defined(Q_OS_WIN) && (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    #include <QtPlatformHeaders\QWindowsWindowFunctions>
-#endif
 
 #include "newbufferdialog.h"
 #include "application.h"
