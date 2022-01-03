@@ -856,10 +856,37 @@ void PixelLineProgram::render(const std::vector<Stroke::Point> &points, const Co
 
 QString BrushDabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) const
 {
+    std::unordered_map<QOpenGLShader::ShaderTypeBit, QString> stageDefine{
+        {QOpenGLShader::Vertex, "VERTEX_STAGE"},
+        {QOpenGLShader::Geometry, "GEOMETRY_STAGE"},
+        {QOpenGLShader::Fragment, "FRAGMENT_STAGE"},
+    };
+    std::unordered_map<Brush::Dab::Type, QString> brushTypeDefine{
+        {Brush::Dab::Type::Distance, "BRUSH_DISTANCE"},
+        {Brush::Dab::Type::Buffer, "BRUSH_BUFFER"},
+    };
+    std::unordered_map<QString, QString> defines{
+        {stageDefine[stage], ""},
+        {brushTypeDefine[type], ""},
+        {"DISTANCE", RenderManager::distanceMetrics[metric].functionName},
+        {"VALUE_TYPE", destFormat.shaderValueType()},
+        {"FORMAT_SCALE", QString::number(destFormat.scale())},
+        {"PALETTE_FORMAT_SCALE", QString::number(destIndexed && destPaletteFormat.isValid() ? destPaletteFormat.scale() : 1.0)},
+        {"BLEND_MODE", RenderManager::blendModes[blendMode].functionName},
+        {"COMPOSE_MODE", RenderManager::composeModes[composeMode].functionName},
+        {"SCALAR_VALUE_TYPE", destFormat.shaderScalarValueType()},
+        {"DEST_BUFFER_TYPE", "BUFFER_RGBA"},
+        {"DEST_BUFFER_NAME", "dest"},
+        {"DEST_BUFFER_TEXTURE_LOCATION", QString::number(0)},
+        {"DEST_BUFFER_SAMPLER_TYPE", destFormat.shaderSamplerType()},
+        {"DEST_BUFFER_FORMAT_SCALE", QString::number(destFormat.scale())},
+        {"DEST_BUFFER_SCALAR_VALUE_TYPE", destFormat.shaderScalarValueType()},
+    };
+
     const QString filename = "brush.glsl";
     const QString &srcy = RenderManager::resourceShaderPart(filename);
-    const QString &preprocessed = qApp->renderManager.preprocessGlsl(srcy, filename, {{"FRAGMENT_STAGE", "1"}, {"BRUSH_DISTANCE", "1"}, {"VALUE_TYPE", "vec4"}, {"SCALAR_VALUE_TYPE", "float"}, {"FORMAT_SCALE", "256.0"}});
-    qDebug().noquote() << "PREPROCESSED:" << preprocessed;
+    const QString &preprocessed = qApp->renderManager.preprocessGlsl(srcy, filename, defines);
+    return preprocessed;
 
     const QString common = R"(
 struct Point {

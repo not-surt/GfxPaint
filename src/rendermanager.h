@@ -88,7 +88,7 @@ public:
 
     static const QString shadersPath;
     void addGlslIncludes(const std::vector<QString> &includes);
-    QString preprocessGlsl(const QString &src, const QString &filename, const std::map<QString, QString> &defines);
+    QString preprocessGlsl(const QString &src, const QString &filename, const std::unordered_map<QString, QString> &defines);
 
     static QString headerShaderPart();
     static QString resourceShaderPart(const QString &filename);

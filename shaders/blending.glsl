@@ -1,3 +1,6 @@
+#if !defined(BLENDING_GLSL)
+#define BLENDING_GLSL
+
 // Index blend functions
 uint blendIndexNormal(const uint dest, const uint src) {
     return src;
@@ -209,3 +212,5 @@ vec3 blendColour(const vec3 dest, const vec3 src) {
 vec3 blendLuminosity(const vec3 dest, const vec3 src) {
     return setLum(dest, lum(src));
 }
+
+#endif // BLENDING_GLSL

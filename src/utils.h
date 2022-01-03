@@ -14,6 +14,9 @@
 #include "buffer.h"
 #include "types.h"
 
+#define STRINGIZE_EXPAND(string) #string
+#define STRINGIZE(string) STRINGIZE_EXPAND(string)
+
 namespace GfxPaint {
 
 QString buildFilterString(QList<QByteArray> imageFormats, QString allLabel = QString("supported"));

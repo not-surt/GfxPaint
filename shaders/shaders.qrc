@@ -9,5 +9,8 @@
         <file>brush.glsl</file>
         <file>fragment.glsl</file>
         <file>precision.glsl</file>
+        <file>colourspace.glsl</file>
+        <file>attributeless.glsl</file>
+        <file>buffer.glsl</file>
     </qresource>
 </RCC>

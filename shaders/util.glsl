@@ -1,3 +1,6 @@
+#if !defined(UTIL_GLSL)
+#define UTIL_GLSL
+
 float scaleShift(const float scale, const float shift, const float value) {
     return scale * value + shift;
 }
@@ -167,3 +170,5 @@ vec2 pixelSnap(const ivec2 pixelSnap, const vec2 target, const vec2 size) {
     float offsetY = pixelSnapOffset(pixelSnap.y, target.y, size.y);
     return snap(vec2(offsetX, offsetY), vec2(1.0, 1.0), target);
 }
+
+#endif // UTIL_GLSL

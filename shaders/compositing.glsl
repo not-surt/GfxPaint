@@ -1,3 +1,6 @@
+#if !defined(COMPOSITING_GLSL)
+#define COMPOSITING_GLSL
+
 vec4 porterDuff(const vec4 s, const vec4 d, const vec4 b) {
     float areaSrc = s.a * (1.0 - d.a);
     float areaDest = d.a * (1.0 - s.a);
@@ -57,3 +60,5 @@ vec4 porterDuffDestAtop(const vec4 dest, const vec4 src) {
 vec4 porterDuffXor(const vec4 dest, const vec4 src) {
     return porterDuff(src, dest, vec4(0.0));
 }
+
+#endif // COMPOSITING_GLSL

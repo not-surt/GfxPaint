@@ -1,7 +1,9 @@
-#include "types.glsl"
-#include "util.glsl"
+///////////////
+// STAGE COMMON
+///////////////
 
-// Common parts
+#include "types.glsl"
+
 struct Point {
     vec2 pos;
     float pressure;
@@ -9,15 +11,17 @@ struct Point {
     float age;
     float distance;
 };
-layout(std430, binding = 0) buffer StorageData
-{
-    Point points[];
-};
 
 struct Dab {
     float hardness;
     float opacity;
 };
+
+layout(std430, binding = 0) buffer StorageData
+{
+    Point points[];
+};
+
 layout(std140, binding = 0) uniform UniformData {
     uniform mat4 object;
     uniform mat4 worldToBuffer;
@@ -39,6 +43,10 @@ void main(void) {
 #elif defined(GEOMETRY_STAGE)
 /////////////////////////////
 
+#include "attributeless.glsl"
+
+ATTRIBUTELESS_CLIP_QUAD
+
 layout(points) in;
 layout(triangle_strip, max_vertices = 4) out;
 
@@ -59,7 +67,9 @@ void main(void)
 #elif defined(FRAGMENT_STAGE)
 /////////////////////////////
 
+#include "util.glsl"
 #include "distance.glsl"
+#include "buffer.glsl"
 
 in vec2 pos;
 
@@ -96,6 +106,9 @@ Colour src(void) {
 //    if (gl_FragDepth >= 1.0) discard;
     return colour;
 }
+
+//DEST_PALEETE_BUFFER_TYPE(DEST_BUFFER_NAME, DEST_BUFFER_TEXTURE_LOCATION, DEST_BUFFER_SAMPLER_TYPE, DEST_BUFFER_FORMAT_SCALE, DEST_BUFFER_SCALAR_VALUE_TYPE)
+//DEST_BUFFER_TYPE(DEST_BUFFER_NAME, DEST_BUFFER_TEXTURE_LOCATION, DEST_BUFFER_SAMPLER_TYPE, DEST_BUFFER_FORMAT_SCALE, DEST_BUFFER_SCALAR_VALUE_TYPE)
 
 #define FRAGMENT_MAIN
 #include "fragment.glsl"

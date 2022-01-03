@@ -1,3 +1,6 @@
+#if !defined(TYPES_GLSL)
+#define TYPES_GLSL
+
 #define FLOAT_INF (1.0 / 0.0)
 #define UINT_MAX 0xffffffffu
 
@@ -23,3 +26,5 @@ struct SubImage {
     ivec2 pos;
     ivec2 size;
 };
+
+#endif // TYPES_GLSL

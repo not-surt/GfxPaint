@@ -60,6 +60,7 @@ Application::Application(int &argc, char **argv)
       renderManager(),
       workBufferManager(),
       sessionManager(), documentManager(),
+      m_gitCommit(),
       m_recentSessions(), m_recentFiles(),
       styles(), m_styleActions(this), palettes(), m_paletteActions(this), stylesheets(), m_stylesheetActions(this),
       m_reopenSessionAtStartup(true), m_saveSessionAtExit(true), timer(),
@@ -73,7 +74,8 @@ Application::Application(int &argc, char **argv)
     static const QString name = "GfxPaint";
     setApplicationName(name);
     setApplicationDisplayName(name);
-    setApplicationVersion("0.0.0");
+    setApplicationVersion(STRINGIZE(APP_VERSION));
+    setGitRevision(STRINGIZE(APP_GIT_REVISION));
     setDesktopFileName(name + ".desktop");
     QSettings::setDefaultFormat(QSettings::IniFormat);
     setQuitOnLastWindowClosed(false);

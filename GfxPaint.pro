@@ -4,25 +4,39 @@
 #
 #-------------------------------------------------
 
-QT       += core gui widgets
-greaterThan(QT_MAJOR_VERSION, 5) {
-    QT   += core5compat openglwidgets
+QT_REQUIRED_MAJOR_VERSION = 6
+QT_REQUIRED_MINOR_VERSION = 0
+QT_REQUIRED_PATCH_VERSION = 0
+QT_REQUIRED_VERISION = $${QT_REQUIRED_MAJOR_VERSION}.$${QT_REQUIRED_MINOR_VERSION}.$${QT_REQUIRED_PATCH_VERSION}
+
+!versionAtLeast(QT_VERSION, $$QT_REQUIRED_VERISION) {
+    message("Cannot use Qt $${QT_VERSION}")
+    error("Use Qt $${QT_REQUIRED_VERISION} or newer")
 }
-#QT       += gamepad
+
+QT += core gui widgets openglwidgets
 
 TARGET = GfxPaint
+VERSION = 0.0.0
 TEMPLATE = app
+
+DEFINES += APP_VERSION=$$VERSION
+
+APP_GIT_REVISION = $$system(git rev-parse --short=8 HEAD)
+APP_GIT_TAG = $$system(git describe --tags --abbrev=0)
+
+DEFINES += APP_GIT_REVISION=$$APP_GIT_REVISION APP_GIT_TAG=$$APP_GIT_TAG
 
 CONFIG += c++2a
 
 QMAKE_CXXFLAGS += -pedantic -pedantic-errors
 QMAKE_CXXFLAGS_WARN_ON += -Wno-unused-parameter -Wno-unused-variable
 
-# You can also make your code fail to compile if you use deprecated APIs.
-# In order to do so, uncomment the following line.
-# You can also select to disable deprecated APIs only up to a certain version of Qt.
-#DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x051500    # disables all the APIs deprecated before Qt 5.15.0
-DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
+DEPRECATED_MAJOR_VERSION = $$format_number($${QT_REQUIRED_MAJOR_VERSION}, width=2 zeropad)
+DEPRECATED_MINOR_VERSION = $$format_number($${QT_REQUIRED_MINOR_VERSION}, width=2 zeropad)
+DEPRECATED_PATCH_VERSION = $$format_number($${QT_REQUIRED_PATCH_VERSION}, width=2 zeropad)
+DEPRECATED_VERSION = 0x$${DEPRECATED_MAJOR_VERSION}$${DEPRECATED_PATCH_VERSION}$${DEPRECATED_PATCH_VERSION}
+DEFINES += QT_DISABLE_DEPRECATED_BEFORE=$$DEPRECATED_VERSION
 
 #PRECOMPILED_HEADER = stable.h
 

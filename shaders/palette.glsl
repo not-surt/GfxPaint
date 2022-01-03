@@ -1,3 +1,6 @@
+#if !defined(PALETTE_GLSL)
+#define PALETTE_GLSL
+
 #define PALETTE_INDEX(samplerType, valueType)\
 valueType paletteIndex(samplerType palette, const Index index) {\
     return texelFetch(palette, ivec2(index, 0), 0);\
@@ -54,3 +57,5 @@ Index quantiseBruteForce(samplerType palette, const uint componentScale, const v
 QUANTISE_BRUTE_FORCE_ALPHA_THRESHOLD(sampler2D)
 QUANTISE_BRUTE_FORCE_ALPHA_THRESHOLD(usampler2D)
 QUANTISE_BRUTE_FORCE_ALPHA_THRESHOLD(isampler2D)
+
+#endif // PALETTE_GLSL

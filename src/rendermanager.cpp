@@ -261,12 +261,12 @@ RenderManager::RenderManager() :
     std::vector<QString> includes = {};
     QDirIterator it(shadersPath, QDirIterator::Subdirectories);
     while (it.hasNext()) {
-        const QFileInfo fileInfo = it.fileInfo();
+        const QString path = it.next();
+        const QFileInfo fileInfo(path);
         const QString &extension = fileInfo.suffix();
         if (!fileInfo.isDir() && QString::compare(extension, "glsl", Qt::CaseInsensitive) == 0) {
             includes.push_back(fileInfo.filePath());
         }
-        it.next();
     }
     addGlslIncludes(includes);
 
@@ -340,7 +340,7 @@ void RenderManager::addGlslIncludes(const std::vector<QString> &includes)
     }
 }
 
-QString RenderManager::preprocessGlsl(const QString &inputSrc, const QString &filename, const std::map<QString, QString> &defines = {})
+QString RenderManager::preprocessGlsl(const QString &src, const QString &filename, const std::unordered_map<QString, QString> &defines = {})
 {
     simplecpp::DUI dui;
     for (const auto &[name, value] : defines) {
@@ -352,10 +352,21 @@ QString RenderManager::preprocessGlsl(const QString &inputSrc, const QString &fi
     }
     simplecpp::OutputList outputList;
     std::vector<std::string> files;
-    std::istringstream inputStream(inputSrc.toStdString());
+    std::istringstream inputStream(src.toStdString());
     simplecpp::TokenList rawTokens(inputStream, files, filename.toStdString(), &outputList);
     rawTokens.removeComments();
     std::map<std::string, simplecpp::TokenList*> includeTokenLists = simplecpp::load(rawTokens, files, dui, &outputList);
+//    auto it = files.begin();
+//    while (it != files.end()) {
+//        std::string path = *it;
+//        if (!includeTokenLists.contains(path)) {
+//            std::string src = includeSources[path];
+//            std::istringstream f(src);
+//            simplecpp::TokenList rawtokens(f,files,path,&outputList);
+//            includeTokenLists[path] = new simplecpp::TokenList(rawtokens);
+//        }
+//        it = files.erase(it);
+//    }
     for (const auto &[path, src] : includeSources) {
         std::istringstream f(src);
         simplecpp::TokenList rawtokens(f,files,path,&outputList);
@@ -368,50 +379,16 @@ QString RenderManager::preprocessGlsl(const QString &inputSrc, const QString &fi
     qDebug() << "INCLUDES:" << includeTokenLists.size();//////////////////////////
     simplecpp::TokenList outputTokens(files);
     simplecpp::preprocess(outputTokens, rawTokens, files, includeTokenLists, dui, &outputList);
-    QString preprocessedSrc = QString::fromStdString(outputTokens.stringify());
-    simplecpp::cleanup(includeTokenLists);
-    return preprocessedSrc;
-
-    /*    QString src;
-    for (const auto &[key, value] : defines) {
-        src += "#define " + key + " " + value + "\n";
+    QString preprocessedSrc;
+    preprocessedSrc += qApp->renderManager.glslVersionString();
+    if (isOpenGLES()) {
+        preprocessedSrc += resourceShaderPart("precision.glsl");
+//        preprocessedSrc += "#include \"precision.glsl\"\n";
     }
-    qDebug().noquote() << src;////////////////////////////////////////
-    src += inputSrc;
-
-    tcpp::StringInputStream input(src.toStdString());
-    tcpp::Lexer lexer(input);
-
-    bool result = true;
-
-    std::set<tcpp::StringInputStream *> streams;
-    const auto &system = systemIncludeSources;
-    const auto &local = localIncludeSources;
-
-    tcpp::Preprocessor preprocessor(lexer,
-        [&result](const tcpp::TErrorInfo &errorInfo) {
-            qDebug() << "GLSL preprocessor error:" << QString::fromStdString(ErrorTypeToString(errorInfo.mType));
-            result = false;
-        },
-        [&streams, &system, &local](const std::string &path, const bool isSystemInclude) {
-            const auto &sources = isSystemInclude ? system : local;
-            tcpp::StringInputStream *stream;
-            if (sources.contains(path)) {
-                stream = new tcpp::StringInputStream(sources.at(path));
-            }
-            else {
-                qDebug() << "GLSL preprocessor error:" << "include not found" << QString::fromStdString(path);
-                stream = new tcpp::StringInputStream("");
-            }
-            streams.insert(stream);
-            return stream;
-        });
-
-    const std::string &output = preprocessor.Process();
-
-    streams.clear();
-
-    return QString::fromStdString(output);*/
+    preprocessedSrc += QString::fromStdString(outputTokens.stringify());
+    simplecpp::cleanup(includeTokenLists);
+    qDebug().noquote() << "PREPROCESSED:" << preprocessedSrc;
+    return preprocessedSrc;
 }
 
 QString RenderManager::headerShaderPart()
@@ -429,6 +406,7 @@ QString RenderManager::headerShaderPart()
 QString RenderManager::resourceShaderPart(const QString &filename)
 {
     QString src;
+    src += QString("#line 0 \"%1\"\n").arg(filename);
     src += fileToString(":/shaders/" + filename);
     return src;
 }

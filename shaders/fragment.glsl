@@ -1,5 +1,6 @@
 #include "compositing.glsl"
 #include "blending.glsl"
+#include "palette.glsl"
 
 uniform Colour srcTransparent;
 //uniform Colour destTransparent;

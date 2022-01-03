@@ -62,6 +62,8 @@ public:
 
     void exit(const int returnCode = 0);
 
+    void setGitRevision(const QString &gitRevision) { m_gitRevision = gitRevision; }
+    const QString &gitRevision() { return m_gitRevision; }
     void updateRecentSessions(const QStringList &filenames = QStringList());
     void updateRecentSessions(const QString &filename);
     const QStringList &recentSessions() const;
@@ -113,6 +115,7 @@ signals:
     void saveSessionAtExitChanged(const bool value);
 
 protected:
+    QString m_gitRevision;
     QStringList m_recentSessions;
     QStringList m_recentFiles;
     QMap<QString, QStyle *> styles;
