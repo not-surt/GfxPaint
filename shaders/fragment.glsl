@@ -1,3 +1,5 @@
+#include "util.glsl"
+#include "buffer.glsl"
 #include "compositing.glsl"
 #include "blending.glsl"
 #include "palette.glsl"
@@ -8,12 +10,15 @@ uniform Colour srcTransparent;
 out layout(location = 0) VALUE_TYPE fragment;
 
 vec4 blend(const vec4 dest, const vec4 src) {
-return vec4(BLEND_MODE(dest.rgb, src.rgb), src.a);
+    return vec4(BLEND_MODE(dest.rgb, src.rgb), src.a);
 }
 
 vec4 compose(const vec4 dest, const vec4 src) {
-return unpremultiply(COMPOSE_MODE(dest, src));
+    return unpremultiply(COMPOSE_MODE(dest, src));
 }
+
+//DEST_PALEETE_BUFFER_TYPE(DEST_BUFFER_NAME, DEST_BUFFER_TEXTURE_LOCATION, DEST_BUFFER_SAMPLER_TYPE, DEST_BUFFER_FORMAT_SCALE, DEST_BUFFER_SCALAR_VALUE_TYPE)
+//DEST_BUFFER_TYPE(DEST_BUFFER_NAME, DEST_BUFFER_TEXTURE_LOCATION, DEST_BUFFER_SAMPLER_TYPE, DEST_BUFFER_FORMAT_SCALE, DEST_BUFFER_SCALAR_VALUE_TYPE)
 
 void main(void) {
     Colour destColour = dest(gl_FragCoord.xy);

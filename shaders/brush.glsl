@@ -67,9 +67,7 @@ void main(void)
 #elif defined(FRAGMENT_STAGE)
 /////////////////////////////
 
-#include "util.glsl"
 #include "distance.glsl"
-#include "buffer.glsl"
 
 in vec2 pos;
 
@@ -106,9 +104,6 @@ Colour src(void) {
 //    if (gl_FragDepth >= 1.0) discard;
     return colour;
 }
-
-//DEST_PALEETE_BUFFER_TYPE(DEST_BUFFER_NAME, DEST_BUFFER_TEXTURE_LOCATION, DEST_BUFFER_SAMPLER_TYPE, DEST_BUFFER_FORMAT_SCALE, DEST_BUFFER_SCALAR_VALUE_TYPE)
-//DEST_BUFFER_TYPE(DEST_BUFFER_NAME, DEST_BUFFER_TEXTURE_LOCATION, DEST_BUFFER_SAMPLER_TYPE, DEST_BUFFER_FORMAT_SCALE, DEST_BUFFER_SCALAR_VALUE_TYPE)
 
 #define FRAGMENT_MAIN
 #include "fragment.glsl"

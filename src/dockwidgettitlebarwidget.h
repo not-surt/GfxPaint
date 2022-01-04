@@ -6,6 +6,7 @@
 #include <QLabel>
 #include <QToolButton>
 #include <QAction>
+#include <QMenu>
 #include <QWidgetAction>
 
 namespace GfxPaint {
@@ -20,8 +21,12 @@ public:
     QAction *closeAction() { return m_closeAction; }
 public slots:
     void setTitle(const QString &text) { titleLabel->setText(text); }
+    void setMenu(QMenu *const menu);
+    void setPopup(QWidget *const popup);
 protected:
     QLabel *titleLabel;
+    QToolButton *menuToolButton;
+    QToolButton *popupToolButton;
     QAction *m_menuAction;
     QWidgetAction *m_popupAction;
     QAction *m_floatAction;

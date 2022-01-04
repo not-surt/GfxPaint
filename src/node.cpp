@@ -157,8 +157,11 @@ void BufferNode::render(Traversal &traversal)
         std::list<Program *> oldPrograms = {program};
         program = new BufferProgram(buffer.format(), indexed, paletteFormat, renderTarget.buffer->format(), renderTarget.indexed, renderTarget.palette ? renderTarget.palette->format() : Buffer::Format(), 0, 3);
         oldPrograms.clear();
+        // TODO: don't recreate copy buffer every render
+        Buffer renderTargetCopy(*renderTarget.buffer);
         renderTarget.buffer->bindFramebuffer();
-        program->render(&buffer, palette, transparent, renderTarget.transform * transform, renderTarget.buffer, renderTarget.palette, Colour{});
+        program->render(&buffer, palette, transparent, renderTarget.transform * transform, &renderTargetCopy, renderTarget.palette, Colour{});
+//        program->render(&buffer, palette, transparent, renderTarget.transform * transform, renderTarget.buffer, renderTarget.palette, Colour{});
     }
 }
 

@@ -19,8 +19,6 @@ public:
     void setPopup(QWidget *const popup);
 protected:
     DockWidgetTitlebarWidget *titleBar;
-    QMenu *m_menu;
-    QWidget *m_popup;
 };
 
 } // namespace GfxPaint

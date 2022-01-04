@@ -30,22 +30,6 @@ typedef std::array<vec2, 2> mat2;
 typedef std::array<vec3, 3> mat3;
 typedef std::array<vec4, 4> mat4;
 
-typedef vec4 Rgba;
-typedef GLuint Index;
-
-#define FLOAT_INF std::numeric_limits<GLfloat>::infinity()
-#define RGBA_INVALID Rgba{FLOAT_INF, FLOAT_INF, FLOAT_INF, FLOAT_INF}
-#define INDEX_INVALID std::numeric_limits<GLuint>::max()
-
-struct alignas(16) Colour {
-    alignas(16) Rgba rgba{RGBA_INVALID};
-    alignas(4) Index index{INDEX_INVALID};
-
-//    inline bool operator==(const Colour &rhs) const = default;
-//    inline bool operator!=(const Colour &rhs) const = default;
-    inline auto operator<=>(const Colour &rhs) const = default;
-};
-
 //typedef QVector2D Vec2;
 //typedef QVector3D Vec3;
 //typedef QVector4D Vec4;
@@ -130,14 +114,92 @@ inline QVector2D operator*(const QMatrix4x4 &matrix, const QVector2D &vector) { 
 inline Vec2 operator*(const Vec2 &vector, const QMatrix4x4 &matrix) { return Vec2(operator*(static_cast<const QVector2D &>(vector), matrix)); }
 inline Vec2 operator*(const QMatrix4x4 &matrix, const Vec2 &vector) { return Vec2(operator*(matrix, static_cast<const QVector2D &>(vector))); }
 
+struct Bounds2 {
+    Vec2 min = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
+    Vec2 max = {-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()};
+
+    bool isValid() const {
+        return min.x() <= max.x() && min.y() <= max.y();
+    }
+
+    Bounds2 expanded(const Bounds2 &bounds) const {
+        if (isValid()) return Bounds2{
+           {std::min(min.x(), bounds.min.x()), std::min(min.y(), bounds.min.y())},
+           {std::max(max.x(), bounds.max.x()), std::max(max.y(), bounds.max.y())},
+        };
+        else return bounds;
+    }
+    Bounds2 expanded(const Vec2 &point) const {
+        return expanded({point, point});
+    }
+
+    Bounds2 clipped(const Bounds2 &other) const {
+         return {
+            {std::max(min.x(), other.min.x()), std::max(min.y(), other.min.y())},
+            {std::min(max.x(), other.max.x()), std::min(max.y(), other.max.y())},
+        };
+    }
+
+    Bounds2 padded(const Bounds2 &padding) const {
+        Q_ASSERT(isValid());
+        return {min - padding.min, max + padding.max};
+    }
+
+    Bounds2 offset(const Vec2 &offset) const {
+        Q_ASSERT(isValid());
+        return {min - offset, max - offset};
+    }
+
+    static Bounds2 fromCorners(const Vec2 &corner0, const Vec2 &corner1) {
+        return {
+            {std::min(corner0.x(), corner1.x()), std::min(corner0.y(), corner1.y())},
+            {std::max(corner0.x(), corner1.x()), std::max(corner0.y(), corner1.y())},
+        };
+    }
+    static Bounds2 fromCentreAndCorner(const Vec2 &centre, const Vec2 &corner) {
+        const Vec2 halfSize = Vec2(corner - centre).abs();
+        return {centre - halfSize, centre + halfSize};
+    }
+    static Bounds2 fromCornerAndSize(const Vec2 &corner, const Vec2 &size) {
+        return {corner, corner + size};
+    }
+    static Bounds2 fromCentreAndSize(const Vec2 &centre, const Vec2 &size) {
+        return fromCentreAndCorner(centre, centre + size / 2.0f);
+    }
+    static Bounds2 fromCentreAndRadius(const Vec2 &centre, const float &radius) {
+        return fromCentreAndSize(centre, {radius, radius});
+    }
+};
+
+struct Bounds3 {
+    Vec3 min = {std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity()};
+    Vec3 max = {-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity()};
+};
+
+typedef std::list<size_t> GraphIndex;
+
+typedef vec4 Rgba;
+typedef GLuint Index;
+
+#define FLOAT_INF std::numeric_limits<GLfloat>::infinity()
+#define RGBA_INVALID Rgba{FLOAT_INF, FLOAT_INF, FLOAT_INF, FLOAT_INF}
+#define INDEX_INVALID std::numeric_limits<GLuint>::max()
+
+struct alignas(16) Colour {
+    alignas(16) Rgba rgba{RGBA_INVALID};
+    alignas(4) Index index{INDEX_INVALID};
+
+    //    inline bool operator==(const Colour &rhs) const = default;
+    //    inline bool operator!=(const Colour &rhs) const = default;
+    inline auto operator<=>(const Colour &rhs) const = default;
+};
+
 inline QDebug operator<<(QDebug debug, const Colour &colour)
 {
     QDebugStateSaver saver(debug);
     debug.nospace() << "Colour(Rgba(" << colour.rgba[0] << ", " << colour.rgba[1] << ", " << colour.rgba[2] << ", " << colour.rgba[3] << "), Index(" << colour.index << ")";
     return debug;
 }
-
-typedef std::list<size_t> GraphIndex;
 
 static const Colour COLOUR_INVALID = Colour{RGBA_INVALID, INDEX_INVALID};
 

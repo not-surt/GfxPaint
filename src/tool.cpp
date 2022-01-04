@@ -18,8 +18,9 @@ std::map<QString, Program *> PixelTool::nodePrograms(EditingContext &context, No
 void PixelTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
     for (Node *node : context.selectedNodes()) {
-        auto &programs = context.selectedNodePrograms[node];
         const Traversal::State &state = context.states().at(node);
+        auto &programs = context.selectedNodeToolPrograms[node];
+//        auto &programs = context.nodeToolPrograms(node, this, state);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
             Buffer *const restoreBuffer = context.selectedNodeRestoreBuffers[node];
@@ -31,7 +32,7 @@ void PixelTool::end(EditingContext &context, const Mat4 &viewTransform)
             // Buffer to clip
             Mat4 bufferToClip = bufferNode->viewportTransform();
 
-            PixelLineProgram *pixelLineProgram = static_cast<PixelLineProgram *>(context.selectedNodePrograms[node]["render"]);
+            PixelLineProgram *pixelLineProgram = static_cast<PixelLineProgram *>(programs["render"]);
             pixelLineProgram->render(context.toolStroke.points, context.colour, worldToBuffer, bufferToClip, restoreBuffer, state.palette);
         }
     }
@@ -60,7 +61,7 @@ std::map<QString, Program *> BrushTool::nodePrograms(EditingContext &context, No
 void BrushTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
     for (Node *node : context.selectedNodes()) {
-        auto &programs = context.selectedNodePrograms[node];
+        auto &programs = context.selectedNodeToolPrograms[node];
         const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
@@ -126,7 +127,7 @@ void RectTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
     update(context, viewTransform);
     for (Node *node : context.selectedNodes()) {
-        auto &programs = context.selectedNodePrograms[node];
+        auto &programs = context.selectedNodeToolPrograms[node];
         const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
@@ -182,7 +183,7 @@ void EllipseTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
     update(context, viewTransform);
     for (Node *node : context.selectedNodes()) {
-        auto &programs = context.selectedNodePrograms[node];
+        auto &programs = context.selectedNodeToolPrograms[node];
         const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
@@ -235,23 +236,11 @@ void ContourTool::end(EditingContext &context, const Mat4 &viewTransform)
 {
     update(context, viewTransform);
     for (Node *node : context.selectedNodes()) {
-        auto &programs = context.selectedNodePrograms[node];
+        auto &programs = context.selectedNodeToolPrograms[node];
         const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {
             Buffer *const restoreBuffer = context.selectedNodeRestoreBuffers[node];
-            Vec2 boundsMin = Vec2(std::numeric_limits<float>::infinity(), std::numeric_limits<float>::infinity());
-            Vec2 boundsMax = Vec2(-std::numeric_limits<float>::infinity(), -std::numeric_limits<float>::infinity());
-//            std::vector<Vec2> points;
-            auto iterator = context.toolStroke.points.begin();
-            while (iterator != context.toolStroke.points.end()) {
-                boundsMin.setX(std::min(boundsMin.x(), iterator->pos.x()));
-                boundsMin.setY(std::min(boundsMin.y(), iterator->pos.y()));
-                boundsMax.setX(std::max(boundsMax.x(), iterator->pos.x()));
-                boundsMax.setY(std::max(boundsMax.y(), iterator->pos.y()));
-//                points.push_back(iterator->pos);
-                ++iterator;
-            }
 
             ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
             bufferNode->buffer.bindFramebuffer();
@@ -259,11 +248,13 @@ void ContourTool::end(EditingContext &context, const Mat4 &viewTransform)
             ContourStencilProgram *stencilProgram = static_cast<ContourStencilProgram *>(programs["stencil"]);
             stencilProgram->render(context.toolStroke.points, bufferNode->viewportTransform() * state.transform.inverted(), restoreBuffer);
 
+            const QRectF &bounds = context.toolStroke.bounds;
+            qDebug() << context.toolStroke.bounds;///////////////////////////
             Model model = {GL_TRIANGLE_STRIP, {2}, {
-                            boundsMin.x(), boundsMin.y(),
-                            boundsMax.x(), boundsMin.y(),
-                            boundsMin.x(), boundsMax.y(),
-                            boundsMax.x(), boundsMax.y()},
+                            (float)bounds.topLeft().x(), (float)bounds.topLeft().y(),
+                            (float)bounds.bottomRight().x(), (float)bounds.topLeft().y(),
+                            (float)bounds.topLeft().x(), (float)bounds.bottomRight().y(),
+                            (float)bounds.bottomRight().x(), (float)bounds.bottomRight().y()},
                            {{0, 1, 2, 3}}, {4}};
             SingleColourModelProgram *modelProgram = static_cast<SingleColourModelProgram *>(programs["colour"]);
             modelProgram->render(&model, context.colour, bufferNode->viewportTransform() * state.transform.inverted(), restoreBuffer, state.palette);
@@ -312,7 +303,7 @@ void ColourPickTool::begin(EditingContext &context, const Mat4 &viewTransform)
 void ColourPickTool::update(EditingContext &context, const Mat4 &viewTransform)
 {
     for (Node *node : context.selectedNodes()) {
-        auto &programs = context.selectedNodePrograms[node];
+        auto &programs = context.selectedNodeToolPrograms[node];
         const Traversal::State &state = context.states().at(node);
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
         if (bufferNode) {

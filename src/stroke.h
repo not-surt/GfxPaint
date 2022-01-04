@@ -2,6 +2,7 @@
 #define STROKE_H
 
 #include <QQuaternion>
+#include <QRect>
 #include <chrono>
 
 #include "types.h"
@@ -29,12 +30,22 @@ struct Stroke {
     };
 
     std::vector<Point> points = {};
+    QRectF bounds = {};
     std::chrono::high_resolution_clock::time_point startTime = {};
     float length = 0.0f;
 
     const Point &add(const Point &point) {
+        if (points.empty()) {
+            bounds = QRectF(point.pos.toPointF(), QSizeF(0.0, 0.0));
+        }
+        else {
+            bounds.setX(std::min(bounds.x(), (double)point.pos.x()));
+            bounds.setY(std::min(bounds.y(), (double)point.pos.y()));
+            bounds.setWidth(std::max(bounds.width(), (double)point.pos.x() - bounds.x()));
+            bounds.setHeight(std::max(bounds.height(), (double)point.pos.y() - bounds.y()));
+        }
         points.push_back(point);
-        return point;
+        return points.back();
     }
     const Point &add(const Vec2 &pos, const float pressure, const QQuaternion &quaternion) {
         Point point = {pos, pressure, quaternion, {}, 0.0};
@@ -45,10 +56,9 @@ struct Stroke {
         else {
             point.distance += std::sqrt(Vec2::dotProduct(points.back().pos, pos));
         }
-        point.age = std::chrono::duration_cast<std::chrono::duration<float/*, std::milli*/>>(now - startTime).count();
-        points.push_back(point);
         length += point.distance;
-        return points.back();
+        point.age = std::chrono::duration_cast<std::chrono::duration<float/*, std::milli*/>>(now - startTime).count();
+        return add(point);
     }
 
     static Point interpolate(const Point &from, const Point &to, const float position) {

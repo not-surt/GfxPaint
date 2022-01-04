@@ -1,3 +1,4 @@
+#if defined(GL_ES)
 precision highp float;
 precision highp int;
 precision highp sampler2D;
@@ -12,3 +13,4 @@ precision highp uimage2D;
 precision highp imageBuffer;
 precision highp iimageBuffer;
 precision highp uimageBuffer;
+#endif // GL_ES

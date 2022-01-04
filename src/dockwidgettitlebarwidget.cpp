@@ -7,6 +7,7 @@
 #include <QWidgetAction>
 #include <QMenu>
 #include <QChar>
+#include <QHBoxLayout>
 
 #include "application.h"
 
@@ -14,7 +15,7 @@ namespace GfxPaint {
 
 DockWidgetTitlebarWidget::DockWidgetTitlebarWidget(QWidget *const parent) :
     QWidget(parent),
-    titleLabel(new QLabel()),
+    titleLabel(new QLabel()), menuToolButton(new QToolButton()), popupToolButton(new QToolButton()),
     m_menuAction(new QAction(this)), m_popupAction(new QWidgetAction(this)), m_floatAction(new QAction(this)), m_closeAction(new QAction(this))
 {
     QStyle *const style = qApp->style();
@@ -23,31 +24,11 @@ DockWidgetTitlebarWidget::DockWidgetTitlebarWidget(QWidget *const parent) :
     layout->setSpacing(0);
     layout->setContentsMargins(0, 0, 0, 0);
 
-    m_menuAction->setIcon(style->standardIcon(QStyle::SP_FileDialogDetailedView));
-//    m_menuAction->setFont(qApp->iconFont());
-//    m_menuAction->setText(QChar((int)Application::IconFont::Menu));
-    QToolButton *const menuToolButton = new QToolButton();
-    menuToolButton->setDefaultAction(m_menuAction);
-    menuToolButton->setPopupMode(QToolButton::InstantPopup);
-//    menuToolButton->setArrowType(Qt::ArrowType::NoArrow);
-    menuToolButton->setAutoRaise(true);
+    menuToolButton->setVisible(false);
     layout->addWidget(menuToolButton);
-    QObject::connect(m_popupAction, &QAction::changed, this, [this, menuToolButton](){
-        menuToolButton->setVisible(m_menuAction->isEnabled());
-    });
 
-    m_popupAction->setDefaultWidget(new QWidget(this));
-    m_popupAction->setIcon(style->standardIcon(QStyle::SP_FileDialogListView));
-    QToolButton *const popupToolButton = new QToolButton();
-    popupToolButton->setDefaultAction(m_popupAction);
-    popupToolButton->addAction(m_popupAction);
-    popupToolButton->setPopupMode(QToolButton::InstantPopup);
-//    popupToolButton->setArrowType(Qt::ArrowType::DownArrow);
-    popupToolButton->setAutoRaise(true);
+    popupToolButton->setVisible(false);
     layout->addWidget(popupToolButton);
-    QObject::connect(m_popupAction, &QAction::changed, this, [this, popupToolButton](){
-        popupToolButton->setVisible(m_popupAction->isEnabled());
-    });
 
     titleLabel->setText("");
     layout->addWidget(titleLabel);
@@ -67,6 +48,42 @@ DockWidgetTitlebarWidget::DockWidgetTitlebarWidget(QWidget *const parent) :
     layout->addWidget(closeToolButton);
 
     setLayout(layout);
+}
+
+void DockWidgetTitlebarWidget::setMenu(QMenu *const menu) {
+    if (menu) {
+        menu->menuAction()->setIcon(qApp->style()->standardIcon(QStyle::SP_FileDialogDetailedView));
+        menuToolButton->setDefaultAction(menu->menuAction());
+        menuToolButton->setPopupMode(QToolButton::InstantPopup);
+        popupToolButton->setAutoRaise(true);
+        menuToolButton->setVisible(true);
+    }
+    else {
+        menuToolButton->setVisible(false);
+        menuToolButton->defaultAction()->deleteLater();
+        menuToolButton->setDefaultAction(nullptr);
+    }
+}
+
+void DockWidgetTitlebarWidget::setPopup(QWidget *const popup) {
+    if (popup) {
+        QMenu *popupWrapper = new QMenu();
+        QHBoxLayout *popupWrapperLayout = new QHBoxLayout();
+        popupWrapperLayout->setSpacing(0);
+        popupWrapperLayout->setContentsMargins(0, 0, 0, 0);
+        popupWrapper->setLayout(popupWrapperLayout);
+        popupWrapperLayout->addWidget(popup);
+        popupWrapper->menuAction()->setIcon(qApp->style()->standardIcon(QStyle::SP_FileDialogListView));
+        popupToolButton->setDefaultAction(popupWrapper->menuAction());
+        popupToolButton->setPopupMode(QToolButton::InstantPopup);
+        popupToolButton->setAutoRaise(true);
+        popupToolButton->setVisible(true);
+    }
+    else {
+        popupToolButton->setVisible(false);
+        popupToolButton->defaultAction()->deleteLater();
+        popupToolButton->setDefaultAction(nullptr);
+    }
 }
 
 } // namespace GfxPaint

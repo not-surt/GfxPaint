@@ -61,6 +61,8 @@ public:
 
     void update(Editor &editor);
 
+    std::map<QString, Program *> &nodeToolPrograms(Node *const node, Tool *const tool, const Traversal::State &state);
+
     std::unordered_map<Node *, Traversal::State> &states() { return m_states; }
     QItemSelectionModel &selectionModel() { return m_selectionModel; }
     std::vector<Node *> &selectedNodes() { return m_selectedNodes; }
@@ -80,7 +82,7 @@ public:
     QItemSelectionModel m_selectionModel;
     std::vector<Node *> m_selectedNodes;
     std::unordered_map<Node *, Buffer *> selectedNodeRestoreBuffers;
-    std::unordered_map<Node *, std::map<QString, Program *>> selectedNodePrograms;
+    std::unordered_map<Node *, std::map<QString, Program *>> selectedNodeToolPrograms;
 };
 
 } // namespace GfxPaint

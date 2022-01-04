@@ -269,6 +269,14 @@ public:
     Mat4 transform() const { return cameraTransform; }
 
     EditingContext::ToolId selectedToolId() { return m_editingContext.selectedToolId; }
+    EditingContext::ToolId activeToolId() {
+        // TODO:
+        if (!activatedToolStack.empty()) {
+            auto &[state, tool] = activatedToolStack.back();
+            return tool;
+        }
+        else return EditingContext::ToolId::Invalid;
+    }
     EditingContext::ToolSpace toolSpace() { return m_editingContext.toolSpace; }
     int blendMode() { return m_editingContext.blendMode; }
     int composeMode() { return m_editingContext.composeMode; }
