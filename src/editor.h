@@ -163,7 +163,9 @@ public:
     PixelTool pixelTool;
     BrushTool brushTool;
     RectTool rectTool;
+    FilledRectTool filledRectTool;
     EllipseTool ellipseTool;
+    FilledEllipseTool filledEllipseTool;
     ContourTool contourTool;
     ColourPickTool pickTool;
     TransformTargetOverrideTool transformTargetOverrideTool;
@@ -174,7 +176,7 @@ public:
 
     const std::vector<Tool *> tools{
         &pixelTool, &brushTool,
-        &rectTool, &ellipseTool, &contourTool,
+        &rectTool, &filledRectTool, &ellipseTool, &filledEllipseTool, &contourTool,
         &pickTool,
         &transformTargetOverrideTool,
         &panTool, &rotoZoomTool, &zoomTool, &rotateTool,
@@ -198,10 +200,10 @@ public:
         // Selectable tools
         {EditingContext::ToolId::Pixel, {"Pixel", &pixelTool, 0}},
         {EditingContext::ToolId::Brush, {"Brush", &brushTool, 0}},
-        {EditingContext::ToolId::RectLined, {"Rectangle", &rectTool,  static_cast<int>(PrimitiveTool::Mode::Lined)}},
-        {EditingContext::ToolId::RectFilled, {"Filled Rectangle", &rectTool, static_cast<int>(PrimitiveTool::Mode::Filled)}},
-        {EditingContext::ToolId::EllipseLined, {"Ellipse", &ellipseTool, static_cast<int>(PrimitiveTool::Mode::Lined)}},
-        {EditingContext::ToolId::EllipseFilled, {"Filled Ellipse", &ellipseTool, static_cast<int>(PrimitiveTool::Mode::Filled)}},
+        {EditingContext::ToolId::RectLined, {"Rectangle", &rectTool, 0}},
+        {EditingContext::ToolId::RectFilled, {"Filled Rectangle", &filledRectTool, 0}},
+        {EditingContext::ToolId::EllipseLined, {"Ellipse", &ellipseTool, 0}},
+        {EditingContext::ToolId::EllipseFilled, {"Filled Ellipse", &filledEllipseTool, 0}},
         {EditingContext::ToolId::Contour, {"Contour", &contourTool, 0}},
         {EditingContext::ToolId::PickColourNode, {"Pick Colour From Node", &pickTool, static_cast<int>(ColourPickTool::Mode::NodeColour)}},
         {EditingContext::ToolId::PickColourScene, {"Pick Colour From Scene", &pickTool, static_cast<int>(ColourPickTool::Mode::SceneColour)}},
@@ -218,7 +220,6 @@ public:
         {EditingContext::ToolId::SnappingOverrideOn, {"Snapping Override On", nullptr, 1}},
         {EditingContext::ToolId::SnappingOverrideOff, {"Snapping Override Off", nullptr, 0}},
     };
-    // TODO: are these actually modelss activators and should have modal switching keys here (or should that be handled buy regular actions?)
     const std::map<InputState, EditingContext::ToolId> toolSelectors{
         {{{Qt::Key_Control}, {}, {}}, EditingContext::ToolId::PickColourNode},
         {{{Qt::Key_P}, {}, {}}, EditingContext::ToolId::Pixel},
@@ -268,6 +269,16 @@ public:
     EditingContext::TransformTarget transformTarget() const { return m_editingContext.transformTarget; }
     Mat4 transform() const { return cameraTransform; }
 
+    std::list<EditingContext::ToolId> activeTools() {
+        std::list<EditingContext::ToolId> tools;
+        for (auto &[inputState, toolId] : selectedToolStack) {
+            tools.push_back(toolId);
+        }
+        for (auto &[inputState, toolId] : activatedToolStack) {
+            tools.push_back(toolId);
+        }
+        return tools;
+    }
     EditingContext::ToolId selectedToolId() { return m_editingContext.selectedToolId; }
     EditingContext::ToolId activeToolId() {
         // TODO:

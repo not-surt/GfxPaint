@@ -121,6 +121,17 @@ struct Bounds2 {
     bool isValid() const {
         return min.x() <= max.x() && min.y() <= max.y();
     }
+    bool isEmpty() const {
+        return min.x() == max.x() && min.y() == max.y();
+    }
+
+    Vec2 size() const {
+        return Vec2{max.x() - min.x(), max.y() - min.y()};
+    }
+
+    Vec2 centroid() const {
+        return Vec2{(min.x() + max.x()) / 2.0f, (min.y() + max.y()) / 2.0f};
+    }
 
     Bounds2 expanded(const Bounds2 &bounds) const {
         if (isValid()) return Bounds2{
@@ -148,6 +159,16 @@ struct Bounds2 {
     Bounds2 offset(const Vec2 &offset) const {
         Q_ASSERT(isValid());
         return {min - offset, max - offset};
+    }
+
+    bool contains(const Vec2 &vec) const {
+        return !(vec.x() < min.x() || vec.x() > max.x() ||
+                 vec.y() < min.y() || vec.y() > max.y());
+    }
+    bool intersects(const Bounds2 &other) const {
+        const Vec2 halfCombinedSize = (this->size() + other.size()) / 2.0f;
+        const Vec2 centroidDifference = Vec2(this->centroid() - other.centroid()).abs();
+        return centroidDifference.x() < halfCombinedSize.x() && centroidDifference.y() < halfCombinedSize.y();
     }
 
     static Bounds2 fromCorners(const Vec2 &corner0, const Vec2 &corner1) {

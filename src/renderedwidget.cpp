@@ -75,6 +75,7 @@ void RenderedWidget::resizeGL(int w, int h)
         ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
         delete widgetBuffer;
         widgetBuffer = new Buffer(QSize(w, h), format);
+        qDebug() << "RESIZE!";//////////////////////////
     }
 }
 

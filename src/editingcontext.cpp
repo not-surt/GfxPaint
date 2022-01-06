@@ -42,7 +42,8 @@ EditingContext::EditingContext(EditingContext &other) :
     colour(other.colour),
     palette(other.palette),
     m_selectionModel(other.m_selectionModel.model()),
-    m_selectedNodes(other.m_selectedNodes)
+    m_selectedNodes(other.m_selectedNodes),
+    formatToolPrograms{}
 {
     m_selectionModel.select(other.m_selectionModel.selection(), QItemSelectionModel::ClearAndSelect);
 }
@@ -51,10 +52,10 @@ EditingContext::~EditingContext()
 {
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     selectedNodeRestoreBuffers.clear();
-    for (auto &programs : selectedNodeToolPrograms) {
-        programs.second.clear();
+    for (auto &[key, programs] : formatToolPrograms) {
+        programs.clear();
     }
-    selectedNodeToolPrograms.clear();
+    formatToolPrograms.clear();
 }
 
 void EditingContext::update(Editor &editor)
@@ -83,34 +84,36 @@ void EditingContext::update(Editor &editor)
     ContextBinder contextBinder(&qApp->renderManager.context, &qApp->renderManager.surface);
     auto oldSelectedNodeRestoreBuffers = selectedNodeRestoreBuffers;
     selectedNodeRestoreBuffers.clear();
-    auto oldSelectedNodePrograms = selectedNodeToolPrograms;
-    selectedNodeToolPrograms.clear();
+    auto oldFormatToolPrograms = formatToolPrograms;
+    formatToolPrograms.clear();
+    auto tools = editor.activeTools();
     for (Node *node : m_selectedNodes) {
         Traversal::State &state = m_states[node];
-        // TODO: get the active tool(s), not the selected CRASH!
-        ToolId toolId = selectedToolId;
-//        ToolId toolId = editor.activeToolId();
-        if (toolId != ToolId::Invalid) {
-            Q_ASSERT(editor.toolInfo.contains(toolId));
-            Tool *const tool = editor.toolInfo.at(toolId).tool;
-            BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
-            if (bufferNode) {
-                selectedNodeRestoreBuffers[bufferNode] = new Buffer(bufferNode->buffer);
-                selectedNodeToolPrograms[bufferNode] = tool->nodePrograms(*this, node, state);
-//                selectedNodePrograms[bufferNode].merge(tool->nodePrograms(*this, node, state));
+        BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
+        if (bufferNode) {
+            selectedNodeRestoreBuffers[bufferNode] = new Buffer(bufferNode->buffer);
+            for (const ToolId toolId : tools) {
+                Tool *const tool = editor.toolInfo.at(toolId).tool;
+                auto programs = tool->formatPrograms(*this, bufferNode->buffer.format(), bufferNode->indexed, state.palette->format());
+                const std::tuple key{bufferNode->buffer.format(), bufferNode->indexed, state.palette->format(), tool};
+                if (!formatToolPrograms.contains(key)) {
+                    formatToolPrograms[key] = programs;
+                }
             }
         }
     }
     oldSelectedNodeRestoreBuffers.clear();
-    oldSelectedNodePrograms.clear();
+    oldFormatToolPrograms.clear();
 }
 
-std::map<QString, Program *> &EditingContext::nodeToolPrograms(Node *const node, Tool *const tool, const Traversal::State &state)
+Program *EditingContext::toolProgram(const Buffer::Format &bufferFormat, const bool indexed, const Buffer::Format &paletteFormat, Tool *const tool, const QString &name)
 {
-    if (!selectedNodeToolPrograms.contains(node)) {
-        selectedNodeToolPrograms[node] = tool->nodePrograms(*this, node, state);
+    auto key = std::tuple{bufferFormat, indexed, paletteFormat, tool};
+    if (!formatToolPrograms.contains(key)) {
+        formatToolPrograms[key] = tool->formatPrograms(*this, bufferFormat, indexed, paletteFormat);
     }
-    return selectedNodeToolPrograms[node];
+    Q_ASSERT(formatToolPrograms[key].contains(name));
+    return formatToolPrograms[key][name];
 }
 
 } // namespace GfxPaint

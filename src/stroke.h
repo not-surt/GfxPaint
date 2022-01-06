@@ -30,20 +30,21 @@ struct Stroke {
     };
 
     std::vector<Point> points = {};
-    QRectF bounds = {};
+    Bounds2 bounds = {};
     std::chrono::high_resolution_clock::time_point startTime = {};
     float length = 0.0f;
 
     const Point &add(const Point &point) {
-        if (points.empty()) {
-            bounds = QRectF(point.pos.toPointF(), QSizeF(0.0, 0.0));
-        }
-        else {
-            bounds.setX(std::min(bounds.x(), (double)point.pos.x()));
-            bounds.setY(std::min(bounds.y(), (double)point.pos.y()));
-            bounds.setWidth(std::max(bounds.width(), (double)point.pos.x() - bounds.x()));
-            bounds.setHeight(std::max(bounds.height(), (double)point.pos.y() - bounds.y()));
-        }
+        bounds = bounds.expanded(point.pos);
+//        if (points.empty()) {
+//            bounds = QRectF(point.pos.toPointF(), QSizeF(0.0, 0.0));
+//        }
+//        else {
+//            bounds.setX(std::min(bounds.x(), (double)point.pos.x()));
+//            bounds.setY(std::min(bounds.y(), (double)point.pos.y()));
+//            bounds.setWidth(std::max(bounds.width(), (double)point.pos.x() - bounds.x()));
+//            bounds.setHeight(std::max(bounds.height(), (double)point.pos.y() - bounds.y()));
+//        }
         points.push_back(point);
         return points.back();
     }

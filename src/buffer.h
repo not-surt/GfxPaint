@@ -136,6 +136,8 @@ class Buffer {
 public:
     using Format = BufferData::Format;
 
+    static const Format FORMAT_INVALID;
+
     explicit Buffer();
     explicit Buffer(const QSize size, const Format format, const GLvoid *const data = nullptr);
     Buffer(const Buffer &other);

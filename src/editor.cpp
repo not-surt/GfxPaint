@@ -229,8 +229,8 @@ bool Editor::event(QEvent *const event)
                         if (info.tool->updatesContext()) {
                             activeEditingContextUpdated();
                         }
-                        grabMouse();
-                        grabKeyboard();
+//                        grabMouse();
+//                        grabKeyboard();
                         consume = true;
                     }
                 }
@@ -238,9 +238,8 @@ bool Editor::event(QEvent *const event)
         }
 
         {
-            auto iterator = activatedToolStack.begin();
-            while (iterator != activatedToolStack.end()) {
-                const ToolInfo &info = toolInfo.at(iterator->second);
+            for (auto &[inputState, toolId] : activatedToolStack) {
+                const ToolInfo &info = toolInfo.at(toolId);
                 // Handle mouse wheel
                 if (event->type() == QEvent::Wheel) {
                     m_editingContext.toolMode = info.operationMode;
@@ -263,12 +262,11 @@ bool Editor::event(QEvent *const event)
                     consume = true;
                 }
                 if (info.tool->isExclusive()) break;
-                ++iterator;
             }
         }
 
         // Add points for preview
-        if (activatedToolStack.empty() && !selectedToolStack.empty()) {
+        if (activatedToolStack.empty()/* && !selectedToolStack.empty()*/) {
             m_editingContext.toolStroke = {};
             m_editingContext.toolStroke.add(cursorWorldPos, pressure, quaternion);
         }

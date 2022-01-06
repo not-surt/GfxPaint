@@ -4,6 +4,8 @@
 
 namespace GfxPaint {
 
+const Buffer::Format Buffer::FORMAT_INVALID{Buffer::Format::ComponentType::Invalid, 0, 0};
+
 const std::map<BufferData::Format::ComponentType, std::string> BufferData::Format::componentTypeNames = {
     {BufferData::Format::ComponentType::Invalid, "Invalid"},
     {BufferData::Format::ComponentType::UNorm, "Unsigned Normalised"},
