@@ -100,6 +100,15 @@ public:
     virtual void onTopPreview(Editor &editor, EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
 };
 
+class PourFillTool : public Tool {
+public:
+    using Tool::Tool;
+    virtual std::map<QString, Program *> formatPrograms(EditingContext &context, const Buffer::Format &bufferFormat, const bool indexed, const Buffer::Format &paletteFormat) const override;
+    virtual void end(EditingContext &context, const Mat4 &viewTransform) override;
+    virtual void onCanvasPreview(EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
+    virtual void onTopPreview(Editor &editor, EditingContext &context, const Mat4 &viewTransform, const bool isActive) override;
+};
+
 class ColourPickTool : public Tool {
 public:
     enum class Mode {

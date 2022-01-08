@@ -269,25 +269,17 @@ public:
     EditingContext::TransformTarget transformTarget() const { return m_editingContext.transformTarget; }
     Mat4 transform() const { return cameraTransform; }
 
-    std::list<EditingContext::ToolId> activeTools() {
-        std::list<EditingContext::ToolId> tools;
+    std::list<EditingContext::ToolId> activeToolIds() {
+        std::list<EditingContext::ToolId> toolIds;
         for (auto &[inputState, toolId] : selectedToolStack) {
-            tools.push_back(toolId);
+            toolIds.push_back(toolId);
         }
         for (auto &[inputState, toolId] : activatedToolStack) {
-            tools.push_back(toolId);
+            toolIds.push_back(toolId);
         }
-        return tools;
+        return toolIds;
     }
     EditingContext::ToolId selectedToolId() { return m_editingContext.selectedToolId; }
-    EditingContext::ToolId activeToolId() {
-        // TODO:
-        if (!activatedToolStack.empty()) {
-            auto &[state, tool] = activatedToolStack.back();
-            return tool;
-        }
-        else return EditingContext::ToolId::Invalid;
-    }
     EditingContext::ToolSpace toolSpace() { return m_editingContext.toolSpace; }
     int blendMode() { return m_editingContext.blendMode; }
     int composeMode() { return m_editingContext.composeMode; }

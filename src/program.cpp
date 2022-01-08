@@ -861,6 +861,8 @@ QString BrushDabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) cons
 //        {QOpenGLShader::Geometry, "GEOMETRY_STAGE"},
 //        {QOpenGLShader::Fragment, "FRAGMENT_STAGE"},
 //    };
+//    if (!stageDefine.contains(stage)) return "";
+
 //    std::unordered_map<Brush::Dab::Type, QString> brushTypeDefine{
 //        {Brush::Dab::Type::Distance, "BRUSH_DISTANCE"},
 //        {Brush::Dab::Type::Buffer, "BRUSH_BUFFER"},
@@ -869,19 +871,22 @@ QString BrushDabProgram::generateSource(QOpenGLShader::ShaderTypeBit stage) cons
 //        {stageDefine[stage], ""},
 //        {brushTypeDefine[type], ""},
 //        {"DISTANCE", RenderManager::distanceMetrics[metric].functionName},
-//        {"VALUE_TYPE", destFormat.shaderValueType()},
-//        {"FORMAT_SCALE", QString::number(destFormat.scale())},
-//        {"PALETTE_FORMAT_SCALE", QString::number(destIndexed && destPaletteFormat.isValid() ? destPaletteFormat.scale() : 1.0)},
 //        {"BLEND_MODE", RenderManager::blendModes[blendMode].functionName},
 //        {"COMPOSE_MODE", RenderManager::composeModes[composeMode].functionName},
-//        {"SCALAR_VALUE_TYPE", destFormat.shaderScalarValueType()},
-//        {"DEST_BUFFER_TYPE", "BUFFER_RGBA"},
-//        {"DEST_BUFFER_NAME", "dest"},
-//        {"DEST_BUFFER_TEXTURE_LOCATION", QString::number(0)},
-//        {"DEST_BUFFER_SAMPLER_TYPE", destFormat.shaderSamplerType()},
-//        {"DEST_BUFFER_FORMAT_SCALE", QString::number(destFormat.scale())},
-//        {"DEST_BUFFER_SCALAR_VALUE_TYPE", destFormat.shaderScalarValueType()},
+//        {"DEST_VALUE_TYPE", destFormat.shaderValueType()},
+//        {"DEST_SAMPLER_TYPE", destFormat.shaderSamplerType()},
+//        {"DEST_FORMAT_SCALE", QString::number(destFormat.scale())},
+//        {"DEST_SCALAR_VALUE_TYPE", destFormat.shaderScalarValueType()},
 //    };
+//    if (destIndexed) {
+//        defines.insert({
+//            {"DEST_INDEXED", ""},
+//            {"DEST_PALETTE_VALUE_TYPE", destPaletteFormat.shaderValueType()},
+//            {"DEST_PALETTE_SAMPLER_TYPE", destPaletteFormat.shaderSamplerType()},
+//            {"DEST_PALETTE_FORMAT_SCALE", QString::number(destPaletteFormat.scale())},
+//            {"DEST_PALETTE_SCALAR_VALUE_TYPE", destPaletteFormat.shaderScalarValueType()},
+//        });
+//    }
 
 //    const QString filename = "brush.glsl";
 //    const QString &srcy = RenderManager::resourceShaderPart(filename);

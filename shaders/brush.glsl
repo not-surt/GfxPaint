@@ -1,5 +1,5 @@
 ///////////////
-// STAGE COMMON
+// COMMON STAGE
 ///////////////
 
 #include "types.glsl"
@@ -30,9 +30,9 @@ layout(std140, binding = 0) uniform UniformData {
     Dab dab;
 };
 
-/////////////////////////
+///////////////////////////
 #if defined(VERTEX_STAGE)
-/////////////////////////
+///////////////////////////
 
 void main(void) {
     Point point = points[gl_InstanceID];
@@ -67,9 +67,17 @@ void main(void)
 #elif defined(FRAGMENT_STAGE)
 /////////////////////////////
 
+#include "buffer.glsl"
 #include "distance.glsl"
 
 in vec2 pos;
+
+#if defined(DEST_INDEXED)
+BUFFER_RGBA(destPalette, 1, DEST_PALETTE_SAMPLER_TYPE, destPaletteTexture, DEST_PALETTE_FORMAT_SCALE, DEST_PALETTE_SCALAR_VALUE_TYPE)
+BUFFER_INDEXED(dest, 0, DEST_SAMPLER_TYPE, destTexture, destPalette)
+#else
+BUFFER_RGBA(dest, 0, DEST_SAMPLER_TYPE, destTexture, DEST_FORMAT_SCALE, DEST_SCALAR_VALUE_TYPE)
+#endif
 
 #if defined(BRUSH_DISTANCE)
 float dabDistance(const vec2 pos) {
@@ -105,7 +113,6 @@ Colour src(void) {
     return colour;
 }
 
-#define FRAGMENT_MAIN
 #include "fragment.glsl"
 
 //////////////

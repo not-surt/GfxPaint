@@ -60,6 +60,7 @@ EditingContext::~EditingContext()
 
 void EditingContext::update(Editor &editor)
 {
+    qDebug() << "EditingContext::update";/////////////////////////
     m_states.clear();
     for (const auto &node : m_selectedNodes) {
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
@@ -86,7 +87,8 @@ void EditingContext::update(Editor &editor)
     selectedNodeRestoreBuffers.clear();
     auto oldFormatToolPrograms = formatToolPrograms;
     formatToolPrograms.clear();
-    auto tools = editor.activeTools();
+    auto tools = editor.activeToolIds();
+    qDebug() << "TOOLS:" << tools.size();
     for (Node *node : m_selectedNodes) {
         Traversal::State &state = m_states[node];
         BufferNode *const bufferNode = dynamic_cast<BufferNode *>(node);
@@ -94,8 +96,9 @@ void EditingContext::update(Editor &editor)
             selectedNodeRestoreBuffers[bufferNode] = new Buffer(bufferNode->buffer);
             for (const ToolId toolId : tools) {
                 Tool *const tool = editor.toolInfo.at(toolId).tool;
-                auto programs = tool->formatPrograms(*this, bufferNode->buffer.format(), bufferNode->indexed, state.palette->format());
-                const std::tuple key{bufferNode->buffer.format(), bufferNode->indexed, state.palette->format(), tool};
+                auto programs = tool->formatPrograms(*this, bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format());
+                qDebug() << "PROGRAMS!!!";//////////////////////////////////////////
+                const std::tuple key{bufferNode->buffer.format(), bufferNode->indexed, state.palette ? state.palette->format() : Buffer::Format(), tool};
                 if (!formatToolPrograms.contains(key)) {
                     formatToolPrograms[key] = programs;
                 }

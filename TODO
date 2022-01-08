@@ -1,2 +1,3 @@
 Mousewheel acumulates canvas zoom bug?
 Crash on exit. Multiple delete editor?
+GLSL preprocessing silent error when macro argument count doesn't match

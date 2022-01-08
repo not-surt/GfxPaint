@@ -51,7 +51,7 @@ QList<QByteArray> Scene::formats()
 
 bool Scene::saveAs(const QString &filename)
 {
-    bool result = false;
+    bool result = false;/////////////////////////////////////////////
     if (result) {
         m_modified = false;
         m_filename = filename;
